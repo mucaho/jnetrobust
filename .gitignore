@@ -1,3 +1,6 @@
 # IntelliJ Idea files
 .idea/
 *.iml
+
+# Binary output
+*/target/*
