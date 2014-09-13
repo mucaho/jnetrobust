@@ -79,6 +79,5 @@ public class PrimitiveValuesTest {
 					intString, is(equalTo(smallLongString)));
 		}
 	}
-	
-	//TODO add int to long test
+
 }

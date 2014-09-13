@@ -57,10 +57,7 @@ public abstract class MapControl {
 			}
 		}
 	}
-	
-	//TODO documentation
-	//TODO change left hand side of fields from implementations to interfaces
-	
+
 	private void discardTimedoutEntries() {
 		if (maxEntryTimeout > 0) {
 			Collection<MultiKeyValue> timedOuts = 

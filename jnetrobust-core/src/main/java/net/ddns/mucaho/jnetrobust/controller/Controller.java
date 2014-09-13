@@ -16,12 +16,8 @@ public class Controller {
 	protected ReceivedBitsControl receivedBitsHandler;
 	
 	protected RTTControl rttHandler;
-	
-	//TODO maybe decorator pattern for all controllers that add new features
-	
-	//TODO add send(Collection MultiKeys) -> only 1 packet (ack/last acks) for retransmits
-	// also receive(Collection MultiKeys)
-	
+
+
 	public Controller(Config config) {		
 		pendingMapHandler = new PendingMapControl(config.listener, config.packetQueueLimit, 
 				config.packetQueueTimeout) {
@@ -40,19 +36,12 @@ public class Controller {
 		
 		rttHandler = new RTTControl(config.K, config.G);
 	}
-	
-	//TODO rename packages & split packages into api / implementation
-	
-	//TODO add pool instead of new package creation 
-	// & replace serializer object creation strategy
-	
-	//TODO add tests for controller (data & packet as input)
+
 	
 	public synchronized Packet send(Object data) {
 		MultiKeyValue multiRef = new MultiKeyValue(++dataId, data);
 		return send(multiRef);
 	}
-	//TODO return Externalizable
 	public synchronized Packet send(MultiKeyValue data) {
 		// adapt local seq
 		localSeq++;
@@ -73,7 +62,6 @@ public class Controller {
 		return pkg;
 	}
 	
-	//TODO receive Externalizable
 	public synchronized Object receive(Packet pkg) {
 		short newRemoteSeq = pkg.getData().getLastDynamicReference();
 		

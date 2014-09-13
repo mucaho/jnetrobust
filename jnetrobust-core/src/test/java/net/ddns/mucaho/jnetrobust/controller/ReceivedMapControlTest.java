@@ -121,5 +121,4 @@ public class ReceivedMapControlTest extends MapControlTest {
 			assertNull("Ref was not added as expected", dataMap.get(ref));
 	}
 
-	//TODO test removeEntry for receivedMapControl as its non-trivial
 }

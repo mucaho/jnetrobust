@@ -12,7 +12,6 @@ public class RetransmissionController extends Controller {
 				config.listener);
 	}
 
-	// TODO return collection here instead of triggering listener
 	public synchronized void retransmit() {
 		// Update outdated not acked packets
 		boolean shouldRetransmit = responseHandler.updatePendingTime(rttHandler.getRTO());
@@ -34,9 +33,6 @@ public class RetransmissionController extends Controller {
 	@Override
 	public synchronized Object receive(Packet pkg) {
 		// Update continuous receive time
-		// FIXME RTO doesnt account for how many packets we send:
-		// empty transmission should occur after lastAcks.SIZE / 2 packets received or RTO / 2
-		// -> whichever is smaller
 		responseHandler.updateReceivedTime(rttHandler.getRTO() / 2);
 		
 		return super.receive(pkg);

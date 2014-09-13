@@ -17,8 +17,7 @@ public class ReceivedMapControl extends MapControl {
 		this.listener = listener;
 		this.nextRemoteSeq = (short) (remoteSeq+1);
 	}
-	
-	//TODO add logging (similar to delayTest for high level + these low level internals)
+
 
 	@Override
 	protected void createMap() {

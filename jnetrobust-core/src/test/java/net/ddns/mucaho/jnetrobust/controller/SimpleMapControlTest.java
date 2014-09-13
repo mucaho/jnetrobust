@@ -154,7 +154,6 @@ public class SimpleMapControlTest extends MapControlTest {
 					-control.maxEntryOffset);
 	}
 	
-	//TODO add timeout discard entry test
     public final void testDiscardTimedoutEntries() {
         Deencapsulation.setField(control, "maxEntryTimeout", 2L);
     }

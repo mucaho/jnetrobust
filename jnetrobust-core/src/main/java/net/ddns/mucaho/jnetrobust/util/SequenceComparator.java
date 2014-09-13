@@ -7,7 +7,6 @@ public class SequenceComparator implements Comparator<Short> {
 	
 	
 	public final static int MAX_SEQUENCE = Short.MAX_VALUE - Short.MIN_VALUE + 1;
-	//TODO refactor so no - min value
 	
 
 	

@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-//TODO mavenize JArrayLiterals and add it as an dependency
-
 /**
  * Shortcuts for creating arbitrary arrays (e.g. for parameterized unit tests).
  * <p>

@@ -344,7 +344,6 @@ public class DelayedTest {
 //			assertTrue("ordered data contains successor of unorderedData", orderedB.contains(succ));
 		}
 		
-		//TODO the last messages get sent with 0 RT0 -> empty retransmits triggered
 //		assertEquals("no empty packets sent", 0, emptySendA.value);
 		assertEquals("all packets acked", 0, notAckedA.size());
 		assertEquals("all packets ordered", 0, unorderedA.size());
@@ -372,7 +371,6 @@ public class DelayedTest {
 		assertEquals("all messages from B must be acked", sentB.size() - retransmitsB.size() - notAckedB.size() - 3, ackedB.size());
 		assertEquals("all messages from B must be ordered at A", sentB.size() - retransmitsB.size() - unorderedA.size() - 1, orderedA.size());		
 	
-		//TODO check pendingMapSize and receivedMapSize
 	}
 	
 	

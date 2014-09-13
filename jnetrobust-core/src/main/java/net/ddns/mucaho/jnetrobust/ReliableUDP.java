@@ -4,7 +4,6 @@ package net.ddns.mucaho.jnetrobust;
 //import com.esotericsoftware.kryonet.Listener;
 
 public class ReliableUDP { //extends Listener {
-	//TODO maybe pack protocolId and reference count into first Byte
 /*
 	private final Map<Connection, Controller> connectionHandlers = 
 		new HashMap<Connection, Controller>();
