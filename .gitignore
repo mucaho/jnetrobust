@@ -2,5 +2,10 @@
 .idea/
 *.iml
 
+# Eclipse files
+.classpath
+.project
+.settings/
+
 # Binary output
-*/target/*
+target/
