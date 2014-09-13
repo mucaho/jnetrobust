@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>net.ddns.mucaho</groupId>
+    <artifactId>jnetrobust</artifactId>
+    <version>0.0.1</version>
+
+    <url>http://mucaho.ddns.net/jnetrobust</url>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>Reliable &amp; lightweight virtual network protocol for the JVM. Contains the library &amp; samples.</description>
+
+    <licenses>
+        <license>
+            <name>Mozilla Public License Version 2.0</name>
+            <url>https://www.mozilla.org/MPL/2.0/index.txt</url>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <name>mucaho</name>
+            <!-- <email></email> -->
+            <url>http://mucaho.ddns.net</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <connection>scm:git:git@github.com:mucaho/jnetrobust.git</connection>
+        <developerConnection>scm:git:git@github.com:mucaho/jnetrobust.git</developerConnection>
+        <url>git@github.com:mucaho/jnetrobust.git</url>
+    </scm>
+
+    <packaging>pom</packaging>
+    <modules>
+        <module>jnetrobust-core</module>
+        <module>jnetrobust-samples</module>
+    </modules>
+</project>
