@@ -6,24 +6,28 @@ import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.data.Packet;
 
-public class TestHost implements Runnable {
-	public interface TestHostListener {
-		public void notifySent(Long value);
-		public void nofityReceived(Long value);
+public class TestHost<T> implements Runnable {
+	public interface TestHostListener<T> {
+		public void notifySent(T value);
+		public void notifyReceived(T value);
 	}
+    public interface TestHostDataGenerator<T> {
+        public T generateData();
+    }
 	
-	private final TestHostListener hostListener;
-	private final UnreliableQueue<Packet> inQueue;
+	private final TestHostListener<T> hostListener;
+    private final TestHostDataGenerator<T> dataGenerator;
+    private final UnreliableQueue<Packet> inQueue;
 	private final UnreliableQueue<Packet> outQueue;
 	private final RetransmissionController protocol;
 	private final boolean shouldRetransmit;
-	private long counter = -1; //Long.MIN_VALUE;
 	
-	public TestHost(TestHostListener hostListener, boolean retransmit,
-			UnreliableQueue<Packet> inQueue, UnreliableQueue<Packet> outQueue, 
-			Config config) {
+	public TestHost(TestHostListener<T> hostListener, TestHostDataGenerator<T> dataGenerator,
+                    UnreliableQueue<Packet> inQueue, UnreliableQueue<Packet> outQueue, boolean retransmit,
+                    Config config) {
 		this.hostListener = hostListener;
-		this.protocol = new RetransmissionController(adaptConfig(config));
+        this.dataGenerator = dataGenerator;
+        this.protocol = new RetransmissionController(adaptConfig(config));
 		this.inQueue = inQueue;
 		this.outQueue = outQueue;
 		this.shouldRetransmit = retransmit;
@@ -37,12 +41,14 @@ public class TestHost implements Runnable {
 		}
 	}
 	protected void receive(Packet packet) {
-		Long value = consume(packet);
-		hostListener.nofityReceived(value);
+		T value = consume(packet);
+		hostListener.notifyReceived(value);
 	}
-	protected Long consume(Packet packet) {
+
+    @SuppressWarnings("unchecked")
+	protected T consume(Packet packet) {
 		//System.out.println("YYY"+packet.data.getDynamicReferences().size());
-		return (Long) protocol.receive(packet);
+		return (T) protocol.receive(packet);
 	}
 	
 	
@@ -50,13 +56,14 @@ public class TestHost implements Runnable {
 		send(produce());
 	}
 	protected Packet produce() {
-		return protocol.send(++counter);
+		return protocol.send(dataGenerator.generateData());
 	}
-	
-	protected void send(Packet packet) {
+
+    @SuppressWarnings("unchecked")
+    protected void send(Packet packet) {
 		//System.out.println("WWW"+packet.data.getDynamicReferences().size());
 		outQueue.offer(packet);
-		hostListener.notifySent((Long) packet.getData().getValue());
+		hostListener.notifySent((T) packet.getData().getValue());
 	}
 	
 	public void retransmit() {

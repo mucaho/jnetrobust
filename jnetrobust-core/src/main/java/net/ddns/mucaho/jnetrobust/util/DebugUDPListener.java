@@ -14,8 +14,10 @@ public class DebugUDPListener extends UDPListener {
 	public DebugUDPListener(String name) {
 		this(name, new Logger() {
 			@Override
-			public void log(String... text) {
-				System.out.println(text);
+			public void log(String... texts) {
+                for (String text: texts)
+				    System.out.print(text + "\t");
+                System.out.println();
 			}
 		});
 	}

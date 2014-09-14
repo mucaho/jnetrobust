@@ -41,9 +41,9 @@ public class DelayedTest {
 	@Injectable
 	private UDPListener protocolListenerB;
 	@Injectable
-	private TestHostListener hostListenerA;
+	private TestHostListener<Long> hostListenerA;
 	@Injectable
-	private TestHostListener hostListenerB;
+	private TestHostListener<Long> hostListenerB;
 	
 	public Object[][] parametersForTestDelayed() {
 		Object[][] out = {{
@@ -68,8 +68,9 @@ public class DelayedTest {
 		final UnreliableQueue<Packet> bToA = new UnreliableQueue<Packet>(queueListenerBtoA, 
 				minDelay, maxDelay, lossChance, dupChance);
 
-		final TestHost hostA = new TestHost(hostListenerA, retransmit, bToA, aToB, 
-				new Config(protocolListenerA));		
+
+		final TestHost<Long> hostA = new TestHost<Long>(hostListenerA, new LongDataGenerator(),
+                bToA, aToB, retransmit, new Config(protocolListenerA));
 		final List<Long> sentA = new ArrayList<Long>();
 		final List<Long> lostSentA = new ArrayList<Long>();
 		final List<Long> dupedSentA = new ArrayList<Long>();
@@ -82,8 +83,8 @@ public class DelayedTest {
 		final IntWrapper emptySendA = new IntWrapper();
 
 		
-		final TestHost hostB = new TestHost(hostListenerB, retransmit, aToB, bToA,
-				new Config(protocolListenerB));
+		final TestHost<Long> hostB = new TestHost<Long>(hostListenerB, new LongDataGenerator(),
+                aToB, bToA, retransmit, new Config(protocolListenerB));
 		final List<Long> sentB = new ArrayList<Long>();
 		final List<Long> lostSentB = new ArrayList<Long>();
 		final List<Long> dupedSentB = new ArrayList<Long>();
@@ -97,7 +98,7 @@ public class DelayedTest {
 		
 		
 		new NonStrictExpectations() {{
-			hostListenerA.nofityReceived(withCapture(receivedA)); result = new Delegate<Void>() {
+			hostListenerA.notifyReceived(withCapture(receivedA)); result = new Delegate<Void>() {
 				@SuppressWarnings("unused")
 				void delegate(Long received) {
 					System.out.println("[A-received]: "+received);
@@ -151,7 +152,7 @@ public class DelayedTest {
 		}};
 		
 		new NonStrictExpectations() {{
-			hostListenerB.nofityReceived(withCapture(receivedB)); result = new Delegate<Void>() {
+			hostListenerB.notifyReceived(withCapture(receivedB)); result = new Delegate<Void>() {
 				@SuppressWarnings("unused")
 				void delegate(Long received) {
 					System.out.println("[B-received]: "+received);
@@ -377,4 +378,11 @@ public class DelayedTest {
 	private class IntWrapper {
 		public int value = 0;
 	}
+    private class LongDataGenerator implements TestHost.TestHostDataGenerator<Long> {
+        private long counter = -1; //Long.MIN_VALUE;
+        @Override
+        public Long generateData() {
+            return ++counter;
+        }
+    }
 }

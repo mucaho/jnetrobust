@@ -7,7 +7,7 @@ import net.ddns.mucaho.jnetrobust.controller.ReceivedMapControl.TransmissionOrde
 import net.ddns.mucaho.jnetrobust.controller.ResponseControl.TransmissionRequestListener;
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 
-public class UDPListener implements TransmissionSuccessListener, TransmissionOrderListener, 
+public class UDPListener implements TransmissionSuccessListener, TransmissionOrderListener,
 	TransmissionRequestListener {
 
 	@Override
