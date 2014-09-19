@@ -139,6 +139,6 @@ public class MultiKeyValueMap {
 		public MultiKeyValue removeValue(Short currentKey) {
 			return removeAll(currentKey);
 		}
-	};
+	}
 	
 }

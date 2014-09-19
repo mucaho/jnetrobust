@@ -14,7 +14,7 @@ public class Packet implements Freezable {
 		super();
 	}
 
-	private MultiKeyValue data = new MultiKeyValue();
+	private MultiKeyValue data;
 	private short ack;
 	private int lastAcks;
 	
@@ -54,19 +54,48 @@ public class Packet implements Freezable {
 		+ "ack = " + ack + "\t"
 		+ "lastAcks = " + String.format("%33s", Long.toBinaryString(lastAcks)) + "\n";
 	}
-	
+
+    /**
+     * Externalize the packet.
+     * Static method that does the same thing as {@link java.io.Externalizable#writeExternal(java.io.ObjectOutput)} .
+     *
+     * @param packet    the instance to write
+     * @param out       the {@link java.io.ObjectOutput} to write to
+     * @throws IOException  if an error occurs
+     */
+    public static void writeExternalStatic(Packet packet, ObjectOutput out) throws IOException {
+        packet.writeExternal(out);
+    }
+
+    /**
+     * Deexternalize the packet.
+     * Static method that does the same thing as {@link java.io.Externalizable#readExternal(java.io.ObjectInput)} .
+     *
+     * @param in    the {@link java.io.ObjectInput} to read from
+     * @return      a new packet instance, constructed by the data read
+     * @throws IOException  if an error occurs
+     * @throws ClassNotFoundException   if an error occurs.
+     */
+    public static Packet readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
+        Packet packet = new Packet();
+        packet.readExternal(in);
+        return packet;
+    }
+
+
+
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeShort(ack);
 		out.writeInt(lastAcks);
-		data.writeExternal(out);
+        MultiKeyValue.writeExternalStatic(data, out);
 	}
 
 	@Override
 	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
 		ack = in.readShort();
 		lastAcks = in.readInt();
-		data.readExternal(in);
+        data = MultiKeyValue.readExternalStatic(in);
 	}
 
 	@Override
@@ -77,5 +106,4 @@ public class Packet implements Freezable {
 		clone.data = (MultiKeyValue) data.clone();
 		return clone;
 	}
-	
 }

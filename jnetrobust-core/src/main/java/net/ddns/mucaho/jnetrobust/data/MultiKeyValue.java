@@ -90,7 +90,34 @@ public class MultiKeyValue implements Timestamp, Freezable {
 		
 		return out;
 	}
-	
+
+    /**
+     * Externalize the multiKeyValue.
+     * Static method that does the same thing as {@link java.io.Externalizable#writeExternal(java.io.ObjectOutput)} .
+     *
+     * @param multiKeyValue     the instance to write
+     * @param out               the {@link java.io.ObjectOutput} to write to
+     * @throws IOException      if an error occurs
+     */
+    public static void writeExternalStatic(MultiKeyValue multiKeyValue, ObjectOutput out) throws IOException {
+        multiKeyValue.writeExternal(out);
+    }
+
+    /**
+     * Deexternalize the multiKeyValue.
+     * Static method that does the same thing as {@link java.io.Externalizable#readExternal(java.io.ObjectInput)} .
+     *
+     * @param in    the {@link java.io.ObjectInput} to read from
+     * @return      a new multiKeyValue instance, constructed by the data read
+     * @throws IOException              if an error occurs
+     * @throws ClassNotFoundException   if an error occurs.
+     */
+    public static MultiKeyValue readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
+        MultiKeyValue multiKeyValue = new MultiKeyValue();
+        multiKeyValue.readExternal(in);
+        return multiKeyValue;
+    }
+
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
 		out.writeShort(staticReference);
