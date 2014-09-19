@@ -1,11 +1,5 @@
 package net.ddns.mucaho.jnetrobust.util;
 
-import java.util.Arrays;
-import java.util.Collection;
-
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-
-
 public class DebugUDPListener extends UDPListener {
 
 	private final String name;
@@ -29,32 +23,22 @@ public class DebugUDPListener extends UDPListener {
 	
 	@Override
 	public void handleOrderedTransmission(Object iterPkg) {
-		logger.log("["+name+"]: Package received ordered: " + iterPkg);
+		logger.log(name, "Package received ordered", iterPkg != null ? iterPkg.toString() : "null");
 	}
 	
 	@Override
 	public void handleUnorderedTransmission(Object unorderedPkg) {
-		logger.log("["+name+"]: Package received unordered: " + unorderedPkg);
+        logger.log(name, "Package received unordered", unorderedPkg != null ? unorderedPkg.toString() : "null");
 	}
 
 	@Override
 	public void handleNotAckedTransmission(Object timedoutPkg) {
-		logger.log("["+name+"]: Package timedout: " + timedoutPkg);
-	}
+        logger.log(name, "Package timed out", timedoutPkg != null ? timedoutPkg.toString() : "null");
+    }
 	
 	@Override
 	public void handleAckedTransmission(Object ackedPkg) {
-		logger.log("["+name+"]: Package delivered: " + ackedPkg);
-	}
-	
-	@Override
-	public void handleTransmissionRequest() {
-		logger.log("["+name+"]: Null transmission request: ");
-	}
-
-	@Override
-	public void handleTransmissionRequests(Collection<? extends MultiKeyValue> retransmitDatas) {
-		logger.log("["+name+"]: Package retransmission requests: " + Arrays.deepToString(retransmitDatas.toArray()));
+		logger.log(name, "Package delivered", ackedPkg != null ? ackedPkg.toString() : "null");
 	}
 	
 

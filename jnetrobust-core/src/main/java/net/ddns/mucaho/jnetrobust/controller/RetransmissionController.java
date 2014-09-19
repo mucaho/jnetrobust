@@ -1,40 +1,24 @@
 package net.ddns.mucaho.jnetrobust.controller;
 
-import net.ddns.mucaho.jnetrobust.data.Packet;
+import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.util.Config;
+
+import java.util.Collection;
 
 public class RetransmissionController extends Controller {
 	protected ResponseControl responseHandler;
 	
 	public RetransmissionController(Config config) {
 		super(config);
-		responseHandler = new ResponseControl(pendingMapHandler.dataMap.getMap().values(), 
-				config.listener);
+		responseHandler = new ResponseControl(pendingMapHandler.dataMap.getMap().values());
 	}
 
-	public synchronized void retransmit() {
+	public synchronized Collection<? extends MultiKeyValue> retransmit() {
 		// Update outdated not acked packets
-		boolean shouldRetransmit = responseHandler.updatePendingTime(rttHandler.getRTO());
-		if (shouldRetransmit) {
+		Collection<MultiKeyValue> retransmits = responseHandler.updatePendingTime(rttHandler.getRTO());
+		if (!retransmits.isEmpty()) {
 			rttHandler.backoff();
 		}
-	}
-	
-	
-	@Override
-	public synchronized Packet send(Object data) {
-		// Reset continuous receive time	
-		responseHandler.resetReceivedTime();
-		
-		return super.send(data);
-	}
-	
-	
-	@Override
-	public synchronized Object receive(Packet pkg) {
-		// Update continuous receive time
-		responseHandler.updateReceivedTime(rttHandler.getRTO() / 2);
-		
-		return super.receive(pkg);
+        return retransmits;
 	}
 }
