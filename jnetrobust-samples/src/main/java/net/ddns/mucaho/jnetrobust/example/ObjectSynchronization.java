@@ -16,6 +16,7 @@ public class ObjectSynchronization {
     private static InetSocketAddress SERVER_ADDRESS;
     private static InetSocketAddress CLIENT_ADDRESS;
     private static InetSocketAddress EMULATOR_ADDRESS;
+
     static {
         try {
             SERVER_ADDRESS = new InetSocketAddress(InetAddress.getLocalHost(), 12345);

@@ -77,8 +77,9 @@ public class DefaultHost<T> {
                 super.handleTransmissionRequest();
                 try {
                     //FIXME
-                    internalSend((T)null);
-                } catch (IOException e) {}
+                    internalSend((T) null);
+                } catch (IOException e) {
+                }
             }
 
             @Override
@@ -91,7 +92,7 @@ public class DefaultHost<T> {
 
     public void send(T data) throws IOException {
         protocol.retransmit();
-        for (MultiKeyValue retransmit: retransmitQueue) {
+        for (MultiKeyValue retransmit : retransmitQueue) {
             internalSend(protocol.send(retransmit));
             System.out.println("[" + hostName + "-RETRANSMIT]: " + retransmit.getValue().toString());
         }
@@ -102,7 +103,7 @@ public class DefaultHost<T> {
 
     private void internalSend(T data) throws IOException {
         internalSend(protocol.send(data));
-        System.out.println("["+hostName+"-SEND]: "+data);
+        System.out.println("[" + hostName + "-SEND]: " + data);
     }
 
     private void internalSend(final Packet outPacket) throws IOException {
@@ -115,20 +116,21 @@ public class DefaultHost<T> {
     }
 
     private Queue<T> outQueue = new LinkedList<T>();
+
     @SuppressWarnings("unchecked")
     public Queue<T> receive() throws IOException, ClassNotFoundException {
         outQueue.clear();
 
         buffer.clear();
         SocketAddress senderAddress = channel.receive(buffer);
-        while(senderAddress != null) {
+        while (senderAddress != null) {
             buffer.flip();
             bufferInput.setBuffer(buffer);
             Packet inPacket = new Packet();
             inPacket.readExternal(objectInput);
 
-            T data = (T)protocol.receive(inPacket);
-            System.out.println("["+hostName+"-RECV]: " + data);
+            T data = (T) protocol.receive(inPacket);
+            System.out.println("[" + hostName + "-RECV]: " + data);
             if (data != null)
                 outQueue.add(data);
 

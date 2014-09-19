@@ -5,19 +5,19 @@ import net.ddns.mucaho.jnetrobust.controller.ReceivedMapControl.TransmissionOrde
 
 public class UDPListener implements TransmissionSuccessListener, TransmissionOrderListener {
 
-	@Override
-	public void handleOrderedTransmission(Object orderedPkg) {
-	}
+    @Override
+    public void handleOrderedTransmission(Object orderedPkg) {
+    }
 
-	@Override
-	public void handleUnorderedTransmission(Object unorderedPkg) {
-	}
+    @Override
+    public void handleUnorderedTransmission(Object unorderedPkg) {
+    }
 
-	@Override
-	public void handleAckedTransmission(Object ackedPkg) {
-	}
+    @Override
+    public void handleAckedTransmission(Object ackedPkg) {
+    }
 
-	@Override
-	public void handleNotAckedTransmission(Object timedoutPkg) {
-	}
+    @Override
+    public void handleNotAckedTransmission(Object timedoutPkg) {
+    }
 }

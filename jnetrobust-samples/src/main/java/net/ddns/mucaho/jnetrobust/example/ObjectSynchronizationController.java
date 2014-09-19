@@ -11,8 +11,9 @@ import java.net.InetSocketAddress;
 import java.util.Queue;
 
 public class ObjectSynchronizationController implements Runnable {
-    public static enum HOST { CLIENT, SERVER }
-    public static enum MODE { UPDATE_ON_RECEIVED_DATA, UPDATE_ON_ORDERED_DATA }
+    public static enum HOST {CLIENT, SERVER}
+
+    public static enum MODE {UPDATE_ON_RECEIVED_DATA, UPDATE_ON_ORDERED_DATA}
 
     private final ObjectSynchronizationGUI gui;
     private final DefaultHost<Vector2D> host;
@@ -42,6 +43,7 @@ public class ObjectSynchronizationController implements Runnable {
     }
 
     private Vector2D oldData = new Vector2D(Integer.MIN_VALUE, Integer.MIN_VALUE);
+
     @Override
     public void run() {
         try {
@@ -62,14 +64,14 @@ public class ObjectSynchronizationController implements Runnable {
         boolean isNewData = false;
 
         JPanel hostObject = gui.getHostObject();
-        if (hostObject.getX() != oldData.getX()|| hostObject.getY() != oldData.getY())
+        if (hostObject.getX() != oldData.getX() || hostObject.getY() != oldData.getY())
             isNewData = true;
 
         oldData.setX(hostObject.getX());
         oldData.setY(hostObject.getY());
 
         //FIXME if (isNewData)
-            host.send(oldData);
+        host.send(oldData);
     }
 
     private void updateGUI(final Vector2D data) {

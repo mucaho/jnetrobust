@@ -23,28 +23,28 @@ import java.util.Set;
 
 /**
  * Shortcuts for creating arbitrary arrays (e.g. for parameterized unit tests).
- * <p>
- * This class has two overloaded method. 
- * The {@link ArrayShortcuts#$(Object...) <code><T>$(T...): T[]</code>} method is used for 
- * creating an array of a generic element type and expects a non-zero, 
+ * <p/>
+ * This class has two overloaded method.
+ * The {@link ArrayShortcuts#$(Object...) <code><T>$(T...): T[]</code>} method is used for
+ * creating an array of a generic element type and expects a non-zero,
  * variable amount of arguments.
- * The {@link ArrayShortcuts#$(Object) <code><T>$(T): T[]</code>} method is used for 
+ * The {@link ArrayShortcuts#$(Object) <code><T>$(T): T[]</code>} method is used for
  * creating a higher-dimension array of a generic element type and expects a single argument.
  * <br>
- * This class has fields that start with {@linkplain $}. The fields represent zero-sized 
+ * This class has fields that start with {@linkplain $}. The fields represent zero-sized
  * arrays of a specific element type.
  * <br>
- * Note that both the methods and fields return boxed wrapper arrays instead of their respective, 
+ * Note that both the methods and fields return boxed wrapper arrays instead of their respective,
  * primitive data type arrays.
- * <p>
+ * <p/>
  * Be sure to use {@link ArrayShortcuts#$null $null} instead of the regular <b>null</b>
  * when nesting arrays.
  * <br>
- * Additionally, there are methods which automatically cast <code>int</code> arguments to 
+ * Additionally, there are methods which automatically cast <code>int</code> arguments to
  * <code>Byte</code>s {@link ArrayShortcuts#$B(int...) <code><T>$B(int...): Byte[]</code>} or
  * <code>short</code>s {@link ArrayShortcuts#$S(int...) <code><T>$S(int...): Short[]</code>}.
  * Be careful that these 2 methods trade performance for brevity.
- * <p>
+ * <p/>
  * An utility method {@link ArrayShortcuts#toString() toString} which prints
  * <i>anything</i> (including multidimensional arrays) is available.
  *
@@ -76,27 +76,27 @@ public class ArrayShortcuts {
      * <br>
      * Numbers are suffixed with the first capital letter of their respective types.
      *
-     * @param arr	anything
-     * @return		String representation of <b>arr</b>
+     * @param arr anything
+     * @return String representation of <b>arr</b>
      */
-    public static String toString(Object arr){
+    public static String toString(Object arr) {
         return toString(arr, 0);
     }
 
     private static String ident(int amount) {
         String out = "\n";
-        for (int i=0; i<amount; ++i)
+        for (int i = 0; i < amount; ++i)
             out += " ";
 
         return out;
     }
 
-    private static String toString(Object arr, int depth){
+    private static String toString(Object arr, int depth) {
         String out = "";
 
         if (arr == null) {
             out += arr;
-        } else if (!arr.getClass().isArray()){
+        } else if (!arr.getClass().isArray()) {
             out += arr.toString();
             Class<?> objClass = arr.getClass();
             if (isPrimitiveNumber(objClass)) {
@@ -107,14 +107,14 @@ public class ArrayShortcuts {
             out += "[";
 
             int arrLength = Array.getLength(arr);
-            for (int i=0; i<arrLength; ++i) {
+            for (int i = 0; i < arrLength; ++i) {
                 if (i != 0) out += ", ";
-                out += toString(Array.get(arr, i), depth+1);
-                if (i < arrLength-1) out += " ";
+                out += toString(Array.get(arr, i), depth + 1);
+                if (i < arrLength - 1) out += " ";
             }
 
             out += "]";
-            out += ident(depth-1);
+            out += ident(depth - 1);
         }
 
         return out;
@@ -125,8 +125,8 @@ public class ArrayShortcuts {
      * Shortcut for returning a higher dimension array containing only the parameter.
      * Note that the parameter itself can be an array.
      *
-     * @param param		A single parameter.
-     * @return Values	Array containing the parameter only.
+     * @param param A single parameter.
+     * @return Values    Array containing the parameter only.
      */
     public static <T> Object $(T param) {
         return createArray(getClass(param), param);
@@ -144,10 +144,10 @@ public class ArrayShortcuts {
      * other method by casting the array to an Object
      * <code>{@link ArrayShortcuts#$(Object) $( (Object) params )}</code>.
      *
-     * @param params	<b>(1)</b> A list of parameters <i>OR</i>
-     * 					<b>(2)</b> A single parameter array.
-     * @return			<b>(1)</b> Array containing the list of parameters <i>OR</i>
-     * 					<b>(2)</b> The single parameter array.
+     * @param params <b>(1)</b> A list of parameters <i>OR</i>
+     *               <b>(2)</b> A single parameter array.
+     * @return            <b>(1)</b> Array containing the list of parameters <i>OR</i>
+     * <b>(2)</b> The single parameter array.
      */
     public static <T> Object $(T... params) {
         Class<T> componentType = getClass(params[0]);
@@ -156,7 +156,7 @@ public class ArrayShortcuts {
         if (params.getClass().getComponentType() != componentType) {
             boolean isCommonComponentType = false;
 
-            for (int i=1; i<params.length; i++) {
+            for (int i = 1; i < params.length; i++) {
                 if (getClass(params[i]) == componentType) {
                     isCommonComponentType = true;
                     continue;
@@ -177,18 +177,20 @@ public class ArrayShortcuts {
 
     @SuppressWarnings("unchecked")
     private static <T> Class<T> getClass(T param) {
-        return (Class<T>) ( param != null ? param.getClass() : Void.class );
+        return (Class<T>) (param != null ? param.getClass() : Void.class);
     }
+
     @SuppressWarnings("unchecked")
     private static <T> T[] createArray(Class<T> klazz, T param) {
         T[] out = (T[]) Array.newInstance(klazz, 1);
         Array.set(out, 0, param);
         return out;
     }
+
     @SuppressWarnings("unchecked")
-    private static <T,S> T[] createArray(Class<T> klazz, S... params) {
+    private static <T, S> T[] createArray(Class<T> klazz, S... params) {
         T[] out = (T[]) Array.newInstance(klazz, params.length);
-        for (int i=0; i<params.length; i++) {
+        for (int i = 0; i < params.length; i++) {
             Array.set(out, i, params[i]);
         }
         return out;
@@ -198,13 +200,12 @@ public class ArrayShortcuts {
      * Shortcut for returning an array of Bytes. All parameters passed to this
      * method are returned in an <code>Byte[]</code> array.
      *
-     * @param params
-     *            Values to be returned in an <code>Byte[]</code> array.
+     * @param params Values to be returned in an <code>Byte[]</code> array.
      * @return Values passed to this method.
      */
     public static Object $B(int... params) {
         Byte[] out = new Byte[params.length];
-        for (int i=0; i<out.length; ++i) {
+        for (int i = 0; i < out.length; ++i) {
             out[i] = (byte) params[i];
         }
         return out;
@@ -214,18 +215,16 @@ public class ArrayShortcuts {
      * Shortcut for returning an array of Shorts. All parameters passed to this
      * method are returned in an <code>Short[]</code> array.
      *
-     * @param params
-     *            Values to be returned in an <code>Short[]</code> array.
+     * @param params Values to be returned in an <code>Short[]</code> array.
      * @return Values passed to this method.
      */
     public static Object $S(int... params) {
         Short[] out = new Short[params.length];
-        for (int i=0; i<out.length; ++i) {
+        for (int i = 0; i < out.length; ++i) {
             out[i] = (short) params[i];
         }
         return out;
     }
-
 
 
     /**

@@ -9,7 +9,8 @@
 
     <url>http://mucaho.ddns.net/jnetrobust</url>
     <name>${project.groupId}:${project.artifactId}</name>
-    <description>Reliable &amp; lightweight virtual network protocol for the JVM. Contains the library &amp; samples.</description>
+    <description>Reliable &amp; lightweight virtual network protocol for the JVM. Contains the library &amp; samples.
+    </description>
 
     <licenses>
         <license>

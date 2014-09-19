@@ -15,6 +15,7 @@ public class Protocol {
     public static interface ProtocolListener {
 
     }
+
     private final ProtocolListener protocolListener;
     private final RetransmissionController controller;
 
@@ -25,6 +26,7 @@ public class Protocol {
         };
         this.controller = new RetransmissionController(new Config(udpListener));
     }
+
     public Protocol(ProtocolListener protocolListener, String name, Logger logger) {
         this.protocolListener = protocolListener;
 
@@ -35,7 +37,7 @@ public class Protocol {
 
     public synchronized Packet send(Object data) {
         Collection<? extends MultiKeyValue> retransmits = controller.retransmit();
-        for (MultiKeyValue retransmit: retransmits) {
+        for (MultiKeyValue retransmit : retransmits) {
             internalSend(protocol.send(retransmit));
             System.out.println("[" + hostName + "-RETRANSMIT]: " + retransmit.getValue().toString());
         }

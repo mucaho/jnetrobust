@@ -33,21 +33,20 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * A convenience class for debugging UDP communication. The DatagramWanEmulator sits between
- * two specified {@link DatagramSocket}s and introduces latency, jitter and package loss 
+ * two specified {@link DatagramSocket}s and introduces latency, jitter and package loss
  * between these two sockets.
- * <p>
- * In order to use the emulator, you send the {@link DatagramPacket}s directly 
- * to the emulator's {@link java.net.SocketAddress} instead of sending them to the receiver 
- * {@link java.net.SocketAddress}. 
- * The emulator will introduce latency, jitter and package loss. Then it will send 
+ * <p/>
+ * In order to use the emulator, you send the {@link DatagramPacket}s directly
+ * to the emulator's {@link java.net.SocketAddress} instead of sending them to the receiver
+ * {@link java.net.SocketAddress}.
+ * The emulator will introduce latency, jitter and package loss. Then it will send
  * the packets to the receiving socket.
- * <p>
+ * <p/>
  * This class can be instantiated with the respective addresses. Use the appropriate methods
  * to start and stop the emulation.
- * The specific emulation parameters can be tuned with the appropriate getters / setters. 
+ * The specific emulation parameters can be tuned with the appropriate getters / setters.
  *
  * @author mucaho
- *
  */
 public class DatagramWanEmulator {
     /**
@@ -55,13 +54,19 @@ public class DatagramWanEmulator {
      */
     private static final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
 
-    /** The socket address A. */
+    /**
+     * The socket address A.
+     */
     private final InetSocketAddress socketAddressA;
 
-    /** The socket address B. */
+    /**
+     * The socket address B.
+     */
     private InetSocketAddress socketAddressB;
 
-    /** The emulator socket. */
+    /**
+     * The emulator socket.
+     */
     private DatagramSocket emulatorSocket;
 
     /**
@@ -69,9 +74,9 @@ public class DatagramWanEmulator {
      * bound to the specified emulatorAddress. The socketAddressB will be captured the
      * first time a packet is sent from socketAddressB.
      *
-     * @param emulatorAddress	the emulator address
-     * @param socketAddressA	one socket address
-     * @throws SocketException	the socket exception
+     * @param emulatorAddress the emulator address
+     * @param socketAddressA  one socket address
+     * @throws SocketException the socket exception
      */
     public DatagramWanEmulator(InetSocketAddress emulatorAddress, InetSocketAddress socketAddressA)
             throws SocketException {
@@ -82,10 +87,10 @@ public class DatagramWanEmulator {
      * Construct a new DatagramWanEmulator. This will automatically create a new socket
      * bound to the specified emulatorAddress.
      *
-     * @param emulatorAddress	the emulator address
-     * @param socketAddressA	one socket address
-     * @param socketAddressB	the other socket address
-     * @throws SocketException	the socket exception
+     * @param emulatorAddress the emulator address
+     * @param socketAddressA  one socket address
+     * @param socketAddressB  the other socket address
+     * @throws SocketException the socket exception
      */
     public DatagramWanEmulator(InetSocketAddress emulatorAddress, InetSocketAddress socketAddressA,
                                InetSocketAddress socketAddressB) throws SocketException {
@@ -232,52 +237,64 @@ public class DatagramWanEmulator {
         this.minLatency = minLatency;
     }
 
-    /** The runnable. */
+    /**
+     * The runnable.
+     */
     private final Runnable runnable = new Runnable() {
 
         @Override
-        public void run() { try {
+        public void run() {
+            try {
 
-            while(true) {
-                byte[] bytes = new byte[maxPacketLength];
-                final DatagramPacket packet = new DatagramPacket(bytes, maxPacketLength);
-                emulatorSocket.receive(packet);
+                while (true) {
+                    byte[] bytes = new byte[maxPacketLength];
+                    final DatagramPacket packet = new DatagramPacket(bytes, maxPacketLength);
+                    emulatorSocket.receive(packet);
 
-                if ((socketAddressB == null) &&
-                        !(socketAddressA.equals(packet.getSocketAddress())))
-                    socketAddressB = (InetSocketAddress) packet.getSocketAddress();
+                    if ((socketAddressB == null) &&
+                            !(socketAddressA.equals(packet.getSocketAddress())))
+                        socketAddressB = (InetSocketAddress) packet.getSocketAddress();
 
-                if (socketAddressA.equals(packet.getSocketAddress()))
-                    packet.setSocketAddress(socketAddressB);
-                else if (socketAddressB.equals(packet.getSocketAddress()))
-                    packet.setSocketAddress(socketAddressA);
+                    if (socketAddressA.equals(packet.getSocketAddress()))
+                        packet.setSocketAddress(socketAddressB);
+                    else if (socketAddressB.equals(packet.getSocketAddress()))
+                        packet.setSocketAddress(socketAddressA);
 
-                do {
+                    do {
 
-                    if (Math.random() >= packageLoss)
-                        executor.schedule(new Runnable() {
+                        if (Math.random() >= packageLoss)
+                            executor.schedule(new Runnable() {
 
-                                              @Override public void run() { try {
-                                                  if (!emulatorSocket.isClosed())
-                                                      emulatorSocket.send(packet);
-                                              } catch(Exception e) {e.printStackTrace();}}
+                                                  @Override
+                                                  public void run() {
+                                                      try {
+                                                          if (!emulatorSocket.isClosed())
+                                                              emulatorSocket.send(packet);
+                                                      } catch (Exception e) {
+                                                          e.printStackTrace();
+                                                      }
+                                                  }
 
-                                          }, minLatency + (int)(Math.random()* (maxLatency - minLatency)),
-                                TimeUnit.MILLISECONDS);
+                                              }, minLatency + (int) (Math.random() * (maxLatency - minLatency)),
+                                    TimeUnit.MILLISECONDS);
 
-                } while (Math.random() < packageDuplication);
+                    } while (Math.random() < packageDuplication);
+                }
+
+
+            } catch (SocketException se) {/*closed*/} catch (Exception e) {
+                e.printStackTrace();
             }
-
-
-        } catch (SocketException se) {/*closed*/} catch (Exception e) { e.printStackTrace();}}
+        }
     };
 
     /**
      * Start the emulation between the two sockets.
+     *
      * @throws IllegalStateException if the current instance has already been stopped by stopEmulation().
-     * Create new
-     * {@link DatagramWanEmulator#DatagramWanEmulator(InetSocketAddress, InetSocketAddress, InetSocketAddress) instance}
-     * instead.
+     *                               Create new
+     *                               {@link DatagramWanEmulator#DatagramWanEmulator(InetSocketAddress, InetSocketAddress, InetSocketAddress) instance}
+     *                               instead.
      */
     public void startEmulation() throws IllegalStateException {
         if (emulatorSocket.isClosed())
