@@ -5,19 +5,19 @@ import net.ddns.mucaho.jnetrobust.data.MultiKeyValueMap;
 
 public class ReceivedMapControl extends MapControl {
     public interface TransmissionOrderListener {
-        public void handleOrderedTransmission(Object orderedPkg);
+        public void handleOrderedTransmission(short dataId, Object orderedData);
 
-        public void handleUnorderedTransmission(Object unorderedPkg);
+        public void handleUnorderedTransmission(short dataId, Object unorderedData);
     }
 
     private final TransmissionOrderListener listener;
-    private short nextRemoteSeq;
+    private short nextDataId;
 
-    public ReceivedMapControl(short remoteSeq, TransmissionOrderListener listener,
-                              int maxEntryOffset, long maxEntryTimeout) {
-        super(maxEntryOffset, maxEntryTimeout);
+    public ReceivedMapControl(short dataId, TransmissionOrderListener listener,
+                              int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
+        super(maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
         this.listener = listener;
-        this.nextRemoteSeq = (short) (remoteSeq + 1);
+        this.nextDataId = (short) (dataId + 1);
     }
 
 
@@ -26,7 +26,7 @@ public class ReceivedMapControl extends MapControl {
         dataMap = new MultiKeyValueMap(comparator) {
             @Override
             public void put(Short ref, MultiKeyValue data) {
-                if (comparator.compare(ref, nextRemoteSeq) >= 0) {
+                if (comparator.compare(ref, nextDataId) >= 0) {
 //					System.out.print("P["+ref+"]");
                     super.put(ref, data);
                 }
@@ -48,30 +48,30 @@ public class ReceivedMapControl extends MapControl {
 
     private void removeTail() {
         Short key = dataMap.firstKey();
-        while (key != null && key == nextRemoteSeq) {
+        while (key != null && key == nextDataId) {
 //			System.out.print("R["+key+"]");
             notifyOrdered(dataMap.remove(key));
 
             key = dataMap.higherKey(key);
-            nextRemoteSeq++;
+            nextDataId++;
         }
     }
 
     @Override
     protected void discardEntry(short key) {
-        nextRemoteSeq = comparator.compare((short) (key + 1), nextRemoteSeq) > 0 ?
-                (short) (key + 1) : nextRemoteSeq;
+        nextDataId = comparator.compare((short) (key + 1), nextDataId) > 0 ?
+                (short) (key + 1) : nextDataId;
         notifyUnordered(dataMap.remove(key));
     }
 
     private void notifyUnordered(MultiKeyValue unorderedPkg) {
         if (unorderedPkg != null)
-            listener.handleUnorderedTransmission(unorderedPkg.getValue());
+            listener.handleUnorderedTransmission(unorderedPkg.getStaticReference(), unorderedPkg.getValue());
     }
 
     private void notifyOrdered(MultiKeyValue orderedPackage) {
         if (orderedPackage != null)
-            listener.handleOrderedTransmission(orderedPackage.getValue());
+            listener.handleOrderedTransmission(orderedPackage.getStaticReference(), orderedPackage.getValue());
 
     }
 }

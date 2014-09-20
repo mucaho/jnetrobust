@@ -1,6 +1,7 @@
 package net.ddns.mucaho.jnetrobust;
 
 import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
+import net.ddns.mucaho.jnetrobust.data.Data;
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.data.Packet;
 import net.ddns.mucaho.jnetrobust.util.Config;
@@ -44,7 +45,7 @@ public class Protocol {
         retransmitQueue.clear();
     }
 
-    public synchronized Object receive(Packet pkg) {
+    public synchronized Data receive(Packet pkg) {
 
     }
 }

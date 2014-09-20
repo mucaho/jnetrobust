@@ -111,23 +111,23 @@ public class TestHost<T> implements Runnable {
         }
 
         @Override
-        public void handleOrderedTransmission(Object orderedPkg) {
-            listener.handleOrderedTransmission(orderedPkg);
+        public void handleOrderedTransmission(Object orderedData) {
+            listener.handleOrderedTransmission(orderedData);
         }
 
         @Override
-        public void handleUnorderedTransmission(Object unorderedPkg) {
-            listener.handleUnorderedTransmission(unorderedPkg);
+        public void handleUnorderedTransmission(Object unorderedData) {
+            listener.handleUnorderedTransmission(unorderedData);
         }
 
         @Override
-        public void handleAckedTransmission(Object ackedPkg) {
-            listener.handleAckedTransmission(ackedPkg);
+        public void handleAckedTransmission(Object ackedData) {
+            listener.handleAckedTransmission(ackedData);
         }
 
         @Override
-        public void handleNotAckedTransmission(Object timedoutPkg) {
-            listener.handleNotAckedTransmission(timedoutPkg);
+        public void handleNotAckedTransmission(Object unackedData) {
+            listener.handleNotAckedTransmission(unackedData);
         }
     }
 

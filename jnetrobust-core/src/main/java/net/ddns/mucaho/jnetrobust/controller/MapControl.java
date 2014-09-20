@@ -8,6 +8,7 @@ import net.ddns.mucaho.jnetrobust.util.TimeoutHandler;
 import java.util.Collection;
 import java.util.Comparator;
 
+
 public abstract class MapControl {
     protected final static Comparator<Short> comparator = SequenceComparator.instance;
 
@@ -16,6 +17,7 @@ public abstract class MapControl {
 
     protected final int maxEntries;
     protected final int maxEntryOffset;
+    protected final int maxEntryOccurrences;
     protected final long maxEntryTimeout;
 
     /*
@@ -23,9 +25,10 @@ public abstract class MapControl {
      */
     protected MultiKeyValueMap dataMap;
 
-    public MapControl(int maxEntryOffset, long maxEntryTimeout) {
+    public MapControl(int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
         this.maxEntries = maxEntryOffset;
         this.maxEntryOffset = maxEntryOffset;
+        this.maxEntryOccurrences = maxEntryOccurrences;
         this.maxEntryTimeout = maxEntryTimeout;
         createMap();
     }
@@ -41,7 +44,9 @@ public abstract class MapControl {
         discardTooManyEntries();
         discardTooOldEntries();
         discardTimedoutEntries();
+        discardEntryTooOften();
     }
+
 
     private void discardTooManyEntries() {
         while (dataMap.size() > maxEntries) {
@@ -66,6 +71,17 @@ public abstract class MapControl {
                     entryTimeoutHandler.filterTimedOut(dataMap.getMap().values(), maxEntryTimeout);
             for (MultiKeyValue timedOut : timedOuts)
                 discardEntry(timedOut.getFirstDynamicReference());
+        }
+    }
+
+    private void discardEntryTooOften() {
+        if (maxEntryOccurrences > 0) {
+            Short key = dataMap.firstKey();
+            while (key != null) {
+                if (dataMap.get(key).getDynamicReferences().size() > maxEntryOccurrences)
+                    discardEntry(key);
+                key = dataMap.higherKey(key);
+            }
         }
     }
 }

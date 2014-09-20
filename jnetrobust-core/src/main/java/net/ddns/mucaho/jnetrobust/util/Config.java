@@ -3,6 +3,7 @@ package net.ddns.mucaho.jnetrobust.util;
 public class Config {
     public int packetQueueLimit = SequenceComparator.MAX_SEQUENCE / 4;
     public long packetQueueTimeout = -1L;
+    public int packetRetransmitLimit = -1;
     public int K = 2;
     public int G = 25;
     public final UDPListener listener;

@@ -22,24 +22,26 @@ public class DebugUDPListener extends UDPListener {
     }
 
     @Override
-    public void handleOrderedTransmission(Object iterPkg) {
-        logger.log(name, "Package received ordered", iterPkg != null ? iterPkg.toString() : "null");
+    public void handleOrderedTransmission(short dataId, Object orderedData) {
+        logger.log(name, Logger.LoggingEvent.ORDERED.toString(), String.valueOf(dataId),
+                orderedData != null ? orderedData.toString() : "null");
     }
 
     @Override
-    public void handleUnorderedTransmission(Object unorderedPkg) {
-        logger.log(name, "Package received unordered", unorderedPkg != null ? unorderedPkg.toString() : "null");
+    public void handleUnorderedTransmission(short dataId, Object unorderedData) {
+        logger.log(name, Logger.LoggingEvent.UNORDERED.toString(), String.valueOf(dataId),
+                unorderedData != null ? unorderedData.toString() : "null");
     }
 
     @Override
-    public void handleNotAckedTransmission(Object timedoutPkg) {
-        logger.log(name, "Package timed out", timedoutPkg != null ? timedoutPkg.toString() : "null");
+    public void handleAckedTransmission(short dataId, Object ackedData) {
+        logger.log(name, Logger.LoggingEvent.ACKED.toString(), String.valueOf(dataId),
+                ackedData != null ? ackedData.toString() : "null");
     }
 
     @Override
-    public void handleAckedTransmission(Object ackedPkg) {
-        logger.log(name, "Package delivered", ackedPkg != null ? ackedPkg.toString() : "null");
+    public void handleNotAckedTransmission(short dataId, Object unackedData) {
+        logger.log(name, Logger.LoggingEvent.NOTACKED.toString(), String.valueOf(dataId),
+                unackedData != null ? unackedData.toString() : "null");
     }
-
-
 }

@@ -1,7 +1,9 @@
 package net.ddns.mucaho.jnetrobust.controller;
 
+import net.ddns.mucaho.jnetrobust.data.Data;
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.data.Packet;
+import net.ddns.mucaho.jnetrobust.util.CollectionUtils;
 import net.ddns.mucaho.jnetrobust.util.Config;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 
@@ -20,7 +22,7 @@ public class Controller {
 
     public Controller(Config config) {
         pendingMapHandler = new PendingMapControl(config.listener, config.packetQueueLimit,
-                config.packetQueueTimeout) {
+                config.packetRetransmitLimit + 1, config.packetQueueTimeout) {
             @Override
             protected void notifyAcked(MultiKeyValue ackedObject, boolean directlyAcked) {
                 if (ackedObject != null && directlyAcked)
@@ -31,14 +33,15 @@ public class Controller {
         };
 
         receivedBitsHandler = new ReceivedBitsControl(SequenceComparator.instance);
-        receivedMapHandler = new ReceivedMapControl(remoteSeq, config.listener,
-                config.packetQueueLimit, config.packetQueueTimeout);
+        receivedMapHandler = new ReceivedMapControl(dataId, config.listener,
+                config.packetQueueLimit, config.packetRetransmitLimit + 1, config.packetQueueTimeout);
 
         rttHandler = new RTTControl(config.K, config.G);
     }
 
 
     public synchronized Packet send(Object data) {
+        // adapt unique data id
         MultiKeyValue multiRef = new MultiKeyValue(++dataId, data);
         return send(multiRef);
     }
@@ -81,9 +84,15 @@ public class Controller {
         return receive(pkg.getData());
     }
 
-    public synchronized Object receive(MultiKeyValue data) {
-        return data.getValue();
+    private Data data = new Data();
+    private Data dataOut = Data.immutableData(data);
+    public synchronized Data receive(MultiKeyValue multiKeyValue) {
+        data.setDataId(multiKeyValue.getStaticReference());
+        data.setData(multiKeyValue.getValue());
+        return dataOut;
     }
+
+
 
     @Override
     public String toString() {

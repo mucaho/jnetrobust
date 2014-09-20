@@ -66,10 +66,10 @@ public class DefaultHost<T> {
         this.protocol = new RetransmissionController(new Config(new DebugUDPListener(hostName) {
             @Override
             @SuppressWarnings("unchecked")
-            public void handleOrderedTransmission(Object iterPkg) {
-                super.handleOrderedTransmission(iterPkg);
-                if (iterPkg != null)
-                    orderedDataListener.handleOrderedData((T) iterPkg);
+            public void handleOrderedTransmission(Object orderedData) {
+                super.handleOrderedTransmission(orderedData);
+                if (orderedData != null)
+                    orderedDataListener.handleOrderedData((T) orderedData);
             }
 
             @Override

@@ -5,6 +5,7 @@ import java.util.*;
 import java.util.Map.Entry;
 
 public class CollectionUtils {
+
     /**
      * Returns an unmodifiable view of the specified navigable set.
      */
@@ -35,7 +36,6 @@ public class CollectionUtils {
         }
     }
 
-    ;
 
     static class UnmodifiableNavigableSet<E>
             implements NavigableSet<E>, Serializable {
@@ -269,6 +269,7 @@ public class CollectionUtils {
          * {@link java.util.Map.Entry#setValue(Object) entry.setValue()}!!!
          */
         @Override
+        @Deprecated
         public Set<Entry<K, V>> entrySet() {
             return Collections.unmodifiableSet(decoratedMap.entrySet());
         }
