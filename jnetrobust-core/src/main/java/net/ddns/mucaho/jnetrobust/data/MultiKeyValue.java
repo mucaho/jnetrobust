@@ -12,11 +12,11 @@ import java.util.NavigableSet;
 import java.util.TreeSet;
 
 public class MultiKeyValue implements Timestamp, Freezable {
-    private transient final static int MAX_CAPACITY = Byte.MAX_VALUE - Byte.MIN_VALUE + 1;
-
     private transient long lastTouched = System.currentTimeMillis();
+
     private Short staticReference;
-    private TreeSet<Short> dynamicReferences = new TreeSet<Short>(SequenceComparator.instance);
+    private NavigableSet<Short> dynamicReferences =
+            new TreeSet<Short>(SequenceComparator.instance);
     private transient NavigableSet<Short> dynamicReferencesOut =
             CollectionUtils.unmodifiableNavigableSet(dynamicReferences);
 
@@ -41,9 +41,6 @@ public class MultiKeyValue implements Timestamp, Freezable {
     }
 
     boolean addDynamicReference(Short e) {
-        if (this.dynamicReferences.size() >= MAX_CAPACITY)
-            throw new IndexOutOfBoundsException("Can not add more references than " + MAX_CAPACITY + ".");
-
         return dynamicReferences.add(e);
     }
 

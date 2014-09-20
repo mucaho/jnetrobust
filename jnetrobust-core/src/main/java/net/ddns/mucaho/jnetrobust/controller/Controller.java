@@ -1,9 +1,13 @@
 package net.ddns.mucaho.jnetrobust.controller;
 
-import net.ddns.mucaho.jnetrobust.data.Data;
+import net.ddns.mucaho.jnetrobust.control.PendingMapControl;
+import net.ddns.mucaho.jnetrobust.control.RTTControl;
+import net.ddns.mucaho.jnetrobust.control.ReceivedBitsControl;
+import net.ddns.mucaho.jnetrobust.control.ReceivedMapControl;
+import net.ddns.mucaho.jnetrobust.IdData;
+import net.ddns.mucaho.jnetrobust.IdPacket;
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.data.Packet;
-import net.ddns.mucaho.jnetrobust.util.CollectionUtils;
 import net.ddns.mucaho.jnetrobust.util.Config;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 
@@ -12,7 +16,7 @@ public class Controller {
     protected ReceivedMapControl receivedMapHandler;
 
     protected short localSeq = Short.MIN_VALUE;
-    protected final PendingMapControl pendingMapHandler;
+    protected PendingMapControl pendingMapHandler;
 
     protected short remoteSeq = Short.MIN_VALUE;
     protected ReceivedBitsControl receivedBitsHandler;
@@ -21,8 +25,8 @@ public class Controller {
 
 
     public Controller(Config config) {
-        pendingMapHandler = new PendingMapControl(config.listener, config.packetQueueLimit,
-                config.packetRetransmitLimit + 1, config.packetQueueTimeout) {
+        pendingMapHandler = new PendingMapControl(config.listener, config.getPacketQueueLimit(),
+                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
             @Override
             protected void notifyAcked(MultiKeyValue ackedObject, boolean directlyAcked) {
                 if (ackedObject != null && directlyAcked)
@@ -33,20 +37,20 @@ public class Controller {
         };
 
         receivedBitsHandler = new ReceivedBitsControl(SequenceComparator.instance);
-        receivedMapHandler = new ReceivedMapControl(dataId, config.listener,
-                config.packetQueueLimit, config.packetRetransmitLimit + 1, config.packetQueueTimeout);
+        receivedMapHandler = new ReceivedMapControl(dataId, config.listener, config.getPacketQueueLimit(),
+                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
-        rttHandler = new RTTControl(config.K, config.G);
+        rttHandler = new RTTControl(config.getK(), config.getG());
     }
 
 
-    public synchronized Packet send(Object data) {
+    public IdPacket send(Object data) {
         // adapt unique data id
         MultiKeyValue multiRef = new MultiKeyValue(++dataId, data);
         return send(multiRef);
     }
 
-    public synchronized Packet send(MultiKeyValue data) {
+    public IdPacket send(MultiKeyValue data) {
         // adapt local seq
         localSeq++;
 
@@ -63,10 +67,21 @@ public class Controller {
         pkg.setData(data);
         pkg.setAck(remoteSeq);
         pkg.setLastAcks((int) receivedBitsHandler.getReceivedRemoteBits());
-        return pkg;
+
+        return send(data.getStaticReference(), pkg);
     }
 
-    public synchronized Object receive(Packet pkg) {
+    private IdPacket idPacket = new IdPacket();
+    private IdPacket idPacketOut = IdPacket.immutablePacket(idPacket);
+    public IdPacket send(short dataId, Packet packet) {
+        idPacket.setDataId(dataId);
+        idPacket.setPacket(packet);
+        return idPacketOut;
+    }
+
+
+
+    public IdData receive(Packet pkg) {
         short newRemoteSeq = pkg.getData().getLastDynamicReference();
 
         // Handle local sequences
@@ -84,17 +99,22 @@ public class Controller {
         return receive(pkg.getData());
     }
 
-    private Data data = new Data();
-    private Data dataOut = Data.immutableData(data);
-    public synchronized Data receive(MultiKeyValue multiKeyValue) {
-        data.setDataId(multiKeyValue.getStaticReference());
-        data.setData(multiKeyValue.getValue());
-        return dataOut;
+
+    public IdData receive(MultiKeyValue multiKeyValue) {
+        return receive(multiKeyValue.getStaticReference(), multiKeyValue.getValue());
+    }
+
+    private IdData idData = new IdData();
+    private IdData idDataOut = IdData.immutableData(idData);
+    public IdData receive(short dataId, Object value) {
+        idData.setDataId(dataId);
+        idData.setData(value);
+        return idDataOut;
     }
 
 
 
-    @Override
+        @Override
     public String toString() {
         return "UDPHandler:\t"
                 + "DataId = " + dataId + "\t"

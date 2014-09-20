@@ -1,7 +1,7 @@
 package net.ddns.mucaho.jnetrobust.util;
 
-import net.ddns.mucaho.jnetrobust.controller.PendingMapControl.TransmissionSuccessListener;
-import net.ddns.mucaho.jnetrobust.controller.ReceivedMapControl.TransmissionOrderListener;
+import net.ddns.mucaho.jnetrobust.control.PendingMapControl.TransmissionSuccessListener;
+import net.ddns.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderListener;
 
 public class UDPListener implements TransmissionSuccessListener, TransmissionOrderListener {
 

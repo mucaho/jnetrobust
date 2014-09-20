@@ -1,4 +1,4 @@
-package net.ddns.mucaho.jnetrobust.controller;
+package net.ddns.mucaho.jnetrobust.control;
 
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.util.TimeoutHandler;
@@ -15,7 +15,7 @@ public class ResponseControl {
         this.pendingDatas = pendingDatas;
     }
 
-    protected Collection<MultiKeyValue> updatePendingTime(long maxWaitTime) {
+    public Collection<MultiKeyValue> updatePendingTime(long maxWaitTime) {
         return pendingDataTimeoutHandler.filterTimedOut(pendingDatas, maxWaitTime);
     }
 }

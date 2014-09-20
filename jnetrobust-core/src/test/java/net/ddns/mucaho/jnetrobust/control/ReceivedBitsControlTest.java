@@ -1,8 +1,9 @@
-package net.ddns.mucaho.jnetrobust.controller;
+package net.ddns.mucaho.jnetrobust.control;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.Deencapsulation;
+import net.ddns.mucaho.jnetrobust.control.ReceivedBitsControl;
 import net.ddns.mucaho.jnetrobust.util.ShiftableBitSet;
 import org.junit.Test;
 import org.junit.runner.RunWith;

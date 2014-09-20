@@ -6,10 +6,10 @@ import net.ddns.mucaho.jnetrobust.util.EntryIterator;
 import java.util.*;
 
 public class MultiKeyValueMap {
-    private final EntryIterator<Short, MultiKeyValue> entryIterator =
-            new MultiRefDataMapIterator();
-    private final transient NavigableMap<Short, MultiKeyValue> dataMapOut;
-    private final TreeMap<Short, MultiKeyValue> dataMap;
+    private final NavigableMap<Short, MultiKeyValue> dataMap;
+    private final NavigableMap<Short, MultiKeyValue> dataMapOut;
+    private final EntryIterator<Short, MultiKeyValue> entryIterator = new MultiRefDataMapIterator();
+
 
     public MultiKeyValueMap(Comparator<Short> comparator) {
         this.dataMap = new TreeMap<Short, MultiKeyValue>(comparator);

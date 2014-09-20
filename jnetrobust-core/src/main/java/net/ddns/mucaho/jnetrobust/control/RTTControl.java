@@ -1,4 +1,4 @@
-package net.ddns.mucaho.jnetrobust.controller;
+package net.ddns.mucaho.jnetrobust.control;
 
 /**
  * SRTT = (1 - alpha) * SRTT + alpha * R'
@@ -15,8 +15,6 @@ package net.ddns.mucaho.jnetrobust.controller;
  * RTO = SRTT + max (G, K*RTTVAR)
  * <p/>
  * if timer expires, RTO *= 2, until the RTT of the newly retransmitted message arrives
- *
- * @author nego
  */
 public class RTTControl {
     private final static float alpha = 1f / 8f;
@@ -58,7 +56,7 @@ public class RTTControl {
         lastBackoffTime = System.currentTimeMillis();
     }
 
-    protected void updateRTT(long packetTimestamp) {
+    public void updateRTT(long packetTimestamp) {
         long rttDelta = System.currentTimeMillis() - packetTimestamp - srtt;
 
         if (srtt == 0 || rttvar == 0) { // first RTT received

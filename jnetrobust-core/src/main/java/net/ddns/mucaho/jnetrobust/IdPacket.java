@@ -1,23 +1,25 @@
-package net.ddns.mucaho.jnetrobust.data;
+package net.ddns.mucaho.jnetrobust;
 
-public class Data {
-    private Object data;
+import net.ddns.mucaho.jnetrobust.data.Packet;
+
+public class IdPacket {
+    private Packet packet;
     private short dataId;
 
-    public Data() {
+    public IdPacket() {
     }
 
-    public Data(Object data, short dataId) {
-        this.data = data;
+    public IdPacket(Packet packet, short dataId) {
+        this.packet = packet;
         this.dataId = dataId;
     }
 
-    public Object getData() {
-        return data;
+    public Packet getPacket() {
+        return packet;
     }
 
-    public void setData(Object data) {
-        this.data = data;
+    public void setPacket(Packet packet) {
+        this.packet = packet;
     }
 
     public short getDataId() {
@@ -28,15 +30,15 @@ public class Data {
         this.dataId = dataId;
     }
 
-    public static Data immutableData(final Data delegate) {
-        return new Data() {
+    public static IdPacket immutablePacket(final IdPacket delegate) {
+        return new IdPacket() {
             @Override
-            public Object getData() {
-                return delegate.getData();
+            public Packet getPacket() {
+                return delegate.getPacket();
             }
 
             @Override
-            public void setData(Object data) {
+            public void setPacket(Packet packet) {
                 throw new UnsupportedOperationException("Can not change field of immutable data object.");
             }
 

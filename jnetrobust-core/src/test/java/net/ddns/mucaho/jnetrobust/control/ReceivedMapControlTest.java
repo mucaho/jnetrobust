@@ -1,4 +1,4 @@
-package net.ddns.mucaho.jnetrobust.controller;
+package net.ddns.mucaho.jnetrobust.control;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;

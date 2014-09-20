@@ -1,4 +1,4 @@
-package net.ddns.mucaho.jnetrobust.controller;
+package net.ddns.mucaho.jnetrobust.control;
 
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.util.FastLog;
@@ -14,14 +14,14 @@ public class PendingMapControl extends MapControl {
 
     private final TransmissionSuccessListener listener;
 
-    public PendingMapControl(TransmissionSuccessListener listener,
-                             int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
-        super(maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
+    public PendingMapControl(TransmissionSuccessListener listener, int maxEntries, int maxEntryOffset,
+                             int maxEntryOccurrences, long maxEntryTimeout) {
+        super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
         this.listener = listener;
     }
 
 
-    protected void addToPending(short seqNo, MultiKeyValue data) {
+    public void addToPending(short seqNo, MultiKeyValue data) {
         // discard old entries in pending map
         super.discardEntries();
 
@@ -30,7 +30,7 @@ public class PendingMapControl extends MapControl {
     }
 
 
-    protected void removeFromPending(short ackNo, int lastAcks) {
+    public void removeFromPending(short ackNo, int lastAcks) {
         // remove multiple (oldest until newest) from pending map
         removeOnBits(ackNo, lastAcks);
 

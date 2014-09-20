@@ -1,4 +1,4 @@
-package net.ddns.mucaho.jnetrobust.controller;
+package net.ddns.mucaho.jnetrobust.control;
 
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValueMap;
@@ -7,6 +7,7 @@ import net.ddns.mucaho.jnetrobust.util.TimeoutHandler;
 
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.NavigableMap;
 
 
 public abstract class MapControl {
@@ -25,8 +26,8 @@ public abstract class MapControl {
      */
     protected MultiKeyValueMap dataMap;
 
-    public MapControl(int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
-        this.maxEntries = maxEntryOffset;
+    public MapControl(int maxEntries, int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
+        this.maxEntries = maxEntries;
         this.maxEntryOffset = maxEntryOffset;
         this.maxEntryOccurrences = maxEntryOccurrences;
         this.maxEntryTimeout = maxEntryTimeout;
@@ -37,6 +38,9 @@ public abstract class MapControl {
         dataMap = new MultiKeyValueMap(comparator);
     }
 
+    public NavigableMap<Short, MultiKeyValue> getMap() {
+        return dataMap.getMap();
+    }
 
     protected abstract void discardEntry(short key);
 

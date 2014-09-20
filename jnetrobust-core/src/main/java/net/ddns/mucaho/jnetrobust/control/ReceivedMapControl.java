@@ -1,4 +1,4 @@
-package net.ddns.mucaho.jnetrobust.controller;
+package net.ddns.mucaho.jnetrobust.control;
 
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValueMap;
@@ -13,9 +13,9 @@ public class ReceivedMapControl extends MapControl {
     private final TransmissionOrderListener listener;
     private short nextDataId;
 
-    public ReceivedMapControl(short dataId, TransmissionOrderListener listener,
-                              int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
-        super(maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
+    public ReceivedMapControl(short dataId, TransmissionOrderListener listener, int maxEntries, int maxEntryOffset,
+                              int maxEntryOccurrences, long maxEntryTimeout) {
+        super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
         this.listener = listener;
         this.nextDataId = (short) (dataId + 1);
     }
@@ -35,7 +35,7 @@ public class ReceivedMapControl extends MapControl {
     }
 
 
-    protected void addToReceived(MultiKeyValue data) {
+    public void addToReceived(MultiKeyValue data) {
         // discard old entries in received map
         super.discardEntries();
 

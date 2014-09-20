@@ -1,6 +1,7 @@
-package net.ddns.mucaho.jnetrobust.controller;
+package net.ddns.mucaho.jnetrobust.control;
 
 import mockit.Deencapsulation;
+import net.ddns.mucaho.jnetrobust.control.MapControl;
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.data.MultiKeyValueMap;
 import net.ddns.mucaho.jnetrobust.util.Config;

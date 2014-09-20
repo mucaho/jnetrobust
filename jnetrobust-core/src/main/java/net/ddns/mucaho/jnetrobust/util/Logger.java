@@ -4,8 +4,9 @@ public interface Logger {
     public static enum LoggingEvent {
         SEND("Data sent"),
         RECEIVE("Data received"),
+        RETRANSMIT("Data retransmitted"),
         ORDERED("Data received ordered"),
-        UNORDERED("Data order was corrupted"),
+        UNORDERED("Data received not ordered"),
         ACKED("Data was received at other end"),
         NOTACKED("Data was probably not received at other end");
 
