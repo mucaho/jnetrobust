@@ -33,6 +33,8 @@
  */
 package net.ddns.mucaho.jnetrobust.example;
 
+import net.ddns.mucaho.jnetrobust.example.ObjectSynchronization.HOST;
+import net.ddns.mucaho.jnetrobust.example.ObjectSynchronization.Vector2D;
 
 import javax.swing.*;
 import java.awt.*;
@@ -49,11 +51,11 @@ import java.util.Map;
  */
 public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
     private JPanel windowPanel;
-    private ObjectSynchronization.HOST localHost;
-    private Map<ObjectSynchronization.HOST, JPanel> objects =
-            new EnumMap<ObjectSynchronization.HOST, JPanel>(ObjectSynchronization.HOST.class);
+    private HOST localHost;
+    private Map<HOST, JPanel> objects =
+            new EnumMap<HOST, JPanel>(HOST.class);
 
-    public ObjectSynchronizationGUI(ObjectSynchronization.HOST type) {
+    public ObjectSynchronizationGUI(HOST type) {
         localHost = type;
 
         setTitle(type.toString());
@@ -68,15 +70,15 @@ public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
         windowPanel.setLayout(null);
         windowPanel.addKeyListener(this);
 
-        objects.put(ObjectSynchronization.HOST.CLIENTA, createPanel(0, 0, Color.RED));
-        objects.put(ObjectSynchronization.HOST.CLIENTB, createPanel(300, 0, Color.BLUE));
-        objects.put(ObjectSynchronization.HOST.SERVER, createPanel(150, 300, Color.GREEN));
+        objects.put(HOST.CLIENTA, createPanel(0, 0, Color.RED));
+        objects.put(HOST.CLIENTB, createPanel(300, 0, Color.BLUE));
+        objects.put(HOST.SERVER, createPanel(150, 300, Color.GREEN));
 
-        if (type == ObjectSynchronization.HOST.SERVER) {
+        if (type == HOST.SERVER) {
             setLocation(200, 410);
-        } else if (type == ObjectSynchronization.HOST.CLIENTA) {
+        } else if (type == HOST.CLIENTA) {
             setLocation(0, 0);
-        } else if (type == ObjectSynchronization.HOST.CLIENTB) {
+        } else if (type == HOST.CLIENTB) {
             setLocation(410, 0);
         }
         windowPanel.repaint();
@@ -96,7 +98,7 @@ public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
         return objects.get(localHost);
     }
 
-    protected JPanel getRemoteObject(ObjectSynchronization.HOST host) {
+    protected JPanel getRemoteObject(HOST host) {
         return objects.get(host);
     }
 
@@ -123,7 +125,7 @@ public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
         hostObject.setLocation(hostObject.getX() + x, hostObject.getY() + y);
     }
 
-    void sendGUI(ObjectSynchronizationController.Vector2D data) throws IOException {
+    void sendGUI(Vector2D data) throws IOException {
         boolean isNewData = false;
 
         JPanel hostObject = getHostObject();
@@ -136,7 +138,7 @@ public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
         //FIXME if (isNewData)
     }
 
-    void updateGUI(final ObjectSynchronizationController.Vector2D data) {
+    void updateGUI(final Vector2D data) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {

@@ -22,7 +22,7 @@ import java.util.NavigableMap;
 import java.util.Queue;
 
 public class DefaultHost<T> {
-    public static interface OrderedDataListener<T> {
+    public static interface DataListener<T> {
         public void handleOrderedData(T orderedData);
         public void handleNewestData(T newestData);
         //TODO add exceptional callback
@@ -30,9 +30,10 @@ public class DefaultHost<T> {
 
     // protocol fields
     private final Protocol protocol;
-    private final OrderedDataListener<T> listener;
+    private final DataListener<T> listener;
 
     // serialization fields
+    private final Kryo kryo;
     private final ByteBuffer buffer = ByteBuffer.allocate(2048);
     private final ByteBufferInput bufferInput = new ByteBufferInput();
     private final ByteBufferOutput bufferOutput = new ByteBufferOutput();
@@ -43,10 +44,9 @@ public class DefaultHost<T> {
     private final DatagramChannel channel;
     private final InetSocketAddress targetAddress;
 
-    public DefaultHost(String hostName, Kryo kryo,
-                       InetSocketAddress hostAddress, final InetSocketAddress targetAddress,
-                       final OrderedDataListener<T> orderedDataListener) throws IOException {
-        this.listener = orderedDataListener;
+    public DefaultHost(String hostName, InetSocketAddress hostAddress, final InetSocketAddress targetAddress,
+                       Class<T> dataClass, final DataListener<T> dataListener) throws IOException {
+        this.listener = dataListener;
 
         // setup network communication
         channel = DatagramChannel.open();
@@ -55,8 +55,10 @@ public class DefaultHost<T> {
         this.targetAddress = targetAddress;
 
         // setup serialization
+        kryo = new Kryo();
         kryo.register(Packet.class); // add argument `new ExternalizableSerializer()` if needed
         kryo.register(MultiKeyValue.class); // add argument `new ExternalizableSerializer()` if needed
+        kryo.register(dataClass);
         objectInput = new KryoObjectInput(kryo, bufferInput);
         objectOutput = new KryoObjectOutput(kryo, bufferOutput);
 
@@ -64,7 +66,7 @@ public class DefaultHost<T> {
         this.protocol = new Protocol(new ProtocolListener() {
             @Override
             public void handleOrderedTransmission(short dataId, Object orderedData) {
-               orderedDataListener.handleOrderedData((T) orderedData);
+               dataListener.handleOrderedData((T) orderedData);
             }
         }, hostName, Logger.getConsoleLogger());
     }
@@ -79,8 +81,8 @@ public class DefaultHost<T> {
     }
 
     private Queue<T> outQueue = new LinkedList<T>();
-
     private Short newestId = null;
+    private T newestData = null;
     @SuppressWarnings("unchecked")
     public Queue<T> receive() throws IOException, ClassNotFoundException {
         outQueue.clear();
@@ -94,15 +96,19 @@ public class DefaultHost<T> {
 
             if (newestId == null || protocol.compare(receivedDatas.lastKey(), newestId) > 0) {
                 newestId = receivedDatas.lastKey();
-                listener.handleNewestData((T) receivedDatas.get(newestId));
+                newestData = (T) receivedDatas.get(newestId);
             }
-
 
             for (Object receivedData: receivedDatas.values())
                 outQueue.add((T) receivedData);
 
             buffer.clear();
             senderAddress = channel.receive(buffer);
+        }
+
+        if (newestData != null) {
+            listener.handleNewestData(newestData);
+            newestData = null;
         }
 
         return outQueue;
