@@ -1,5 +1,6 @@
 package net.ddns.mucaho.jnetrobust.util;
 
+import net.ddns.mucaho.jnetrobust.Logger;
 import net.ddns.mucaho.jnetrobust.ProtocolListener;
 
 public class DebugProtocolListener extends ProtocolListener {
@@ -8,16 +9,6 @@ public class DebugProtocolListener extends ProtocolListener {
     private final Logger logger;
     private final ProtocolListener delegate;
 
-    public DebugProtocolListener(ProtocolListener delegate, String name) {
-        this(delegate, name, new Logger() {
-            @Override
-            public void log(String... texts) {
-                for (String text : texts)
-                    System.out.print(text + "\t");
-                System.out.println();
-            }
-        });
-    }
 
     public DebugProtocolListener(ProtocolListener delegate, String name, Logger logger) {
         this.name = name;

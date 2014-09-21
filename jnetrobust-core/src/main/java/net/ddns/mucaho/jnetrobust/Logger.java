@@ -1,6 +1,6 @@
-package net.ddns.mucaho.jnetrobust.util;
+package net.ddns.mucaho.jnetrobust;
 
-public interface Logger {
+public abstract class Logger {
     public static enum LoggingEvent {
         SEND("Data sent"),
         RECEIVE("Data received"),
@@ -20,5 +20,16 @@ public interface Logger {
             return description;
         }
     }
-    public void log(String... texts);
+    public abstract void log(String... texts);
+
+    public static Logger getConsoleLogger() {
+        return new Logger() {
+            @Override
+            public void log(String... texts) {
+                for (String text : texts)
+                    System.out.print(text + "\t");
+                System.out.println();
+            }
+        };
+    }
 }

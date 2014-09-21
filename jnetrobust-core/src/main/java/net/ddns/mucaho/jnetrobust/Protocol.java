@@ -31,7 +31,7 @@ public class Protocol implements Comparator<Short> {
                 @Override
                 public Object doReceive(MultiKeyValue multiKeyValue) {
                     receivedDatas.put(multiKeyValue.getStaticReference(), multiKeyValue.getValue());
-                    return super.receive(multiKeyValue);
+                    return super.doReceive(multiKeyValue);
                 }
             };
             this.protocolListener = new DebugProtocolListener(config.listener, name, logger);
@@ -40,7 +40,7 @@ public class Protocol implements Comparator<Short> {
                 @Override
                 public Object doReceive(MultiKeyValue multiKeyValue) {
                     receivedDatas.put(multiKeyValue.getStaticReference(), multiKeyValue.getValue());
-                    return super.receive(multiKeyValue);
+                    return super.doReceive(multiKeyValue);
                 }
             };
             this.protocolListener = config.listener;

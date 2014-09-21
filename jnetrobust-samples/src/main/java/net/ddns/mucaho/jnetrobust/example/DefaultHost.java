@@ -6,19 +6,20 @@ import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
 import com.esotericsoftware.kryo.io.KryoObjectInput;
 import com.esotericsoftware.kryo.io.KryoObjectOutput;
-import net.ddns.mucaho.jnetrobust.ProtocolConfig;
-import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
+import net.ddns.mucaho.jnetrobust.Logger;
+import net.ddns.mucaho.jnetrobust.Protocol;
+import net.ddns.mucaho.jnetrobust.ProtocolListener;
 import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.controller.Packet;
-import net.ddns.mucaho.jnetrobust.util.DebugProtocolListener;
+import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.util.Collection;
 import java.util.LinkedList;
+import java.util.NavigableMap;
 import java.util.Queue;
 
 public class DefaultHost<T> {
@@ -27,11 +28,8 @@ public class DefaultHost<T> {
         //TODO add handleExceptionalState();
     }
 
-    private final String hostName;
-
     // protocol fields
-    private final RetransmissionController protocol;
-    private final Queue<MultiKeyValue> retransmitQueue = new LinkedList<MultiKeyValue>();
+    private final Protocol protocol;
 
     // serialization fields
     private final ByteBuffer buffer = ByteBuffer.allocate(2048);
@@ -48,7 +46,6 @@ public class DefaultHost<T> {
                        InetSocketAddress hostAddress, final InetSocketAddress targetAddress,
                        final OrderedDataListener<T> orderedDataListener) throws IOException {
         //TODO put in overridable methods
-        this.hostName = hostName;
 
         // setup network communication
         channel = DatagramChannel.open();
@@ -63,53 +60,18 @@ public class DefaultHost<T> {
         objectOutput = new KryoObjectOutput(kryo, bufferOutput);
 
         // setup virtual protocol
-        this.protocol = new RetransmissionController(new ProtocolConfig(new DebugProtocolListener(hostName) {
+        this.protocol = new Protocol(new ProtocolListener() {
             @Override
-            @SuppressWarnings("unchecked")
-            public void handleOrderedTransmission(Object orderedData) {
-                super.handleOrderedTransmission(orderedData);
-                if (orderedData != null)
-                    orderedDataListener.handleOrderedData((T) orderedData);
+            public void handleOrderedTransmission(short dataId, Object orderedData) {
+               orderedDataListener.handleOrderedData((T) orderedData);
             }
-
-            @Override
-            public void handleTransmissionRequest() {
-                super.handleTransmissionRequest();
-                try {
-                    //FIXME
-                    internalSend((T) null);
-                } catch (IOException e) {
-                }
-            }
-
-            @Override
-            public void handleTransmissionRequests(Collection<? extends MultiKeyValue> retransmitDatas) {
-                super.handleTransmissionRequests(retransmitDatas);
-                retransmitQueue.addAll(retransmitDatas);
-            }
-        }));
+        }, hostName, Logger.getConsoleLogger());
     }
 
     public void send(T data) throws IOException {
-        protocol.retransmit();
-        for (MultiKeyValue retransmit : retransmitQueue) {
-            internalSend(protocol.send(retransmit));
-            System.out.println("[" + hostName + "-RETRANSMIT]: " + retransmit.getValue().toString());
-        }
-        retransmitQueue.clear();
-
-        internalSend(data);
-    }
-
-    private void internalSend(T data) throws IOException {
-        internalSend(protocol.send(data));
-        System.out.println("[" + hostName + "-SEND]: " + data);
-    }
-
-    private void internalSend(final Packet outPacket) throws IOException {
         buffer.clear();
         bufferOutput.setBuffer(buffer);
-        outPacket.writeExternal(objectOutput);
+        protocol.send(data, objectOutput);
 
         buffer.flip();
         channel.send(buffer, targetAddress);
@@ -126,13 +88,10 @@ public class DefaultHost<T> {
         while (senderAddress != null) {
             buffer.flip();
             bufferInput.setBuffer(buffer);
-            Packet inPacket = new Packet();
-            inPacket.readExternal(objectInput);
+            NavigableMap<Short, Object> receivedDatas = protocol.receive(objectInput);
 
-            T data = (T) protocol.receive(inPacket);
-            System.out.println("[" + hostName + "-RECV]: " + data);
-            if (data != null)
-                outQueue.add(data);
+            for (Object receivedData: receivedDatas.values())
+                outQueue.add((T) receivedData);
 
             buffer.clear();
             senderAddress = channel.receive(buffer);

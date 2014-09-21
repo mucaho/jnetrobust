@@ -2,24 +2,13 @@ package net.ddns.mucaho.jnetrobust.controller;
 
 import net.ddns.mucaho.jnetrobust.ProtocolConfig;
 import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.util.Logger;
+import net.ddns.mucaho.jnetrobust.Logger;
 
 import java.util.Collection;
 
 public class DebugController extends RetransmissionController {
     private final String name;
     private final Logger logger;
-
-    public DebugController(ProtocolConfig config, String name) {
-        this(config, name, new Logger() {
-            @Override
-            public void log(String... texts) {
-                for (String text : texts)
-                    System.out.print(text + "\t");
-                System.out.println();
-            }
-        });
-    }
 
     public DebugController(ProtocolConfig config, String name, Logger logger) {
         super(config);
@@ -42,7 +31,7 @@ public class DebugController extends RetransmissionController {
         logger.log(name, Logger.LoggingEvent.RECEIVE.toString(), String.valueOf(multiKeyValue.getStaticReference()),
                 value != null ? value.toString() : "null");
 
-        return super.receive(multiKeyValue);
+        return super.doReceive(multiKeyValue);
     }
 
     @Override
