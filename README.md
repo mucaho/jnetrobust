@@ -36,4 +36,4 @@ It is a library and imposes no restrictions on how you use it:
 * the protocol just adds/removes metadata to/from your original data
 * you decide what to do with the metadata-packaged data (e.g. add some of your own metadata, etc... )
 * you decide how you want to serialize the metadata-packaged data (e.g. with [default serialization](http://docs.oracle.com/javase/7/docs/api/java/io/Externalizable.html), [Kryo](https://github.com/EsotericSoftware/kryo), etc... )
-* you decide how you want to send the metadata-packaged data (e.g. plain [DatagramSocket](http://docs.oracle.com/javase/7/docs/api/java/net/DatagramSocket.html), newer NIO [DatagramChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/DatagramChannel.html) or even network libraries like [KryoNet](https://github.com/EsotericSoftware/kryonet))
+* you decide how you want to send the metadata-packaged data (e.g. plain [DatagramSocket](http://docs.oracle.com/javase/7/docs/api/java/net/DatagramSocket.html), newer NIO [DatagramChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/DatagramChannel.html) or even network libraries like [Apache MINA](https://mina.apache.org/))
