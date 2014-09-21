@@ -23,7 +23,7 @@ It provides some benefits from both transport layer protocols that are accessibl
 * no flow control - unlike TCP
 * no congestion control - unlike TCP
 
-Why should I use it?
+Why should you use it?
 --------------------
 If you only need validated data and you do not care about latency, you should rather use TCP.   
 If you need validated data, but you could also benefit from receiving unvalidated data with no latency, JNetRobust could be for you.
