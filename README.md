@@ -27,7 +27,7 @@ Why should you use it?
 ----------------------
 If you don't need reliability, use UDP.   
 If you need reliability and you can wait for it to be validated, use TCP.   
-If you need reliability, but you could also benefit from receiving unvalidated data with no latency, try JNetRobust.
+If you need reliability, but you benefit from receiving unvalidated data with no latency, try JNetRobust.
 
 How do you use it?
 ------------------
