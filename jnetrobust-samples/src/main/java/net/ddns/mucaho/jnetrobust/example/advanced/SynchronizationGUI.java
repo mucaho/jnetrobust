@@ -31,10 +31,10 @@
  *
  * Created: Jul 29, 2006
  */
-package net.ddns.mucaho.jnetrobust.example;
+package net.ddns.mucaho.jnetrobust.example.advanced;
 
-import net.ddns.mucaho.jnetrobust.example.ObjectSynchronization.HOST;
-import net.ddns.mucaho.jnetrobust.example.ObjectSynchronization.Vector2D;
+import net.ddns.mucaho.jnetrobust.example.advanced.SynchronizationMain.HOST;
+import net.ddns.mucaho.jnetrobust.example.advanced.SynchronizationMain.Vector2D;
 
 import javax.swing.*;
 import java.awt.*;
@@ -49,13 +49,13 @@ import java.util.Map;
  * @author Matthew D. Hicks
  * @author mucaho
  */
-public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
+public class SynchronizationGUI extends JFrame implements KeyListener {
     private JPanel windowPanel;
     private HOST localHost;
     private Map<HOST, JPanel> objects =
             new EnumMap<HOST, JPanel>(HOST.class);
 
-    public ObjectSynchronizationGUI(HOST type) {
+    public SynchronizationGUI(HOST type) {
         localHost = type;
 
         setTitle(type.toString());

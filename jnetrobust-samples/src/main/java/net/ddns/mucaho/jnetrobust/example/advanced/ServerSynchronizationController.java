@@ -1,36 +1,37 @@
-package net.ddns.mucaho.jnetrobust.example;
+package net.ddns.mucaho.jnetrobust.example.advanced;
 
 
-import net.ddns.mucaho.jnetrobust.example.ObjectSynchronization.Vector2D;
-import net.ddns.mucaho.jnetrobust.example.ObjectSynchronization.MODE;
-import net.ddns.mucaho.jnetrobust.example.ObjectSynchronization.HOST;
+import net.ddns.mucaho.jnetrobust.example.DefaultHost;
+import net.ddns.mucaho.jnetrobust.example.advanced.SynchronizationMain.Vector2D;
+import net.ddns.mucaho.jnetrobust.example.advanced.SynchronizationMain.MODE;
+import net.ddns.mucaho.jnetrobust.example.advanced.SynchronizationMain.HOST;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Queue;
 
-public class ServerObjectSynchronizationController implements Runnable {
+public class ServerSynchronizationController implements Runnable {
     private final Vector2D data;
     private final HOST hostMode = HOST.SERVER;
 
-    private ObjectSynchronizationGUI gui;
+    private SynchronizationGUI gui;
     private DefaultHost<Vector2D> hostA;
     private DefaultHost<Vector2D> hostB;
     private MODE updateModeA;
     private MODE updateModeB;
 
-    public ServerObjectSynchronizationController(final MODE updateModeA,
-                                                 final MODE updateModeB,
-                                                 InetSocketAddress hostAddressA,
-                                                 InetSocketAddress hostAddressB,
-                                                 InetSocketAddress clientAddressA,
-                                                 InetSocketAddress clientAddressB) throws IOException {
+    public ServerSynchronizationController(final MODE updateModeA,
+                                           final MODE updateModeB,
+                                           InetSocketAddress hostAddressA,
+                                           InetSocketAddress hostAddressB,
+                                           InetSocketAddress clientAddressA,
+                                           InetSocketAddress clientAddressB) throws IOException {
 
         this.updateModeA = updateModeA;
         this.updateModeB = updateModeB;
         data = new Vector2D(Integer.MIN_VALUE, Integer.MIN_VALUE, hostMode);
 
-        gui = new ObjectSynchronizationGUI(hostMode);
+        gui = new SynchronizationGUI(hostMode);
         gui.setVisible(true);
 
 
