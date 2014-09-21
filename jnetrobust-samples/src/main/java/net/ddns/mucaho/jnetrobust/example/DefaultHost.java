@@ -11,7 +11,6 @@ import net.ddns.mucaho.jnetrobust.Protocol;
 import net.ddns.mucaho.jnetrobust.ProtocolListener;
 import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.controller.Packet;
-import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -26,7 +25,7 @@ public class DefaultHost<T> {
     public static interface OrderedDataListener<T> {
         public void handleOrderedData(T orderedData);
         public void handleNewestData(T newestData);
-        //add exceptional callback
+        //TODO add exceptional callback
     }
 
     // protocol fields
@@ -47,7 +46,6 @@ public class DefaultHost<T> {
     public DefaultHost(String hostName, Kryo kryo,
                        InetSocketAddress hostAddress, final InetSocketAddress targetAddress,
                        final OrderedDataListener<T> orderedDataListener) throws IOException {
-        //TODO put in overridable methods
         this.listener = orderedDataListener;
 
         // setup network communication
