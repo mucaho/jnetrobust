@@ -2,8 +2,8 @@ package net.ddns.mucaho.jnetrobust.example;
 
 
 import com.esotericsoftware.kryo.Kryo;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.data.Packet;
+import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
 
 import javax.swing.*;
 import java.io.IOException;

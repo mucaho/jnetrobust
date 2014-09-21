@@ -1,10 +1,12 @@
-package net.ddns.mucaho.jnetrobust.data;
+package net.ddns.mucaho.jnetrobust.control;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.FullVerificationsInOrder;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
+import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.control.MultiKeyValueMap;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 import org.junit.Test;
 import org.junit.runner.RunWith;

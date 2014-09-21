@@ -1,4 +1,4 @@
-package net.ddns.mucaho.jnetrobust.data;
+package net.ddns.mucaho.jnetrobust.control;
 
 import net.ddns.mucaho.jnetrobust.util.CollectionUtils;
 import net.ddns.mucaho.jnetrobust.util.EntryIterator;
@@ -24,11 +24,11 @@ public class MultiKeyValueMap {
         return dataMapOut;
     }
 
-    public void putAll(MultiKeyValue data) {
+    void putAll(MultiKeyValue data) {
         putAll(data.getDynamicReferences(), data);
     }
 
-    protected void putAll(NavigableSet<Short> refs, MultiKeyValue data) {
+    void putAll(NavigableSet<Short> refs, MultiKeyValue data) {
         Short nextKey = refs.first();
         while (nextKey != null) {
             put(nextKey, data);
@@ -36,7 +36,7 @@ public class MultiKeyValueMap {
         }
     }
 
-    public void put(Short ref, MultiKeyValue data) {
+    void put(Short ref, MultiKeyValue data) {
         if (data != null)
             data.addDynamicReference(ref);
         MultiKeyValue replacedData = dataMap.put(ref, data);
@@ -46,18 +46,18 @@ public class MultiKeyValueMap {
     }
 
 
-    public MultiKeyValue removeAll(Short ref) {
+    MultiKeyValue removeAll(Short ref) {
         return removeAll(get(ref));
     }
 
-    protected MultiKeyValue removeAll(MultiKeyValue data) {
+    MultiKeyValue removeAll(MultiKeyValue data) {
         if (data != null)
             removeAll(data.getDynamicReferences());
 
         return data;
     }
 
-    protected void removeAll(NavigableSet<Short> refs) {
+    void removeAll(NavigableSet<Short> refs) {
         Short nextKey = refs.first();
         while (nextKey != null) {
             remove(nextKey);
@@ -65,7 +65,7 @@ public class MultiKeyValueMap {
         }
     }
 
-    public MultiKeyValue remove(Short ref) {
+    MultiKeyValue remove(Short ref) {
         MultiKeyValue data = dataMap.remove(ref);
         if (data != null)
             data.removeDynamicReference(ref);
@@ -94,11 +94,11 @@ public class MultiKeyValueMap {
         return dataMap.lowerKey(key);
     }
 
-    public void clear() {
+    void clear() {
         clear(false);
     }
 
-    public void clear(boolean thourough) {
+    void clear(boolean thourough) {
         if (thourough) {
             Collection<MultiKeyValue> datas = dataMap.values();
             for (MultiKeyValue data : datas) {

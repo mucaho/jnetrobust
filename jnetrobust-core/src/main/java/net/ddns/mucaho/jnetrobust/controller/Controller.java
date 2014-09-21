@@ -1,14 +1,11 @@
 package net.ddns.mucaho.jnetrobust.controller;
 
+import net.ddns.mucaho.jnetrobust.ProtocolConfig;
 import net.ddns.mucaho.jnetrobust.control.PendingMapControl;
 import net.ddns.mucaho.jnetrobust.control.RTTControl;
 import net.ddns.mucaho.jnetrobust.control.ReceivedBitsControl;
 import net.ddns.mucaho.jnetrobust.control.ReceivedMapControl;
-import net.ddns.mucaho.jnetrobust.IdData;
-import net.ddns.mucaho.jnetrobust.IdPacket;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.data.Packet;
-import net.ddns.mucaho.jnetrobust.util.Config;
+import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 
 public class Controller {
@@ -24,7 +21,7 @@ public class Controller {
     protected RTTControl rttHandler;
 
 
-    public Controller(Config config) {
+    public Controller(ProtocolConfig config) {
         pendingMapHandler = new PendingMapControl(config.listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
             @Override
@@ -44,79 +41,73 @@ public class Controller {
     }
 
 
-    public IdPacket send(Object data) {
+
+    public Packet send(Object data, Packet packet) {
         // adapt unique data id
         MultiKeyValue multiRef = new MultiKeyValue(++dataId, data);
-        return send(multiRef);
+        return send(multiRef, packet);
     }
 
-    public IdPacket send(MultiKeyValue data) {
+    public Packet send(MultiKeyValue data, Packet packet) {
+        if (packet == null) {
+            packet = new Packet();
+            packet.setAck(remoteSeq);
+            packet.setLastAcks((int) receivedBitsHandler.getReceivedRemoteBits());
+        }
+
         // adapt local seq
         localSeq++;
 
         // Handle local sequences
         pendingMapHandler.addToPending(localSeq, data);
 
-        // Update last modified time
-        data.updateTime();
-
 //		System.out.print("C");
 //		for (Short ref: data.getDynamicReferences())
 //			System.out.print("["+ref+"]");
-        Packet pkg = new Packet();
-        pkg.setData(data);
-        pkg.setAck(remoteSeq);
-        pkg.setLastAcks((int) receivedBitsHandler.getReceivedRemoteBits());
+        packet.addLastData(data);
 
-        return send(data.getStaticReference(), pkg);
-    }
-
-    private IdPacket idPacket = new IdPacket();
-    private IdPacket idPacketOut = IdPacket.immutablePacket(idPacket);
-    public IdPacket send(short dataId, Packet packet) {
-        idPacket.setDataId(dataId);
-        idPacket.setPacket(packet);
-        return idPacketOut;
+        return packet;
     }
 
 
 
-    public IdData receive(Packet pkg) {
-        short newRemoteSeq = pkg.getData().getLastDynamicReference();
 
-        // Handle local sequences
-        pendingMapHandler.removeFromPending(pkg.getAck(), pkg.getLastAcks());
+    public Object receive(Packet packet, boolean isFirstIteration) {
+        if (isFirstIteration) {
+            // Handle local sequences
+            pendingMapHandler.removeFromPending(packet.getAck(), packet.getLastAcks());
+        }
+
+        MultiKeyValue data = packet.removeFirstData();
+        return (data != null) ? receive(data) : null;
+    }
+
+    public Object receive(MultiKeyValue data) {
+        short newRemoteSeq = data.getLastDynamicReference();
 
         // Handle remote sequences
-        receivedBitsHandler.addToReceived(pkg.getData().getDynamicReferences(), remoteSeq);
-        receivedMapHandler.addToReceived(pkg.getData());
+        receivedBitsHandler.addToReceived(data.getDynamicReferences(), remoteSeq);
+        receivedMapHandler.addToReceived(data);
 
 
         // adapt remote seq
         if (SequenceComparator.instance.compare(remoteSeq, newRemoteSeq) < 0)
             remoteSeq = newRemoteSeq;
 
-        return receive(pkg.getData());
+        return doReceive(data);
     }
 
 
-    public IdData receive(MultiKeyValue multiKeyValue) {
-        return receive(multiKeyValue.getStaticReference(), multiKeyValue.getValue());
+    public Object doReceive(MultiKeyValue multiKeyValue) {
+        return multiKeyValue.getValue();
     }
 
-    private IdData idData = new IdData();
-    private IdData idDataOut = IdData.immutableData(idData);
-    public IdData receive(short dataId, Object value) {
-        idData.setDataId(dataId);
-        idData.setData(value);
-        return idDataOut;
-    }
 
 
 
         @Override
     public String toString() {
-        return "UDPHandler:\t"
+        return "Controller:\t"
                 + "DataId = " + dataId + "\t"
                 + "LocalSeqNo = " + localSeq + "\t"
                 + "RmoteSeqNo = " + remoteSeq;
@@ -129,6 +120,5 @@ public class Controller {
     public long getRTTVariation() {
         return rttHandler.getRTTVariation();
     }
-
 
 }

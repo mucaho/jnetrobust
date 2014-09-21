@@ -2,94 +2,102 @@ package net.ddns.mucaho.jnetrobust;
 
 import net.ddns.mucaho.jnetrobust.controller.DebugController;
 import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.data.Packet;
-import net.ddns.mucaho.jnetrobust.util.Config;
-import net.ddns.mucaho.jnetrobust.util.Logger;
-import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
-import net.ddns.mucaho.jnetrobust.util.UDPListener;
+import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
+import net.ddns.mucaho.jnetrobust.util.*;
 
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.net.ProtocolException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.LinkedList;
+import java.util.*;
 
 
 public class Protocol implements Comparator<Short> {
-    public final static int MAX_PACKETS_SENT = Byte.MAX_VALUE - Byte.MIN_VALUE + 1;
-
-    private final UDPListener udpListener;
+    private final ProtocolListener protocolListener;
     private final RetransmissionController controller;
 
-    public Protocol(UDPListener udpListener) {
-        this(new Config(udpListener));
+    public Protocol(ProtocolListener protocolListener) {
+        this(new ProtocolConfig(protocolListener));
     }
-    public Protocol(Config config) {
+    public Protocol(ProtocolConfig config) {
         this(config, null, null);
     }
-    public Protocol(UDPListener udpListener, String name, Logger logger) {
-        this(new Config(udpListener), name, logger);
+    public Protocol(ProtocolListener protocolListener, String name, Logger logger) {
+        this(new ProtocolConfig(protocolListener), name, logger);
     }
-    public Protocol(Config config, String name, Logger logger) {
-        this.udpListener = config.listener;
-        if (name != null && logger != null)
-            this.controller = new DebugController(config, name, logger);
-        else
-            this.controller = new RetransmissionController(config);
+    public Protocol(ProtocolConfig config, String name, Logger logger) {
+        if (name != null && logger != null) {
+            this.controller = new DebugController(config, name, logger) {
+                @Override
+                public Object doReceive(MultiKeyValue multiKeyValue) {
+                    receivedDatas.put(multiKeyValue.getStaticReference(), multiKeyValue.getValue());
+                    return super.receive(multiKeyValue);
+                }
+            };
+            this.protocolListener = new DebugProtocolListener(config.listener, name, logger);
+        } else {
+            this.controller = new RetransmissionController(config) {
+                @Override
+                public Object doReceive(MultiKeyValue multiKeyValue) {
+                    receivedDatas.put(multiKeyValue.getStaticReference(), multiKeyValue.getValue());
+                    return super.receive(multiKeyValue);
+                }
+            };
+            this.protocolListener = config.listener;
+        }
 
     }
 
-    Collection<IdPacket> packets = new LinkedList<IdPacket>();
-    Collection<IdPacket> packetsOut = Collections.unmodifiableCollection(packets);
-    public synchronized Collection<IdPacket> send(Object data) {
-        packets.clear();
 
+
+
+    private final PacketEntry sentPacketOut = new PacketEntry();
+
+    public synchronized Map.Entry<Short, Packet> send(Object data) {
         Collection<? extends MultiKeyValue> retransmits = controller.retransmit();
+        Packet packet = null;
         for (MultiKeyValue retransmit : retransmits) {
-            packets.add(controller.send(retransmit));
+            packet = controller.send(retransmit, packet);
         }
-        packets.add(controller.send(data));
+        packet = controller.send(data, packet);
 
-        return packetsOut;
+        sentPacketOut.packet = packet;
+        sentPacketOut.id = packet.getLastData().getStaticReference();
+        return sentPacketOut;
     }
 
-    public synchronized IdPacket send(Object data, ObjectOutput objectOutput) throws IOException {
-        Collection<IdPacket> sendPackets = send(data);
-        if (sendPackets.size() > MAX_PACKETS_SENT)
-            throw new ProtocolException();
-
-        objectOutput.writeByte(sendPackets.size());
-        IdPacket lastPacket = null;
-        for (IdPacket sendPacket: sendPackets) {
-            Packet.writeExternalStatic(sendPacket.getPacket(), objectOutput);
-            lastPacket = sendPacket;
-        }
-
-        return lastPacket;
+    public synchronized Map.Entry<Short, Packet> send(Object data, ObjectOutput objectOutput) throws IOException {
+        Map.Entry<Short, Packet> packetEntry = send(data);
+        Packet.writeExternalStatic(packetEntry.getValue(), objectOutput);
+        return packetEntry;
     }
 
 
-    public synchronized IdData receive(Packet pkg) {
-       return controller.receive(pkg);
-    }
 
-    Collection<IdData> datas = new LinkedList<IdData>();
-    Collection<IdData> datasOut = Collections.unmodifiableCollection(datas);
-    public synchronized Collection<IdData> receive(ObjectInput objectInput) throws IOException, ClassNotFoundException {
-        datas.clear();
 
-        int packetCount = objectInput.readUnsignedByte();
-        for (int i = 0; i < packetCount; ++packetCount) {
-            Packet packet = Packet.readExternalStatic(objectInput);
-            datas.add(receive(packet));
+
+    private final NavigableMap<Short, Object> receivedDatas = new TreeMap<Short, Object>(SequenceComparator.instance);
+    private final NavigableMap<Short, Object> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
+
+    public synchronized NavigableMap<Short, Object> receive(Packet packet) {
+        receivedDatas.clear();
+
+        Object data = controller.receive(packet, true);
+        while (data != null) {
+            data = controller.receive(packet, false);
         }
 
-        return datas;
+        return receivedDatasOut;
     }
+
+
+    public synchronized NavigableMap<Short, Object> receive(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        Packet packet = Packet.readExternalStatic(objectInput);
+        return receive(packet);
+    }
+
+
+
 
     @Override
     public int compare(Short o1, Short o2) {
@@ -102,5 +110,29 @@ public class Protocol implements Comparator<Short> {
 
     public long getRTTVariation() {
         return controller.getRTTVariation();
+    }
+
+    private static class PacketEntry implements Map.Entry<Short, Packet> {
+        private Short id;
+        private Packet packet;
+
+        public PacketEntry() {
+        }
+
+
+        @Override
+        public Short getKey() {
+            return id;
+        }
+
+        @Override
+        public Packet getValue() {
+            return packet;
+        }
+
+        @Override
+        public Packet setValue(Packet value) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

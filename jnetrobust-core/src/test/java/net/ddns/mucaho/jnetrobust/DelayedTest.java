@@ -6,12 +6,10 @@ import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Verifications;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.data.Packet;
-import net.ddns.mucaho.jnetrobust.util.Config;
+import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
 import net.ddns.mucaho.jnetrobust.util.TestHost;
 import net.ddns.mucaho.jnetrobust.util.TestHost.TestHostListener;
-import net.ddns.mucaho.jnetrobust.util.UDPListener;
 import net.ddns.mucaho.jnetrobust.util.UnreliableQueue;
 import net.ddns.mucaho.jnetrobust.util.UnreliableQueue.QueueListener;
 import org.junit.Test;
@@ -36,9 +34,9 @@ public class DelayedTest {
     @Injectable
     private QueueListener<Packet> queueListenerBtoA;
     @Injectable
-    private UDPListener protocolListenerA;
+    private ProtocolListener protocolListenerA;
     @Injectable
-    private UDPListener protocolListenerB;
+    private ProtocolListener protocolListenerB;
     @Injectable
     private TestHostListener<Long> hostListenerA;
     @Injectable
@@ -69,7 +67,7 @@ public class DelayedTest {
 
 
         final TestHost<Long> hostA = new TestHost<Long>(hostListenerA, new LongDataGenerator(),
-                bToA, aToB, retransmit, new Config(protocolListenerA));
+                bToA, aToB, retransmit, new ProtocolConfig(protocolListenerA));
         final List<Long> sentA = new ArrayList<Long>();
         final List<Long> lostSentA = new ArrayList<Long>();
         final List<Long> dupedSentA = new ArrayList<Long>();
@@ -83,7 +81,7 @@ public class DelayedTest {
 
 
         final TestHost<Long> hostB = new TestHost<Long>(hostListenerB, new LongDataGenerator(),
-                aToB, bToA, retransmit, new Config(protocolListenerB));
+                aToB, bToA, retransmit, new ProtocolConfig(protocolListenerB));
         final List<Long> sentB = new ArrayList<Long>();
         final List<Long> lostSentB = new ArrayList<Long>();
         final List<Long> dupedSentB = new ArrayList<Long>();

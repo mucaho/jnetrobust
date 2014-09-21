@@ -1,9 +1,9 @@
-package net.ddns.mucaho.jnetrobust.util;
+package net.ddns.mucaho.jnetrobust;
 
 import net.ddns.mucaho.jnetrobust.control.PendingMapControl.TransmissionSuccessListener;
 import net.ddns.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderListener;
 
-public class UDPListener implements TransmissionSuccessListener, TransmissionOrderListener {
+public class ProtocolListener implements TransmissionSuccessListener, TransmissionOrderListener {
 
     @Override
     public void handleOrderedTransmission(short dataId, Object orderedData) {

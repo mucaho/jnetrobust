@@ -5,7 +5,6 @@ import junitparams.Parameters;
 import mockit.Deencapsulation;
 import mockit.Mock;
 import mockit.MockUp;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;

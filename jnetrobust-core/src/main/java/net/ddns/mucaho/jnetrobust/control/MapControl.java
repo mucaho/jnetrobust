@@ -1,7 +1,5 @@
 package net.ddns.mucaho.jnetrobust.control;
 
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValueMap;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 import net.ddns.mucaho.jnetrobust.util.TimeoutHandler;
 

@@ -271,7 +271,8 @@ public class CollectionUtils {
         @Override
         @Deprecated
         public Set<Entry<K, V>> entrySet() {
-            return Collections.unmodifiableSet(decoratedMap.entrySet());
+            throw new UnsupportedOperationException();
+            //return Collections.unmodifiableSet(decoratedMap.entrySet());
         }
 
         @Override
@@ -426,6 +427,198 @@ public class CollectionUtils {
             return Collections.unmodifiableSortedMap(decoratedMap.tailMap(fromKey));
         }
     }
+
+    /**
+     * Returns an unmodifiable view of the specified deque.
+     */
+    public static <E> Deque<E> unmodifiableDeque(Deque<E> d) {
+        return new UnmodifiableDeque<E>(d);
+    }
+
+    static class UnmodifiableDeque<E> implements Deque<E>, Serializable {
+        private final Deque<E> decratedDeque;
+
+        UnmodifiableDeque(Deque<E> d) {
+            decratedDeque = d;
+        }
+
+
+        @Override
+        public void addFirst(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void addLast(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean offerFirst(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean offerLast(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E removeFirst() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E removeLast() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E pollFirst() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E pollLast() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E getFirst() {
+            return decratedDeque.getFirst();
+        }
+
+        @Override
+        public E getLast() {
+            return decratedDeque.getLast();
+        }
+
+        @Override
+        public E peekFirst() {
+            return decratedDeque.peekFirst();
+        }
+
+        @Override
+        public E peekLast() {
+            return decratedDeque.peekLast();
+        }
+
+        @Override
+        public boolean removeFirstOccurrence(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeLastOccurrence(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean add(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean offer(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E poll() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E element() {
+            return decratedDeque.element();
+        }
+
+        @Override
+        public E peek() {
+            return decratedDeque.peek();
+        }
+
+        @Override
+        public void push(E e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public E pop() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return decratedDeque.contains(o);
+        }
+
+        @Override
+        public int size() {
+            return decratedDeque.size();
+        }
+
+        @Override
+        public Iterator<E> iterator() {
+            return new UnmodifiableIterator<E>(decratedDeque.iterator());
+        }
+
+        @Override
+        public Iterator<E> descendingIterator() {
+            return new UnmodifiableIterator<E>(decratedDeque.descendingIterator());
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return decratedDeque.isEmpty();
+        }
+
+        @Override
+        public Object[] toArray() {
+            return decratedDeque.toArray();
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a) {
+            return decratedDeque.toArray(a);
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            return decratedDeque.containsAll(c);
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends E> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+    }
+
 
 
 }

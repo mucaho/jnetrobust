@@ -1,35 +1,58 @@
-package net.ddns.mucaho.jnetrobust.data;
+package net.ddns.mucaho.jnetrobust.controller;
 
+import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.util.CollectionUtils;
 import net.ddns.mucaho.jnetrobust.util.Freezable;
 
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.LinkedList;
 
 
 public class Packet implements Freezable {
+    public final static transient int MAX_DATAS_PER_PACKET = (Byte.MAX_VALUE - Byte.MIN_VALUE + 1) - 1;
+
     public Packet() {
         super();
     }
 
-    private MultiKeyValue data;
+    private Deque<MultiKeyValue> datas = new LinkedList<MultiKeyValue>();
+    private transient Deque<MultiKeyValue> datasOut = CollectionUtils.unmodifiableDeque(datas);
     private short ack;
     private int lastAcks;
 
 
-    public MultiKeyValue getData() {
-        return data;
+    public Deque<MultiKeyValue> getDatas() {
+        return datasOut;
     }
 
-    public void setData(MultiKeyValue data) {
-        this.data = data;
+    public MultiKeyValue getFirstData() {
+        return datas.peekFirst();
+    }
+
+    public MultiKeyValue getLastData() {
+        return datas.peekLast();
+    }
+
+    void addLastData(MultiKeyValue data) {
+        if (datas.size() >= MAX_DATAS_PER_PACKET)
+            throw new IndexOutOfBoundsException("Cannot add more than " + MAX_DATAS_PER_PACKET + " datas to packet.");
+
+        datas.addLast(data);
+    }
+
+    MultiKeyValue removeFirstData() {
+        return datas.pollFirst();
     }
 
     public short getAck() {
         return ack;
     }
 
-    public void setAck(short ack) {
+    void setAck(short ack) {
         this.ack = ack;
     }
 
@@ -37,7 +60,7 @@ public class Packet implements Freezable {
         return lastAcks;
     }
 
-    public void setLastAcks(int lastAcks) {
+    void setLastAcks(int lastAcks) {
         this.lastAcks = lastAcks;
     }
 
@@ -47,10 +70,10 @@ public class Packet implements Freezable {
     }
 
     public String toDebugString() {
-        return "ReliableUDPPackage:" + "\t"
-                + "data = " + data + "\t"
+        return "Packet:" + "\t"
                 + "ack = " + ack + "\t"
-                + "lastAcks = " + String.format("%33s", Long.toBinaryString(lastAcks)) + "\n";
+                + "lastAcks = " + String.format("%33s", Long.toBinaryString(lastAcks)) + "\t"
+                + "datas = " + Arrays.deepToString(datas.toArray()) + "\n";
     }
 
     /**
@@ -85,14 +108,18 @@ public class Packet implements Freezable {
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeShort(ack);
         out.writeInt(lastAcks);
-        MultiKeyValue.writeExternalStatic(data, out);
+        out.writeByte(datas.size());
+        for (MultiKeyValue data: datas)
+            MultiKeyValue.writeExternalStatic(data, out);
     }
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         ack = in.readShort();
         lastAcks = in.readInt();
-        data = MultiKeyValue.readExternalStatic(in);
+        int size = in.readUnsignedByte();
+        for (int i = 0; i < size; ++i)
+            datas.addLast(MultiKeyValue.readExternalStatic(in));
     }
 
     @Override
@@ -100,7 +127,7 @@ public class Packet implements Freezable {
         Packet clone = new Packet();
         clone.ack = ack;
         clone.lastAcks = lastAcks;
-        clone.data = (MultiKeyValue) data.clone();
+        clone.datas.addAll(datas);
         return clone;
     }
 }

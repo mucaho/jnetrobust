@@ -1,12 +1,14 @@
 package net.ddns.mucaho.jnetrobust.util;
 
-public class DebugUDPListener extends UDPListener {
+import net.ddns.mucaho.jnetrobust.ProtocolListener;
+
+public class DebugProtocolListener extends ProtocolListener {
 
     private final String name;
     private final Logger logger;
-    private final UDPListener delegate;
+    private final ProtocolListener delegate;
 
-    public DebugUDPListener(UDPListener delegate, String name) {
+    public DebugProtocolListener(ProtocolListener delegate, String name) {
         this(delegate, name, new Logger() {
             @Override
             public void log(String... texts) {
@@ -17,7 +19,7 @@ public class DebugUDPListener extends UDPListener {
         });
     }
 
-    public DebugUDPListener(UDPListener delegate, String name, Logger logger) {
+    public DebugProtocolListener(ProtocolListener delegate, String name, Logger logger) {
         this.name = name;
         this.logger = logger;
         this.delegate = delegate;

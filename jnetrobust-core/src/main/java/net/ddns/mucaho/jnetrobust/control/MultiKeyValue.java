@@ -1,4 +1,4 @@
-package net.ddns.mucaho.jnetrobust.data;
+package net.ddns.mucaho.jnetrobust.control;
 
 import net.ddns.mucaho.jnetrobust.util.CollectionUtils;
 import net.ddns.mucaho.jnetrobust.util.Freezable;
@@ -70,8 +70,8 @@ public class MultiKeyValue implements Timestamp, Freezable {
     }
 
 
-    @Override
-    public void updateTime() {
+
+    void updateTime() {
         lastTouched = System.currentTimeMillis();
     }
 

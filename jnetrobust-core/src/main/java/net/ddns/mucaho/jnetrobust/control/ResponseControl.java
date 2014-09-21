@@ -1,6 +1,5 @@
 package net.ddns.mucaho.jnetrobust.control;
 
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.util.TimeoutHandler;
 
 import java.util.Collection;
@@ -13,6 +12,10 @@ public class ResponseControl {
 
     public ResponseControl(Collection<MultiKeyValue> pendingDatas) {
         this.pendingDatas = pendingDatas;
+    }
+
+    public void resetPendingTime(MultiKeyValue pendingData) {
+        pendingData.updateTime();
     }
 
     public Collection<MultiKeyValue> updatePendingTime(long maxWaitTime) {

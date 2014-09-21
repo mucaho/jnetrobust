@@ -1,7 +1,6 @@
 package net.ddns.mucaho.jnetrobust.control;
 
 import mockit.Deencapsulation;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.util.BitConstants;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 import org.junit.Before;

@@ -1,8 +1,5 @@
 package net.ddns.mucaho.jnetrobust.control;
 
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValueMap;
-
 public class ReceivedMapControl extends MapControl {
     public interface TransmissionOrderListener {
         public void handleOrderedTransmission(short dataId, Object orderedData);

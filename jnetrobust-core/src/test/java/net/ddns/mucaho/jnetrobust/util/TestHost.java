@@ -1,8 +1,10 @@
 package net.ddns.mucaho.jnetrobust.util;
 
+import net.ddns.mucaho.jnetrobust.ProtocolConfig;
+import net.ddns.mucaho.jnetrobust.ProtocolListener;
 import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.data.Packet;
+import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
 
 import java.util.Collection;
 
@@ -26,7 +28,7 @@ public class TestHost<T> implements Runnable {
 
     public TestHost(TestHostListener<T> hostListener, TestHostDataGenerator<T> dataGenerator,
                     UnreliableQueue<Packet> inQueue, UnreliableQueue<Packet> outQueue, boolean retransmit,
-                    Config config) {
+                    ProtocolConfig config) {
         this.hostListener = hostListener;
         this.dataGenerator = dataGenerator;
         this.protocol = new RetransmissionController(adaptConfig(config));
@@ -86,10 +88,10 @@ public class TestHost<T> implements Runnable {
     }
 
 
-    private class ProtocolListenerWrapper extends UDPListener {
-        private final UDPListener listener;
+    private class ProtocolListenerWrapper extends ProtocolListener {
+        private final ProtocolListener listener;
 
-        private ProtocolListenerWrapper(UDPListener listener) {
+        private ProtocolListenerWrapper(ProtocolListener listener) {
             this.listener = listener;
         }
 
@@ -131,8 +133,8 @@ public class TestHost<T> implements Runnable {
         }
     }
 
-    private Config adaptConfig(Config config) {
-        return new Config(new ProtocolListenerWrapper(config.listener), config);
+    private ProtocolConfig adaptConfig(ProtocolConfig config) {
+        return new ProtocolConfig(new ProtocolListenerWrapper(config.listener), config);
     }
 
 }

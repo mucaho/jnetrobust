@@ -6,11 +6,11 @@ import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
 import com.esotericsoftware.kryo.io.KryoObjectInput;
 import com.esotericsoftware.kryo.io.KryoObjectOutput;
+import net.ddns.mucaho.jnetrobust.ProtocolConfig;
 import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.data.Packet;
-import net.ddns.mucaho.jnetrobust.util.Config;
-import net.ddns.mucaho.jnetrobust.util.DebugUDPListener;
+import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
+import net.ddns.mucaho.jnetrobust.util.DebugProtocolListener;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -63,7 +63,7 @@ public class DefaultHost<T> {
         objectOutput = new KryoObjectOutput(kryo, bufferOutput);
 
         // setup virtual protocol
-        this.protocol = new RetransmissionController(new Config(new DebugUDPListener(hostName) {
+        this.protocol = new RetransmissionController(new ProtocolConfig(new DebugProtocolListener(hostName) {
             @Override
             @SuppressWarnings("unchecked")
             public void handleOrderedTransmission(Object orderedData) {

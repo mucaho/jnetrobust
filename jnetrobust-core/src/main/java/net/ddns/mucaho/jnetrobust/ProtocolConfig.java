@@ -1,6 +1,8 @@
-package net.ddns.mucaho.jnetrobust.util;
+package net.ddns.mucaho.jnetrobust;
 
-public class Config {
+import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
+
+public class ProtocolConfig {
     public final static int MAX_PACKET_QUEUE_LIMIT = Byte.MAX_VALUE - Byte.MIN_VALUE + 1;
     public final static int MAX_PACKET_OFFSET_LIMIT = SequenceComparator.MAX_SEQUENCE / 4;
 
@@ -11,15 +13,15 @@ public class Config {
     private int K = 2;
     private int G = 25;
 
-    public final UDPListener listener;
+    public final ProtocolListener listener;
 
-    public Config(UDPListener listener) {
+    public ProtocolConfig(ProtocolListener listener) {
         super();
         this.listener = listener;
     }
 
 
-    public Config(UDPListener listener, Config config) {
+    public ProtocolConfig(ProtocolListener listener, ProtocolConfig config) {
         super();
         this.listener = listener;
         this.packetQueueLimit = config.packetQueueLimit;

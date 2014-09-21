@@ -1,6 +1,5 @@
 package net.ddns.mucaho.jnetrobust.control;
 
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.util.FastLog;
 
 import static net.ddns.mucaho.jnetrobust.util.BitConstants.OFFSET;

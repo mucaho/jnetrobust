@@ -1,13 +1,10 @@
 package net.ddns.mucaho.jnetrobust.control;
 
 import mockit.Deencapsulation;
-import net.ddns.mucaho.jnetrobust.control.MapControl;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.data.MultiKeyValueMap;
-import net.ddns.mucaho.jnetrobust.util.Config;
+import net.ddns.mucaho.jnetrobust.ProtocolConfig;
 
 public abstract class MapControlTest {
-    protected final static Config config = new Config(null);
+    protected final static ProtocolConfig config = new ProtocolConfig(null);
     protected static short dataId = Short.MIN_VALUE;
     protected static MultiKeyValueMap dataMap;
 
