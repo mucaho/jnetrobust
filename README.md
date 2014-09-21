@@ -25,7 +25,7 @@ It provides some benefits from both transport layer protocols that are accessibl
 
 Why should you use it?
 ----------------------
-If you don't need reliability, use UDP.
+If you don't need reliability, use UDP.   
 If you need reliability and you can wait for it to be validated, use TCP.   
 If you need reliability, but you could also benefit from receiving unvalidated data with no latency, try JNetRobust.
 
