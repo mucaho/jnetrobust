@@ -5,23 +5,22 @@ import com.esotericsoftware.kryo.Kryo;
 import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.controller.Packet;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Queue;
 
 public class ObjectSynchronizationController implements Runnable {
-    public static enum HOST {CLIENT, SERVER}
 
-    public static enum MODE {UPDATE_ON_RECEIVED_DATA, UPDATE_ON_ORDERED_DATA}
+    private ObjectSynchronizationGUI gui;
+    private DefaultHost<Vector2D> host;
+    private final ObjectSynchronization.MODE updateMode;
+    private final Vector2D data;
 
-    private final ObjectSynchronizationGUI gui;
-    private final DefaultHost<Vector2D> host;
-    private final MODE updateMode;
+    public ObjectSynchronizationController(ObjectSynchronization.HOST hostMode, final ObjectSynchronization.MODE updateMode,
+                                           InetSocketAddress hostAddress, InetSocketAddress receiverAddress) throws IOException {
 
-    public ObjectSynchronizationController(HOST hostMode, final MODE updateMode, InetSocketAddress hostAddress,
-                                           InetSocketAddress receiverAddress) throws IOException {
         this.updateMode = updateMode;
+        data = new Vector2D(Integer.MIN_VALUE, Integer.MIN_VALUE, hostMode);
 
         gui = new ObjectSynchronizationGUI(hostMode);
         gui.setVisible(true);
@@ -31,18 +30,18 @@ public class ObjectSynchronizationController implements Runnable {
         serializer.register(MultiKeyValue.class);
         serializer.register(Packet.class);
 
+
         host = new DefaultHost<Vector2D>(hostMode.toString(), serializer,
                 hostAddress, receiverAddress, new DefaultHost.OrderedDataListener<Vector2D>() {
             @Override
             public void handleOrderedData(final Vector2D orderedData) {
-                if (updateMode == MODE.UPDATE_ON_ORDERED_DATA)
-                    updateGUI(orderedData);
+                if (updateMode == ObjectSynchronization.MODE.UPDATE_ON_ORDERED_DATA)
+                    gui.updateGUI(orderedData);
             }
         });
-
     }
 
-    private Vector2D oldData = new Vector2D(Integer.MIN_VALUE, Integer.MIN_VALUE);
+
 
     @Override
     public void run() {
@@ -50,52 +49,30 @@ public class ObjectSynchronizationController implements Runnable {
             // receive
             Queue<Vector2D> receivedQueue = host.receive();
             for (final Vector2D receivedData : receivedQueue)
-                if (updateMode == MODE.UPDATE_ON_RECEIVED_DATA)
-                    updateGUI(receivedData);
+                if (updateMode == ObjectSynchronization.MODE.UPDATE_ON_RECEIVED_DATA)
+                    gui.updateGUI(receivedData);
 
             // send
-            sendGUI();
+            gui.sendGUI(data);
+            host.send(data);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void sendGUI() throws IOException {
-        boolean isNewData = false;
-
-        JPanel hostObject = gui.getHostObject();
-        if (hostObject.getX() != oldData.getX() || hostObject.getY() != oldData.getY())
-            isNewData = true;
-
-        oldData.setX(hostObject.getX());
-        oldData.setY(hostObject.getY());
-
-        //FIXME if (isNewData)
-        host.send(oldData);
-    }
-
-    private void updateGUI(final Vector2D data) {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JPanel remoteObject = gui.getRemoteObject();
-                if (remoteObject.getX() != data.getX() || remoteObject.getY() != data.getY())
-                    remoteObject.setLocation(data.getX(), data.getY());
-            }
-        });
-    }
-
 
     public static class Vector2D {
+        private ObjectSynchronization.HOST host;
         private int x;
         private int y;
 
         public Vector2D() {
         }
 
-        public Vector2D(int x, int y) {
+        public Vector2D(int x, int y, ObjectSynchronization.HOST host) {
             this.x = x;
             this.y = y;
+            this.host = host;
         }
 
         public int getX() {
@@ -114,10 +91,19 @@ public class ObjectSynchronizationController implements Runnable {
             this.y = y;
         }
 
+        public ObjectSynchronization.HOST getHost() {
+            return host;
+        }
+
+        public void setHost(ObjectSynchronization.HOST host) {
+            this.host = host;
+        }
+
         @Override
         public String toString() {
-            return "{" +
-                    "x=" + x +
+            return "Vector2D{" +
+                    "host=" + host +
+                    ", x=" + x +
                     ", y=" + y +
                     '}';
         }

@@ -38,6 +38,9 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.IOException;
+import java.util.EnumMap;
+import java.util.Map;
 
 
 /**
@@ -46,10 +49,13 @@ import java.awt.event.KeyListener;
  */
 public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
     private JPanel windowPanel;
-    private JPanel hostObject;
-    private JPanel remoteObject;
+    private ObjectSynchronization.HOST localHost;
+    private Map<ObjectSynchronization.HOST, JPanel> objects =
+            new EnumMap<ObjectSynchronization.HOST, JPanel>(ObjectSynchronization.HOST.class);
 
-    public ObjectSynchronizationGUI(ObjectSynchronizationController.HOST type) {
+    public ObjectSynchronizationGUI(ObjectSynchronization.HOST type) {
+        localHost = type;
+
         setTitle(type.toString());
         setSize(400, 400);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
@@ -62,12 +68,15 @@ public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
         windowPanel.setLayout(null);
         windowPanel.addKeyListener(this);
 
-        if (type == ObjectSynchronizationController.HOST.SERVER) {
-            hostObject = createPanel(0, 0, Color.BLUE);
-            remoteObject = createPanel(300, 300, Color.GREEN);
-        } else {
-            hostObject = createPanel(300, 300, Color.RED);
-            remoteObject = createPanel(0, 0, Color.GREEN);
+        objects.put(ObjectSynchronization.HOST.CLIENTA, createPanel(0, 0, Color.RED));
+        objects.put(ObjectSynchronization.HOST.CLIENTB, createPanel(300, 0, Color.BLUE));
+        objects.put(ObjectSynchronization.HOST.SERVER, createPanel(150, 300, Color.GREEN));
+
+        if (type == ObjectSynchronization.HOST.SERVER) {
+            setLocation(200, 410);
+        } else if (type == ObjectSynchronization.HOST.CLIENTA) {
+            setLocation(0, 0);
+        } else if (type == ObjectSynchronization.HOST.CLIENTB) {
             setLocation(410, 0);
         }
         windowPanel.repaint();
@@ -84,11 +93,11 @@ public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
     }
 
     protected JPanel getHostObject() {
-        return hostObject;
+        return objects.get(localHost);
     }
 
-    protected JPanel getRemoteObject() {
-        return remoteObject;
+    protected JPanel getRemoteObject(ObjectSynchronization.HOST host) {
+        return objects.get(host);
     }
 
     public void keyTyped(KeyEvent e) {
@@ -110,6 +119,31 @@ public class ObjectSynchronizationGUI extends JFrame implements KeyListener {
             y += 5;
         }
 
+        JPanel hostObject = getHostObject();
         hostObject.setLocation(hostObject.getX() + x, hostObject.getY() + y);
+    }
+
+    void sendGUI(ObjectSynchronizationController.Vector2D data) throws IOException {
+        boolean isNewData = false;
+
+        JPanel hostObject = getHostObject();
+        if (hostObject.getX() != data.getX() || hostObject.getY() != data.getY())
+            isNewData = true;
+
+        data.setX(hostObject.getX());
+        data.setY(hostObject.getY());
+
+        //FIXME if (isNewData)
+    }
+
+    void updateGUI(final ObjectSynchronizationController.Vector2D data) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                JPanel remoteObject = getRemoteObject(data.getHost());
+                if (remoteObject.getX() != data.getX() || remoteObject.getY() != data.getY())
+                    remoteObject.setLocation(data.getX(), data.getY());
+            }
+        });
     }
 }
