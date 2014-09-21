@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 public class ObjectSynchronization {
     public static enum HOST {CLIENTA, SERVER, CLIENTB}
-    public static enum MODE {UPDATE_ON_RECEIVED_DATA, UPDATE_ON_ORDERED_DATA}
+    public static enum MODE {UPDATE_ON_RECEIVED_DATA, UPDATE_ON_NEWEST_DATA, UPDATE_ON_ORDERED_DATA}
 
     private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(3);
 
@@ -39,13 +39,15 @@ public class ObjectSynchronization {
     public static void main(String[] args) throws Exception {
         // clientA
         ObjectSynchronizationController clientA = new ObjectSynchronizationController(HOST.CLIENTA,
-                MODE.UPDATE_ON_ORDERED_DATA, CLIENTA_ADDRESS, EMULATORA_ADDRESS);
+                MODE.UPDATE_ON_RECEIVED_DATA, CLIENTA_ADDRESS, EMULATORA_ADDRESS);
         // clientB
         ObjectSynchronizationController clientB = new ObjectSynchronizationController(HOST.CLIENTB,
                 MODE.UPDATE_ON_ORDERED_DATA, CLIENTB_ADDRESS, EMULATORB_ADDRESS);
         // server
         ServerObjectSynchronizationController server = new ServerObjectSynchronizationController(
-                SERVERA_ADDRESS, SERVERB_ADDRESS, EMULATORA_ADDRESS, EMULATORB_ADDRESS);
+                MODE.UPDATE_ON_RECEIVED_DATA, MODE.UPDATE_ON_NEWEST_DATA,
+                SERVERA_ADDRESS, SERVERB_ADDRESS,
+                EMULATORA_ADDRESS, EMULATORB_ADDRESS);
 
         // emulators emulate bad networking conditions as in WANs
         DatagramWanEmulator wanEmulatorA = new DatagramWanEmulator(EMULATORA_ADDRESS, CLIENTA_ADDRESS, SERVERA_ADDRESS);

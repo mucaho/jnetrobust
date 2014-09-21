@@ -38,6 +38,12 @@ public class ObjectSynchronizationController implements Runnable {
                 if (updateMode == ObjectSynchronization.MODE.UPDATE_ON_ORDERED_DATA)
                     gui.updateGUI(orderedData);
             }
+
+            @Override
+            public void handleNewestData(final Vector2D newestData) {
+                if (updateMode == ObjectSynchronization.MODE.UPDATE_ON_NEWEST_DATA)
+                    gui.updateGUI(newestData);
+            }
         });
     }
 

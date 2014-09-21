@@ -25,11 +25,13 @@ import java.util.Queue;
 public class DefaultHost<T> {
     public static interface OrderedDataListener<T> {
         public void handleOrderedData(T orderedData);
-        //TODO add handleExceptionalState();
+        public void handleNewestData(T newestData);
+        //add exceptional callback
     }
 
     // protocol fields
     private final Protocol protocol;
+    private final OrderedDataListener<T> listener;
 
     // serialization fields
     private final ByteBuffer buffer = ByteBuffer.allocate(2048);
@@ -46,6 +48,7 @@ public class DefaultHost<T> {
                        InetSocketAddress hostAddress, final InetSocketAddress targetAddress,
                        final OrderedDataListener<T> orderedDataListener) throws IOException {
         //TODO put in overridable methods
+        this.listener = orderedDataListener;
 
         // setup network communication
         channel = DatagramChannel.open();
@@ -79,6 +82,7 @@ public class DefaultHost<T> {
 
     private Queue<T> outQueue = new LinkedList<T>();
 
+    private Short newestId = null;
     @SuppressWarnings("unchecked")
     public Queue<T> receive() throws IOException, ClassNotFoundException {
         outQueue.clear();
@@ -89,6 +93,12 @@ public class DefaultHost<T> {
             buffer.flip();
             bufferInput.setBuffer(buffer);
             NavigableMap<Short, Object> receivedDatas = protocol.receive(objectInput);
+
+            if (newestId == null || protocol.compare(receivedDatas.lastKey(), newestId) > 0) {
+                newestId = receivedDatas.lastKey();
+                listener.handleNewestData((T) receivedDatas.get(newestId));
+            }
+
 
             for (Object receivedData: receivedDatas.values())
                 outQueue.add((T) receivedData);

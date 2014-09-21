@@ -18,13 +18,19 @@ public class ServerObjectSynchronizationController implements Runnable {
     private ObjectSynchronizationGUI gui;
     private DefaultHost<ObjectSynchronizationController.Vector2D> hostA;
     private DefaultHost<ObjectSynchronizationController.Vector2D> hostB;
-    private ObjectSynchronization.MODE updateModeA = ObjectSynchronization.MODE.UPDATE_ON_ORDERED_DATA;
-    private ObjectSynchronization.MODE updateModeB = ObjectSynchronization.MODE.UPDATE_ON_RECEIVED_DATA;
+    private ObjectSynchronization.MODE updateModeA;
+    private ObjectSynchronization.MODE updateModeB;
 
-    public ServerObjectSynchronizationController(InetSocketAddress hostAddressA, InetSocketAddress hostAddressB,
-                                           InetSocketAddress clientAddressA, InetSocketAddress clientAddressB)
+    public ServerObjectSynchronizationController(final ObjectSynchronization.MODE updateModeA,
+                                                 final ObjectSynchronization.MODE updateModeB,
+                                                 InetSocketAddress hostAddressA,
+                                                 InetSocketAddress hostAddressB,
+                                                 InetSocketAddress clientAddressA,
+                                                 InetSocketAddress clientAddressB)
             throws IOException {
 
+        this.updateModeA = updateModeA;
+        this.updateModeB = updateModeB;
         data = new Vector2D(Integer.MIN_VALUE, Integer.MIN_VALUE, hostMode);
 
         gui = new ObjectSynchronizationGUI(hostMode);
@@ -42,6 +48,12 @@ public class ServerObjectSynchronizationController implements Runnable {
                 if (updateModeA == ObjectSynchronization.MODE.UPDATE_ON_ORDERED_DATA)
                     gui.updateGUI(orderedData);
             }
+
+            @Override
+            public void handleNewestData(final Vector2D newestData) {
+                if (updateModeA == ObjectSynchronization.MODE.UPDATE_ON_NEWEST_DATA)
+                    gui.updateGUI(newestData);
+            }
         });
 
         hostB = new DefaultHost<Vector2D>(hostMode.toString(), serializer,
@@ -50,6 +62,12 @@ public class ServerObjectSynchronizationController implements Runnable {
             public void handleOrderedData(final Vector2D orderedData) {
                 if (updateModeB == ObjectSynchronization.MODE.UPDATE_ON_ORDERED_DATA)
                     gui.updateGUI(orderedData);
+            }
+
+            @Override
+            public void handleNewestData(final Vector2D newestData) {
+                if (updateModeB == ObjectSynchronization.MODE.UPDATE_ON_NEWEST_DATA)
+                    gui.updateGUI(newestData);
             }
         });
 
