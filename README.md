@@ -40,7 +40,7 @@ It is a library and imposes no restrictions on how you use it:
 
 Talk is cheap. Show me the code. [[1]](http://lkml.org/lkml/2000/8/25/132)
 --------------------------------
-Here is a minimal, complete example to show how straightforward it is to use JNetRobust:
+Here is a minimal, complete example:
 * `DefaultHost` abstracts away much of the protocol's functionality with a default configuration, and sets-up a `DatagramChannel` for sending/receiving data, as well as a `Kryo` instance for serialization.
 * If you need more flexibility, you can configure a `Protocol` instance instead and manage network communication & serialization yourself
 
