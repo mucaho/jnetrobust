@@ -42,19 +42,22 @@ public class Controller {
 
 
 
-    public Packet send(Object data, Packet packet) {
-        // adapt unique data id
-        MultiKeyValue multiRef = new MultiKeyValue(++dataId, data);
-        return send(multiRef, packet);
+    public Packet produce() {
+        Packet packet = new Packet();
+        // adapt remote seq
+        packet.setAck(remoteSeq);
+        // Handle remote sequences
+        packet.setLastAcks((int) receivedBitsHandler.getReceivedRemoteBits());
+
+        return packet;
     }
 
-    public Packet send(MultiKeyValue data, Packet packet) {
-        if (packet == null) {
-            packet = new Packet();
-            packet.setAck(remoteSeq);
-            packet.setLastAcks((int) receivedBitsHandler.getReceivedRemoteBits());
-        }
+    public MultiKeyValue produce(Object data) {
+        // Handle data id: adapt unique data id
+        return new MultiKeyValue(++dataId, data);
+    }
 
+    public void send(Packet packet, MultiKeyValue data) {
         // adapt local seq
         localSeq++;
 
@@ -64,48 +67,48 @@ public class Controller {
 //		System.out.print("C");
 //		for (Short ref: data.getDynamicReferences())
 //			System.out.print("["+ref+"]");
+
         packet.addLastData(data);
-
-        return packet;
     }
 
 
 
+    public void consume(Packet packet) {
+        // Handle local sequences
+        pendingMapHandler.removeFromPending(packet.getAck(), packet.getLastAcks());
+    }
 
-    public Object receive(Packet packet, boolean isFirstIteration) {
-        if (isFirstIteration) {
-            // Handle local sequences
-            pendingMapHandler.removeFromPending(packet.getAck(), packet.getLastAcks());
-        }
-
+    public MultiKeyValue receive(Packet packet) {
         MultiKeyValue data = packet.removeFirstData();
-        return (data != null) ? receive(data) : null;
+        if (data != null)
+            receive(data);
+
+        return data;
     }
 
-    public Object receive(MultiKeyValue data) {
+    private void receive(MultiKeyValue data) {
         short newRemoteSeq = data.getLastDynamicReference();
 
         // Handle remote sequences
         receivedBitsHandler.addToReceived(data.getDynamicReferences(), remoteSeq);
+        // Handle data id
         receivedMapHandler.addToReceived(data);
-
 
         // adapt remote seq
         if (SequenceComparator.instance.compare(remoteSeq, newRemoteSeq) < 0)
             remoteSeq = newRemoteSeq;
-
-        return doReceive(data);
     }
 
-
-    public Object doReceive(MultiKeyValue multiKeyValue) {
+    public Object consume(MultiKeyValue multiKeyValue) {
         return multiKeyValue.getValue();
     }
 
 
 
 
-        @Override
+
+
+    @Override
     public String toString() {
         return "Controller:\t"
                 + "DataId = " + dataId + "\t"

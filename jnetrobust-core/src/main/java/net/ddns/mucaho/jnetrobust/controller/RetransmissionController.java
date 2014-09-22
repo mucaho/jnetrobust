@@ -15,11 +15,11 @@ public class RetransmissionController extends Controller {
     }
 
     @Override
-    public Packet send(MultiKeyValue data, Packet packet) {
+    public void send(Packet packet, MultiKeyValue data) {
         // Update last modified time
         responseHandler.resetPendingTime(data);
 
-        return super.send(data, packet);
+        super.send(packet, data);
     }
 
     public Collection<? extends MultiKeyValue> retransmit() {

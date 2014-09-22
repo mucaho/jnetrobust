@@ -13,7 +13,6 @@ import java.util.*;
 
 
 public class Protocol implements Comparator<Short> {
-    private final ProtocolListener protocolListener;
     private final RetransmissionController controller;
 
     public Protocol(ProtocolListener protocolListener) {
@@ -27,23 +26,10 @@ public class Protocol implements Comparator<Short> {
     }
     public Protocol(ProtocolConfig config, String name, Logger logger) {
         if (name != null && logger != null) {
-            this.controller = new DebugController(config, name, logger) {
-                @Override
-                public Object doReceive(MultiKeyValue multiKeyValue) {
-                    receivedDatas.put(multiKeyValue.getStaticReference(), multiKeyValue.getValue());
-                    return super.doReceive(multiKeyValue);
-                }
-            };
-            this.protocolListener = new DebugProtocolListener(config.listener, name, logger);
+            ProtocolListener debugListener = new DebugProtocolListener(config.listener, name, logger);
+            this.controller = new DebugController(new ProtocolConfig(debugListener, config), name, logger);
         } else {
-            this.controller = new RetransmissionController(config) {
-                @Override
-                public Object doReceive(MultiKeyValue multiKeyValue) {
-                    receivedDatas.put(multiKeyValue.getStaticReference(), multiKeyValue.getValue());
-                    return super.doReceive(multiKeyValue);
-                }
-            };
-            this.protocolListener = config.listener;
+            this.controller = new RetransmissionController(config);
         }
 
     }
@@ -54,12 +40,12 @@ public class Protocol implements Comparator<Short> {
     private final PacketEntry sentPacketOut = new PacketEntry();
 
     public synchronized Map.Entry<Short, Packet> send(Object data) {
+        Packet packet = controller.produce();
         Collection<? extends MultiKeyValue> retransmits = controller.retransmit();
-        Packet packet = null;
         for (MultiKeyValue retransmit : retransmits) {
-            packet = controller.send(retransmit, packet);
+            controller.send(packet, retransmit);
         }
-        packet = controller.send(data, packet);
+        controller.send(packet, controller.produce(data));
 
         sentPacketOut.packet = packet;
         sentPacketOut.id = packet.getLastData().getStaticReference();
@@ -74,17 +60,17 @@ public class Protocol implements Comparator<Short> {
 
 
 
-
-
     private final NavigableMap<Short, Object> receivedDatas = new TreeMap<Short, Object>(SequenceComparator.instance);
     private final NavigableMap<Short, Object> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
 
     public synchronized NavigableMap<Short, Object> receive(Packet packet) {
         receivedDatas.clear();
 
-        Object data = controller.receive(packet, true);
-        while (data != null) {
-            data = controller.receive(packet, false);
+        controller.consume(packet);
+        MultiKeyValue multiKeyValue = controller.receive(packet);
+        while (multiKeyValue != null) {
+            receivedDatas.put(multiKeyValue.getStaticReference(), controller.consume(multiKeyValue));
+            multiKeyValue = controller.receive(packet);
         }
 
         return receivedDatasOut;

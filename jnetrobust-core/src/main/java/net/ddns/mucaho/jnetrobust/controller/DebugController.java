@@ -17,21 +17,24 @@ public class DebugController extends RetransmissionController {
     }
 
     @Override
-    public Packet send(MultiKeyValue data, Packet packet) {
-        Object value = data.getValue();
-        logger.log(name, Logger.LoggingEvent.SEND.toString(), String.valueOf(data.getStaticReference()),
+    public MultiKeyValue produce(Object data) {
+        MultiKeyValue out = super.produce(data);
+        Object value = out.getValue();
+
+        logger.log(name, Logger.LoggingEvent.SEND.toString(), String.valueOf(out.getStaticReference()),
                 value != null ? value.toString() : "null");
 
-        return super.send(data, packet);
+        return out;
     }
 
     @Override
-    public Object doReceive(MultiKeyValue multiKeyValue) {
+    public Object consume(MultiKeyValue multiKeyValue) {
         Object value = multiKeyValue.getValue();
+
         logger.log(name, Logger.LoggingEvent.RECEIVE.toString(), String.valueOf(multiKeyValue.getStaticReference()),
                 value != null ? value.toString() : "null");
 
-        return super.doReceive(multiKeyValue);
+        return super.consume(multiKeyValue);
     }
 
     @Override
