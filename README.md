@@ -44,6 +44,7 @@ Here is a minimal, complete example:
 * `DefaultHost` abstracts away much of the protocol's functionality with a default configuration, and sets-up a `DatagramChannel` for sending/receiving data, as well as a `Kryo` instance for serialization.
 * If you need more flexibility, you can configure a `Protocol` instance instead and manage network communication & serialization yourself.
 
+**Code**
 ```java
 public class ChatMain {
     private static InetSocketAddress ADDRESS_A;
@@ -101,4 +102,11 @@ public class ChatMain {
             System.out.println("[A]: "+receivedMessage);
     }
 }
+```
+
+**Console Output** (debug output omitted)
+```
+[B]: Hi!
+[B]: How you doing?
+[A]: Howdy! Fine, thanks.
 ```
