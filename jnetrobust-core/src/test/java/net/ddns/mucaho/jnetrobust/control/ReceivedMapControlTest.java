@@ -18,7 +18,8 @@ import static org.junit.Assert.*;
 @RunWith(JUnitParamsRunner.class)
 public class ReceivedMapControlTest extends MapControlTest {
     protected static ReceivedMapControl handler = new ReceivedMapControl((short) 0, config.listener,
-            config.packetQueueLimit, config.packetQueueTimeout);
+            config.getPacketQueueLimit(), config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1,
+            config.getPacketQueueTimeout());
 
     static {
         System.setProperty("jmockit-mockParameters", "annotated");
@@ -69,14 +70,11 @@ public class ReceivedMapControlTest extends MapControlTest {
         };
 
         MultiKeyValue data = new MultiKeyValue(++dataId, inputs);
-        for (Short ref : inputs) {
-            dataMap.put(ref, null);
-        }
-        dataMap.put(inputs[0], data);
+        dataMap.put(data.getStaticReference(), data);
         Deencapsulation.invoke(handler, "removeTail");
 
 
-        Short actualNextRemoteSeq = (Short) Deencapsulation.getField(handler, "nextRemoteSeq");
+        Short actualNextRemoteSeq = (Short) Deencapsulation.getField(handler, "nextDataId");
         assertEquals("Next remote sequence must match", nextRemoteSeq, actualNextRemoteSeq);
 
         if (outputs[0].length != 0)
@@ -107,7 +105,7 @@ public class ReceivedMapControlTest extends MapControlTest {
     @Test
     @Parameters
     public final void testPut(Short ref, boolean addedRef) {
-        Deencapsulation.setField(handler, "nextRemoteSeq", (short) 1);
+        Deencapsulation.setField(handler, "nextDataId", (short) 1);
         dataMap.clear();
 
         MultiKeyValue data = new MultiKeyValue(++dataId, ref);

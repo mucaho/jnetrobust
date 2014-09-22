@@ -8,6 +8,7 @@ import mockit.NonStrictExpectations;
 import mockit.Verifications;
 import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
 import net.ddns.mucaho.jnetrobust.controller.Packet;
+import net.ddns.mucaho.jnetrobust.util.DebugProtocolListener;
 import net.ddns.mucaho.jnetrobust.util.TestHost;
 import net.ddns.mucaho.jnetrobust.util.TestHost.TestHostListener;
 import net.ddns.mucaho.jnetrobust.util.UnreliableQueue;
@@ -15,10 +16,7 @@ import net.ddns.mucaho.jnetrobust.util.UnreliableQueue.QueueListener;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +42,7 @@ public class DelayedTest {
 
     public Object[][] parametersForTestDelayed() {
         Object[][] out = {{
-                150, 200, 0.10f, 0.10f, 16, 20, true
+                150, 200, 0.10f, 0.10f, 16, 100, true
         }};
 
         return out;
@@ -67,7 +65,8 @@ public class DelayedTest {
 
 
         final TestHost<Long> hostA = new TestHost<Long>(hostListenerA, new LongDataGenerator(),
-                bToA, aToB, retransmit, new ProtocolConfig(protocolListenerA));
+                bToA, aToB, retransmit, new ProtocolConfig(new DebugProtocolListener(
+                protocolListenerA, "A", Logger.getConsoleLogger())), "A");
         final List<Long> sentA = new ArrayList<Long>();
         final List<Long> lostSentA = new ArrayList<Long>();
         final List<Long> dupedSentA = new ArrayList<Long>();
@@ -77,11 +76,11 @@ public class DelayedTest {
         final List<Long> orderedA = new ArrayList<Long>();
         final List<Long> unorderedA = new ArrayList<Long>();
         final List<Long> retransmitsA = new ArrayList<Long>();
-        final IntWrapper emptySendA = new IntWrapper();
 
 
         final TestHost<Long> hostB = new TestHost<Long>(hostListenerB, new LongDataGenerator(),
-                aToB, bToA, retransmit, new ProtocolConfig(protocolListenerB));
+                aToB, bToA, retransmit, new ProtocolConfig(new DebugProtocolListener(
+                protocolListenerB, "B", Logger.getConsoleLogger())), "B");
         final List<Long> sentB = new ArrayList<Long>();
         final List<Long> lostSentB = new ArrayList<Long>();
         final List<Long> dupedSentB = new ArrayList<Long>();
@@ -91,150 +90,50 @@ public class DelayedTest {
         final List<Long> orderedB = new ArrayList<Long>();
         final List<Long> unorderedB = new ArrayList<Long>();
         final List<Long> retransmitsB = new ArrayList<Long>();
-        final IntWrapper emptySendB = new IntWrapper();
 
 
         new NonStrictExpectations() {{
             hostListenerA.notifyReceived(withCapture(receivedA));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long received) {
-                    System.out.println("[A-received]: " + received);
-                }
-            };
             hostListenerA.notifySent(withCapture(sentA));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long sent) {
-                    System.out.println("[A-sent]: " + sent);
-                }
-            };
-            protocolListenerA.handleAckedTransmission(withCapture(ackedA));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long acked) {
-                    System.out.println("[A-acked]: " + acked);
-                }
-            };
-            protocolListenerA.handleNotAckedTransmission(withCapture(notAckedA));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long notAcked) {
-                    System.out.println("[A-notAcked]: " + notAcked);
-                }
-            };
-            protocolListenerA.handleOrderedTransmission(withCapture(orderedA));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long ordered) {
-                    System.out.println("[A-ordered]: " + ordered);
-                }
-            };
-            protocolListenerA.handleUnorderedTransmission(withCapture(unorderedA));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long unordered) {
-                    System.out.println("[A-unordered]: " + unordered);
-                }
-            };
-            protocolListenerA.handleTransmissionRequest();
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate() {
-                    emptySendA.value++;
-                    System.out.println("[A-retransmit]");
-                }
-            };
-            protocolListenerA.handleTransmissionRequests((Collection<? extends MultiKeyValue>) any);
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Collection<? extends MultiKeyValue> datas) {
-                    for (MultiKeyValue data : datas)
-                        retransmitsA.add((Long) data.getValue());
-                    System.out.println("[A-retransmit]: " + Arrays.deepToString(datas.toArray()));
-                }
-            };
+            hostListenerA.notifyRetransmitted(withCapture(retransmitsA));
+
+            protocolListenerA.handleAckedTransmission(anyShort, withCapture(ackedA));
+            protocolListenerA.handleNotAckedTransmission(anyShort, withCapture(notAckedA));
+            protocolListenerA.handleOrderedTransmission(anyShort, withCapture(orderedA));
+            protocolListenerA.handleUnorderedTransmission(anyShort, withCapture(unorderedA));
         }};
 
         new NonStrictExpectations() {{
             hostListenerB.notifyReceived(withCapture(receivedB));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long received) {
-                    System.out.println("[B-received]: " + received);
-                }
-            };
             hostListenerB.notifySent(withCapture(sentB));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long sent) {
-                    System.out.println("[B-sent]: " + sent);
-                }
-            };
-            protocolListenerB.handleAckedTransmission(withCapture(ackedB));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long acked) {
-                    System.out.println("[B-acked]: " + acked);
-                }
-            };
-            protocolListenerB.handleNotAckedTransmission(withCapture(notAckedB));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long notAcked) {
-                    System.out.println("[B-notAcked]: " + notAcked);
-                }
-            };
-            protocolListenerB.handleOrderedTransmission(withCapture(orderedB));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long ordered) {
-                    System.out.println("[B-ordered]: " + ordered);
-                }
-            };
-            protocolListenerB.handleUnorderedTransmission(withCapture(unorderedB));
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Long unordered) {
-                    System.out.println("[B-unordered]: " + unordered);
-                }
-            };
-            protocolListenerB.handleTransmissionRequest();
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate() {
-                    emptySendB.value++;
-                    System.out.println("[B-retransmit]");
-                }
-            };
-            protocolListenerB.handleTransmissionRequests((Collection<? extends MultiKeyValue>) any);
-            result = new Delegate<Void>() {
-                @SuppressWarnings("unused")
-                void delegate(Collection<? extends MultiKeyValue> datas) {
-                    for (MultiKeyValue data : datas)
-                        retransmitsB.add((Long) data.getValue());
-                    System.out.println("[B-retransmit]: " + Arrays.deepToString(datas.toArray()));
-                }
-            };
+            hostListenerB.notifyRetransmitted(withCapture(retransmitsB));
+
+            protocolListenerB.handleAckedTransmission(anyShort, withCapture(ackedB));
+            protocolListenerB.handleNotAckedTransmission(anyShort, withCapture(notAckedB));
+            protocolListenerB.handleOrderedTransmission(anyShort, withCapture(orderedB));
+            protocolListenerB.handleUnorderedTransmission(anyShort, withCapture(unorderedB));
         }};
 
         new NonStrictExpectations() {{
-            queueListenerAtoB.notifyDuplicate((Packet) any);
-            result = new Delegate<Packet>() {
+            queueListenerAtoB.notifyDuplicate((Packet) any); result = new Delegate<Packet>() {
                 @SuppressWarnings("unused")
                 void delegate(Packet dup) {
-                    Long value = (Long) dup.getData().getValue();
-                    dupedSentA.add(value);
-                    System.out.println("[A-dupedSent]: " + value);
+                    for (MultiKeyValue data: dup.getDatas()) {
+                        Long value = (Long) data.getValue();
+                        dupedSentA.add(value);
+                        System.out.println("[A-dupedSent]: " + value);
+                    }
                 }
             };
             queueListenerAtoB.notifyLoss((Packet) any);
             result = new Delegate<Packet>() {
                 @SuppressWarnings("unused")
                 void delegate(Packet loss) {
-                    Long value = (Long) loss.getData().getValue();
-                    lostSentA.add(value);
-                    System.out.println("[A-lostSent]: " + value);
+                    for (MultiKeyValue data: loss.getDatas()) {
+                        Long value = (Long) data.getValue();
+                        lostSentA.add(value);
+                        System.out.println("[A-lostSent]: " + value);
+                    }
                 }
             };
 
@@ -242,18 +141,22 @@ public class DelayedTest {
             result = new Delegate<Packet>() {
                 @SuppressWarnings("unused")
                 void delegate(Packet dup) {
-                    Long value = (Long) dup.getData().getValue();
-                    dupedSentB.add(value);
-                    System.out.println("[B-dupedSent]: " + value);
+                    for (MultiKeyValue data: dup.getDatas()) {
+                        Long value = (Long) data.getValue();
+                        dupedSentB.add(value);
+                        System.out.println("[B-dupedSent]: " + value);
+                    }
                 }
             };
             queueListenerBtoA.notifyLoss((Packet) any);
             result = new Delegate<Packet>() {
                 @SuppressWarnings("unused")
                 void delegate(Packet loss) {
-                    Long value = (Long) loss.getData().getValue();
-                    lostSentB.add(value);
-                    System.out.println("[B-lostSent]: " + value);
+                    for (MultiKeyValue data: loss.getDatas()) {
+                        Long value = (Long) data.getValue();
+                        lostSentB.add(value);
+                        System.out.println("[B-lostSent]: " + value);
+                    }
                 }
             };
         }};
@@ -264,7 +167,7 @@ public class DelayedTest {
 
         // play it for a longer interval
         executor.scheduleAtFixedRate(hostA, 0, executeInterval, TimeUnit.MILLISECONDS);
-        executor.scheduleAtFixedRate(hostB, executeInterval / 2, executeInterval, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(hostB, executeInterval/2, executeInterval, TimeUnit.MILLISECONDS);
         executor.schedule(new Runnable() {
             @Override
             public void run() {
@@ -305,16 +208,12 @@ public class DelayedTest {
 
         if (retransmit) {
             new Verifications() {{
-                protocolListenerA.handleNotAckedTransmission(any);
-                times = 0;
-                protocolListenerA.handleUnorderedTransmission(any);
-                times = 0;
+                protocolListenerA.handleNotAckedTransmission(anyShort, any); times = 0;
+                protocolListenerA.handleUnorderedTransmission(anyShort, any); times = 0;
             }};
             new Verifications() {{
-                protocolListenerB.handleNotAckedTransmission(any);
-                times = 0;
-                protocolListenerB.handleUnorderedTransmission(any);
-                times = 0;
+                protocolListenerB.handleNotAckedTransmission(anyShort, any); times = 0;
+                protocolListenerB.handleUnorderedTransmission(anyShort, any); times = 0;
             }};
         }
 
@@ -373,10 +272,8 @@ public class DelayedTest {
 //			assertTrue("ordered data contains successor of unorderedData", orderedB.contains(succ));
         }
 
-//		assertEquals("no empty packets sent", 0, emptySendA.value);
         assertEquals("all packets acked", 0, notAckedA.size());
         assertEquals("all packets ordered", 0, unorderedA.size());
-//		assertEquals("no empty packets sent", 0, emptySendB.value);
         assertEquals("all packets acked", 0, notAckedB.size());
         assertEquals("all packets ordered", 0, unorderedB.size());
 
@@ -390,21 +287,23 @@ public class DelayedTest {
             assertEquals("no duped packets", 0, dupedSentA.size());
         }
 
-        // the following addition of "magic constants" is due to the scheduling procedure of the very last messages
-        assertEquals("all messages from A must be received at B", sentA.size() - lostSentA.size() + dupedSentA.size(), receivedB.size());
-        assertEquals("all messages from A must be acked", sentA.size() - retransmitsA.size() - notAckedA.size() - 2, ackedA.size());
-        assertEquals("all messages from A must be ordered at B", sentA.size() - retransmitsA.size() - unorderedB.size(), orderedB.size());
 
         // the following addition of "magic constants" is due to the scheduling procedure of the very last messages
-        assertEquals("all messages from B must be received at A", sentB.size() - lostSentB.size() + dupedSentB.size() - 1, receivedA.size());
-        assertEquals("all messages from B must be acked", sentB.size() - retransmitsB.size() - notAckedB.size() - 3, ackedB.size());
-        assertEquals("all messages from B must be ordered at A", sentB.size() - retransmitsB.size() - unorderedA.size() - 1, orderedA.size());
+        assertEquals("all messages from A must be received at B", receivedB.size(),
+                sentA.size() - lostSentA.size() + dupedSentA.size());
+        assertEquals("all messages from A must be acked", ackedA.size(),
+                sentA.size() - retransmitsA.size() - notAckedA.size() - 1);
+        assertEquals("all messages from A must be ordered at B", orderedB.size(),
+                sentA.size() - retransmitsA.size() - unorderedB.size());
 
-    }
+        // the following addition of "magic constants" is due to the scheduling procedure of the very last messages
+        assertEquals("all messages from B must be received at A", receivedA.size(),
+                sentB.size() - lostSentB.size() + dupedSentB.size());
+        assertEquals("all messages from B must be acked", ackedB.size(),
+                sentB.size() - retransmitsB.size() - notAckedB.size() - 1);
+        assertEquals("all messages from B must be ordered at A", orderedA.size(),
+                sentB.size() - retransmitsB.size() - unorderedA.size());
 
-
-    private class IntWrapper {
-        public int value = 0;
     }
 
     private class LongDataGenerator implements TestHost.TestHostDataGenerator<Long> {

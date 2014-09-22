@@ -2,6 +2,7 @@ package net.ddns.mucaho.jnetrobust.controller;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
+import mockit.Deencapsulation;
 import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,6 +20,14 @@ import static org.junit.Assert.assertNotSame;
 public class PacketTest {
     static {
         System.setProperty("jmockit-mockParameters", "annotated");
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public final void testExceptions() {
+        Packet packet = new Packet();
+        for (int i = 0; i <= Packet.MAX_DATAS_PER_PACKET; ++i) {
+            packet.addLastData(new MultiKeyValue());
+        }
     }
 
     @SuppressWarnings("unchecked")
@@ -46,9 +55,9 @@ public class PacketTest {
             outPkg.setAck(ack);
             outPkg.setLastAcks(lastAcks);
             MultiKeyValue data = new MultiKeyValue();
-            data.setStaticReference(Short.MIN_VALUE);
-            data.addDynamicReference(Short.MIN_VALUE);
-            outPkg.setData(data);
+            Deencapsulation.invoke(data, "setStaticReference", Short.MIN_VALUE);
+            Deencapsulation.invoke(data, "addDynamicReference", Short.MIN_VALUE);
+            outPkg.addLastData(data);
             outPkg.writeExternal(out);
         }
         out.close();
@@ -63,7 +72,7 @@ public class PacketTest {
 
         assertEquals("ack mismatch", outPkg.getAck(), inPkg.getAck());
         assertEquals("lastAck mismatch", outPkg.getLastAcks(), inPkg.getLastAcks());
-        assertNotSame("datas are different objects", outPkg.getData(), inPkg.getData());
+        assertNotSame("datas are different objects", outPkg.getFirstData(), inPkg.getFirstData());
     }
 
 
@@ -85,21 +94,22 @@ public class PacketTest {
         Packet original = new Packet();
         original.setAck(ack);
         original.setLastAcks(lastAcks);
-        MultiKeyValue data = new MultiKeyValue();
-        data.setStaticReference(Short.MIN_VALUE);
-        data.addDynamicReference(Short.MIN_VALUE);
-        original.setData(data);
-        Packet clone = (Packet) original.clone();
 
+        MultiKeyValue data = new MultiKeyValue();
+        Deencapsulation.invoke(data, "setStaticReference", Short.MIN_VALUE);
+        Deencapsulation.invoke(data, "addDynamicReference", Short.MIN_VALUE);
+        original.addLastData(data);
+        Packet clone = (Packet) original.clone();
 
         assertEquals("ack mismatch", original.getAck(), clone.getAck());
         assertEquals("lastAck mismatch", original.getLastAcks(), clone.getLastAcks());
-
-        assertNotSame("datas are different objects", original.getData(), clone.getData());
+        assertNotSame("datas are different objects", original.getFirstData(), clone.getFirstData());
 
         original.setAck((short) -1);
         original.setLastAcks(-1);
+        original.addLastData(new MultiKeyValue());
         assertEquals("Cloned ack did not change", ack.shortValue(), clone.getAck());
-        assertEquals("Cloned ack did not change", lastAcks.intValue(), clone.getLastAcks());
+        assertEquals("Cloned lastAck did not change", lastAcks.intValue(), clone.getLastAcks());
+        assertEquals("Cloned datas size did not changte", 1, clone.getDatas().size());
     }
 }

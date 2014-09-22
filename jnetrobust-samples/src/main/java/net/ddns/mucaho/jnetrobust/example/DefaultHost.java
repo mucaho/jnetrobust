@@ -65,6 +65,7 @@ public class DefaultHost<T> {
         // setup virtual protocol
         this.protocol = new Protocol(new ProtocolListener() {
             @Override
+            @SuppressWarnings("unchecked")
             public void handleOrderedTransmission(short dataId, Object orderedData) {
                dataListener.handleOrderedData((T) orderedData);
             }

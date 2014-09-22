@@ -27,7 +27,7 @@ public class MultiKeyValue implements Timestamp, Freezable {
         this.value = value;
     }
 
-    protected MultiKeyValue() {
+    public MultiKeyValue() {
         super();
     }
 

@@ -1,6 +1,8 @@
 package net.ddns.mucaho.jnetrobust.control;
 
 import mockit.Deencapsulation;
+import net.ddns.mucaho.jnetrobust.ProtocolConfig;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
 import net.ddns.mucaho.jnetrobust.util.BitConstants;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 import org.junit.Before;
@@ -15,9 +17,11 @@ import static org.junit.Assert.assertTrue;
 public class SimpleMapControlTest extends MapControlTest {
     private final HashSet<Short> discardedKeys = new HashSet<Short>();
     private final HashSet<MultiKeyValue> discardedDatas = new HashSet<MultiKeyValue>();
-    int maxEntryOffset = (BitConstants.OFFSET + BitConstants.SIZE) * 2;
-    long maxEntryTimeout = -1L;
-    private MapControl control = new MapControl(maxEntryOffset, maxEntryTimeout) {
+
+    private final ProtocolConfig config = new ProtocolConfig(null);
+
+    private MapControl control = new MapControl(config.getPacketQueueLimit(), config.getPacketOffsetLimit(),
+            config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
         @Override
         protected void discardEntry(short key) {
             discardedKeys.add(key);
@@ -53,7 +57,7 @@ public class SimpleMapControlTest extends MapControlTest {
     }
 
     private final Result doInsertion(Decision decision) {
-        final Integer loopCount = Deencapsulation.getField(MultiKeyValue.class, "MAX_CAPACITY");
+        final Integer loopCount = config.getPacketQueueLimit();
         Random rand = new Random();
 
         Short key;

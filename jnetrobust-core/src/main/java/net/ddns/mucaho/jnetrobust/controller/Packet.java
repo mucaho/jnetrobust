@@ -127,7 +127,8 @@ public class Packet implements Freezable {
         Packet clone = new Packet();
         clone.ack = ack;
         clone.lastAcks = lastAcks;
-        clone.datas.addAll(datas);
+        for (MultiKeyValue data: datas)
+            clone.addLastData((MultiKeyValue) data.clone());
         return clone;
     }
 }

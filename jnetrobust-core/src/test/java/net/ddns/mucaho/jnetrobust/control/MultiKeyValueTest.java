@@ -60,15 +60,6 @@ public class MultiKeyValueTest {
         }
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
-    public final void testExceptions() {
-        MultiKeyValue data = new MultiKeyValue();
-        Integer max = Deencapsulation.getField(MultiKeyValue.class, "MAX_CAPACITY");
-        for (int i = 0; i <= max; ++i) {
-            data.addDynamicReference((short) i);
-        }
-    }
-
     static {
         System.setProperty("jmockit-mockParameters", "annotated");
     }

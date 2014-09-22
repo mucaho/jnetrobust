@@ -19,8 +19,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(JUnitParamsRunner.class)
 public class PendingMapControlTest extends MapControlTest {
-    protected PendingMapControl handler = new PendingMapControl(config.listener,
-            config.packetQueueLimit, config.packetQueueTimeout);
+
+    protected PendingMapControl handler = new PendingMapControl(config.listener, config.getPacketQueueLimit(),
+            config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
     public PendingMapControlTest() {
         initDataMap(handler);
