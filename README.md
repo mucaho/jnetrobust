@@ -47,20 +47,12 @@ Here is a minimal, complete example:
 **Code**
 ```java
 public class ChatMain {
-    private static InetSocketAddress ADDRESS_A;
-    private static InetSocketAddress ADDRESS_B;
+    public static void main (String[] args) throws Exception {
+        // host addresses
+        InetSocketAddress ADDRESS_A = new InetSocketAddress(InetAddress.getLocalHost(), 12345);
+        InetSocketAddress ADDRESS_B = new InetSocketAddress(InetAddress.getLocalHost(), 12346);
 
-    static {
-        try {
-            ADDRESS_A = new InetSocketAddress(InetAddress.getLocalHost(), 12345);
-            ADDRESS_B = new InetSocketAddress(InetAddress.getLocalHost(), 12346);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main (String[] args) throws IOException, InterruptedException, ClassNotFoundException {
-        // setup host A
+        // setup DefaultHost A
         DefaultHost<String> hostA = new DefaultHost<String>("A", ADDRESS_A, ADDRESS_B,
                 String.class, new DefaultHost.DataListener<String>() {
             @Override
@@ -69,7 +61,7 @@ public class ChatMain {
             public void handleNewestData(String newestData) {}
         });
 
-        // setup host B
+        // setup DefaultHost B
         DefaultHost<String> hostB = new DefaultHost<String>("B", ADDRESS_B, ADDRESS_A,
                 String.class, new DefaultHost.DataListener<String>() {
             @Override
