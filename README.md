@@ -38,7 +38,7 @@ It is a library and imposes no restrictions on how you use it:
 * you decide how you want to serialize the metadata-packaged data (e.g. with [default serialization](http://docs.oracle.com/javase/7/docs/api/java/io/Externalizable.html), [Kryo](https://github.com/EsotericSoftware/kryo), etc... )
 * you decide how you want to send the metadata-packaged data (e.g. plain [DatagramSocket](http://docs.oracle.com/javase/7/docs/api/java/net/DatagramSocket.html), newer NIO [DatagramChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/DatagramChannel.html) or even network frameworks like [Apache MINA](https://mina.apache.org/))
 
-[Talk is cheap. Show me the code.](http://lkml.org/lkml/2000/8/25/132)
+Talk is cheap. Show me the code. [C](http://lkml.org/lkml/2000/8/25/132)
 --------------------------------
 Here is a minimal, complete example to show how straightforward it is to use JNetRobust:
 * `DefaultHost` abstracts away much of the protocol's functionality with a default configuration, and sets-up a `DatagramChannel` for sending/receiving data, as well as a `Kryo` instance for serialization.
