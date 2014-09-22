@@ -6,9 +6,8 @@ import static net.ddns.mucaho.jnetrobust.util.BitConstants.OFFSET;
 
 public class PendingMapControl extends MapControl {
     public interface TransmissionSuccessListener {
-        public void handleAckedTransmission(short dataId, Object ackedData);
-
-        public void handleNotAckedTransmission(short dataId, Object unackedData);
+        public void handleAckedData(short dataId, Object ackedData);
+        public void handleNotAckedData(short dataId, Object unackedData);
     }
 
     private final TransmissionSuccessListener listener;
@@ -61,11 +60,11 @@ public class PendingMapControl extends MapControl {
 
     protected void notifyNotAcked(MultiKeyValue timedoutPkg) {
         if (timedoutPkg != null)
-            listener.handleNotAckedTransmission(timedoutPkg.getStaticReference(), timedoutPkg.getValue());
+            listener.handleNotAckedData(timedoutPkg.getStaticReference(), timedoutPkg.getValue());
     }
 
     protected void notifyAcked(MultiKeyValue ackedPkg, boolean directlyAcked) {
         if (ackedPkg != null)
-            listener.handleAckedTransmission(ackedPkg.getStaticReference(), ackedPkg.getValue());
+            listener.handleAckedData(ackedPkg.getStaticReference(), ackedPkg.getValue());
     }
 }

@@ -36,7 +36,6 @@ public class MultiKeyValueMap {
         }
     }
 
-    //FIXME no putting of dynamic reference when adding data with only static reference from receivedMapControl
     void put(Short ref, MultiKeyValue data) {
         if (data != null)
             data.addDynamicReference(ref);
@@ -73,6 +72,18 @@ public class MultiKeyValueMap {
 
         return data;
     }
+
+
+
+
+    MultiKeyValue putStatic(MultiKeyValue data) {
+        return dataMap.put(data.getStaticReference(), data);
+    }
+
+    MultiKeyValue removeStatic(Short ref) {
+        return dataMap.remove(ref);
+    }
+
 
 
     public int size() {

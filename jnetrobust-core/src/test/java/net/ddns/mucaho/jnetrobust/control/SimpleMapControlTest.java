@@ -57,7 +57,7 @@ public class SimpleMapControlTest extends MapControlTest {
     }
 
     private final Result doInsertion(Decision decision) {
-        final Integer loopCount = config.getPacketQueueLimit();
+        final Integer loopCount = config.getPacketQueueLimit() + 1;
         Random rand = new Random();
 
         Short key;

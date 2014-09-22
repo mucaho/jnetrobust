@@ -2,9 +2,8 @@ package net.ddns.mucaho.jnetrobust.control;
 
 public class ReceivedMapControl extends MapControl {
     public interface TransmissionOrderListener {
-        public void handleOrderedTransmission(short dataId, Object orderedData);
-
-        public void handleUnorderedTransmission(short dataId, Object unorderedData);
+        public void handleOrderedData(short dataId, Object orderedData);
+        public void handleUnorderedData(short dataId, Object unorderedData);
     }
 
     private final TransmissionOrderListener listener;
@@ -22,11 +21,12 @@ public class ReceivedMapControl extends MapControl {
     protected void createMap() {
         dataMap = new MultiKeyValueMap(comparator) {
             @Override
-            public void put(Short ref, MultiKeyValue data) {
-                if (comparator.compare(ref, nextDataId) >= 0) {
+            MultiKeyValue putStatic(MultiKeyValue data) {
+                if (comparator.compare(data.getStaticReference(), nextDataId) >= 0) {
 //					System.out.print("P["+ref+"]");
-                    super.put(ref, data);
+                    return super.putStatic(data);
                 }
+                return null;
             }
         };
     }
@@ -37,7 +37,7 @@ public class ReceivedMapControl extends MapControl {
         super.discardEntries();
 
         // add original to received map
-        dataMap.put(data.getStaticReference(), data);
+        dataMap.putStatic(data);
 
         // remove multiple from map -> least, consecutive, ordered elements
         removeTail();
@@ -47,7 +47,7 @@ public class ReceivedMapControl extends MapControl {
         Short key = dataMap.firstKey();
         while (key != null && key == nextDataId) {
 //			System.out.print("R["+key+"]");
-            notifyOrdered(dataMap.remove(key));
+            notifyOrdered(dataMap.removeStatic(key));
 
             key = dataMap.higherKey(key);
             nextDataId++;
@@ -58,17 +58,17 @@ public class ReceivedMapControl extends MapControl {
     protected void discardEntry(short key) {
         nextDataId = comparator.compare((short) (key + 1), nextDataId) > 0 ?
                 (short) (key + 1) : nextDataId;
-        notifyUnordered(dataMap.remove(key));
+        notifyUnordered(dataMap.removeStatic(key));
     }
 
     private void notifyUnordered(MultiKeyValue unorderedPkg) {
         if (unorderedPkg != null)
-            listener.handleUnorderedTransmission(unorderedPkg.getStaticReference(), unorderedPkg.getValue());
+            listener.handleUnorderedData(unorderedPkg.getStaticReference(), unorderedPkg.getValue());
     }
 
     private void notifyOrdered(MultiKeyValue orderedPackage) {
         if (orderedPackage != null)
-            listener.handleOrderedTransmission(orderedPackage.getStaticReference(), orderedPackage.getValue());
+            listener.handleOrderedData(orderedPackage.getStaticReference(), orderedPackage.getValue());
 
     }
 }

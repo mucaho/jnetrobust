@@ -17,30 +17,30 @@ public class DebugProtocolListener extends ProtocolListener {
     }
 
     @Override
-    public void handleOrderedTransmission(short dataId, Object orderedData) {
+    public void handleOrderedData(short dataId, Object orderedData) {
         logger.log(name, Logger.LoggingEvent.ORDERED.toString(), String.valueOf(dataId),
                 orderedData != null ? orderedData.toString() : "null");
-        delegate.handleOrderedTransmission(dataId, orderedData);
+        delegate.handleOrderedData(dataId, orderedData);
     }
 
     @Override
-    public void handleUnorderedTransmission(short dataId, Object unorderedData) {
+    public void handleUnorderedData(short dataId, Object unorderedData) {
         logger.log(name, Logger.LoggingEvent.UNORDERED.toString(), String.valueOf(dataId),
                 unorderedData != null ? unorderedData.toString() : "null");
-        delegate.handleUnorderedTransmission(dataId, unorderedData);
+        delegate.handleUnorderedData(dataId, unorderedData);
     }
 
     @Override
-    public void handleAckedTransmission(short dataId, Object ackedData) {
+    public void handleAckedData(short dataId, Object ackedData) {
         logger.log(name, Logger.LoggingEvent.ACKED.toString(), String.valueOf(dataId),
                 ackedData != null ? ackedData.toString() : "null");
-        delegate.handleAckedTransmission(dataId, ackedData);
+        delegate.handleAckedData(dataId, ackedData);
     }
 
     @Override
-    public void handleNotAckedTransmission(short dataId, Object unackedData) {
+    public void handleNotAckedData(short dataId, Object unackedData) {
         logger.log(name, Logger.LoggingEvent.NOTACKED.toString(), String.valueOf(dataId),
                 unackedData != null ? unackedData.toString() : "null");
-        delegate.handleNotAckedTransmission(dataId, unackedData);
+        delegate.handleNotAckedData(dataId, unackedData);
     }
 }

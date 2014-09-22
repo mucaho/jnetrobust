@@ -140,7 +140,7 @@ public class MultiKeyValueTest {
                 Deencapsulation.getField(original, "dynamicReferences"),
                 Deencapsulation.getField(clone, "dynamicReferences"));
 
-        original.setStaticReference(Short.MIN_VALUE);
+        Deencapsulation.setField(original, "staticReference", Short.MIN_VALUE);
         assertFalse("Cloned reference did not change", original.getStaticReference().equals(clone.getStaticReference()));
 
         original.addDynamicReference((short) -1);

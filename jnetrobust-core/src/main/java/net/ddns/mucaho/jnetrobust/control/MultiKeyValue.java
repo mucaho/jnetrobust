@@ -32,10 +32,6 @@ public class MultiKeyValue implements Timestamp, Freezable {
     }
 
 
-    void setStaticReference(Short ref) {
-        this.staticReference = ref;
-    }
-
     public Short getStaticReference() {
         return staticReference;
     }

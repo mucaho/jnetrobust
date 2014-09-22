@@ -55,7 +55,7 @@ public class PacketTest {
             outPkg.setAck(ack);
             outPkg.setLastAcks(lastAcks);
             MultiKeyValue data = new MultiKeyValue();
-            Deencapsulation.invoke(data, "setStaticReference", Short.MIN_VALUE);
+            Deencapsulation.setField(data, "staticReference", Short.MIN_VALUE);
             Deencapsulation.invoke(data, "addDynamicReference", Short.MIN_VALUE);
             outPkg.addLastData(data);
             outPkg.writeExternal(out);
@@ -96,7 +96,7 @@ public class PacketTest {
         original.setLastAcks(lastAcks);
 
         MultiKeyValue data = new MultiKeyValue();
-        Deencapsulation.invoke(data, "setStaticReference", Short.MIN_VALUE);
+        Deencapsulation.setField(data, "staticReference", Short.MIN_VALUE);
         Deencapsulation.invoke(data, "addDynamicReference", Short.MIN_VALUE);
         original.addLastData(data);
         Packet clone = (Packet) original.clone();

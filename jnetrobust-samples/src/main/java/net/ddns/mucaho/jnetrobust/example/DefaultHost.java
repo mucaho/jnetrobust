@@ -66,7 +66,7 @@ public class DefaultHost<T> {
         this.protocol = new Protocol(new ProtocolListener() {
             @Override
             @SuppressWarnings("unchecked")
-            public void handleOrderedTransmission(short dataId, Object orderedData) {
+            public void handleOrderedData(short dataId, Object orderedData) {
                dataListener.handleOrderedData((T) orderedData);
             }
         }, hostName, Logger.getConsoleLogger());

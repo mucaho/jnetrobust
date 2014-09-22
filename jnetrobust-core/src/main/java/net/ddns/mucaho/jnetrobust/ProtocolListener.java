@@ -6,18 +6,18 @@ import net.ddns.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderLi
 public class ProtocolListener implements TransmissionSuccessListener, TransmissionOrderListener {
 
     @Override
-    public void handleOrderedTransmission(short dataId, Object orderedData) {
+    public void handleOrderedData(short dataId, Object orderedData) {
     }
 
     @Override
-    public void handleUnorderedTransmission(short dataId, Object unorderedData) {
+    public void handleUnorderedData(short dataId, Object unorderedData) {
     }
 
     @Override
-    public void handleAckedTransmission(short dataId, Object ackedData) {
+    public void handleAckedData(short dataId, Object ackedData) {
     }
 
     @Override
-    public void handleNotAckedTransmission(short dataId, Object unackedData) {
+    public void handleNotAckedData(short dataId, Object unackedData) {
     }
 }

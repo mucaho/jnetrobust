@@ -26,29 +26,32 @@ public class ReceivedMapControlTest extends MapControlTest {
     }
 
     @BeforeClass
-    public static void clearMap() {
+    public static void initMap() {
         initDataMap(handler);
+        dataId = 0;
+        Deencapsulation.setField(handler, "nextDataId", (short) 1);
         dataMap.clear();
     }
+
 
     public Object[][] parametersForTestRemoveTail() {
         Object[][] out = (Object[][])
                 $($(
-                        $S(3), $($S), (short) 1
+                        (short) 3, $S, (short) 1
                 ), $(
-                        $S(2, 5), $($S), (short) 1
+                        (short) 2, $S, (short) 1
                 ), $(
-                        $S(1), $($S(1), $S(2, 5), $S(3)), (short) 4
+                        (short) 1, $S(1, 2, 3), (short) 4
                 ), $(
-                        $S(4), $($S(4)), (short) 6
+                        (short) 4, $S(4), (short) 5
                 ), $(
-                        $S(7, 9), $($S), (short) 6
+                        (short) 6, $S, (short) 5
                 ), $(
-                        $S(8, 10), $($S), (short) 6
+                        (short) 7, $S, (short) 5
                 ), $(
-                        $S(6, 11), $($S(6, 11), $S(7, 9), $S(8, 10)), (short) 12
+                        (short) 5, $S(5, 6, 7), (short) 8
                 ), $(
-                        $S(1, 2, 3), $($S), (short) 12
+                        (short) 1, $S, (short) 8
                 ));
 
         return out;
@@ -56,8 +59,7 @@ public class ReceivedMapControlTest extends MapControlTest {
 
     @Test
     @Parameters
-    public final void testRemoveTail(final Short[] inputs, final Short[][] outputs,
-                                     final Short nextRemoteSeq) {
+    public final void testRemoveTail(final Short input, final Short[] outputs, final Short nextRemoteSeq) {
 
         final LinkedHashSet<MultiKeyValue> orderedDatas = new LinkedHashSet<MultiKeyValue>();
         new MockUp<ReceivedMapControl>() {
@@ -69,23 +71,22 @@ public class ReceivedMapControlTest extends MapControlTest {
             }
         };
 
-        MultiKeyValue data = new MultiKeyValue(++dataId, inputs);
-        dataMap.put(data.getStaticReference(), data);
+        MultiKeyValue data = new MultiKeyValue(input, input);
+        dataMap.putStatic(data);
         Deencapsulation.invoke(handler, "removeTail");
 
 
-        Short actualNextRemoteSeq = (Short) Deencapsulation.getField(handler, "nextDataId");
+        Short actualNextRemoteSeq = Deencapsulation.getField(handler, "nextDataId");
         assertEquals("Next remote sequence must match", nextRemoteSeq, actualNextRemoteSeq);
 
-        if (outputs[0].length != 0)
+        if (outputs.length != 0)
             assertEquals("Ordered data count must match", outputs.length, orderedDatas.size());
         else
             assertEquals("No ordered data must have occured", 0, orderedDatas.size());
 
         int i = 0;
         for (MultiKeyValue orderedData : orderedDatas) {
-            assertArrayEquals("Order and contents of datas must match",
-                    outputs[i], (Short[]) orderedData.getValue());
+            assertEquals("Order and contents of datas must match", outputs[i], orderedData.getValue());
             i++;
         }
     }
@@ -105,17 +106,18 @@ public class ReceivedMapControlTest extends MapControlTest {
     @Test
     @Parameters
     public final void testPut(Short ref, boolean addedRef) {
+        dataId = 0;
         Deencapsulation.setField(handler, "nextDataId", (short) 1);
         dataMap.clear();
 
-        MultiKeyValue data = new MultiKeyValue(++dataId, ref);
-        Deencapsulation.invoke(data, "addDynamicReference", ref);
-
-        dataMap.put(ref, data);
+        MultiKeyValue data = new MultiKeyValue(ref, ref);
+        dataMap.putStatic(data);
         if (addedRef)
             assertEquals("Ref was added as expected", data, dataMap.get(ref));
         else
             assertNull("Ref was not added as expected", dataMap.get(ref));
+
+        dataMap.clear();
     }
 
 }

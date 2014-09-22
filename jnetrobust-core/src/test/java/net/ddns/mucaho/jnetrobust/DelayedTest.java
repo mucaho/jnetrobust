@@ -97,10 +97,10 @@ public class DelayedTest {
             hostListenerA.notifySent(withCapture(sentA));
             hostListenerA.notifyRetransmitted(withCapture(retransmitsA));
 
-            protocolListenerA.handleAckedTransmission(anyShort, withCapture(ackedA));
-            protocolListenerA.handleNotAckedTransmission(anyShort, withCapture(notAckedA));
-            protocolListenerA.handleOrderedTransmission(anyShort, withCapture(orderedA));
-            protocolListenerA.handleUnorderedTransmission(anyShort, withCapture(unorderedA));
+            protocolListenerA.handleAckedData(anyShort, withCapture(ackedA));
+            protocolListenerA.handleNotAckedData(anyShort, withCapture(notAckedA));
+            protocolListenerA.handleOrderedData(anyShort, withCapture(orderedA));
+            protocolListenerA.handleUnorderedData(anyShort, withCapture(unorderedA));
         }};
 
         new NonStrictExpectations() {{
@@ -108,10 +108,10 @@ public class DelayedTest {
             hostListenerB.notifySent(withCapture(sentB));
             hostListenerB.notifyRetransmitted(withCapture(retransmitsB));
 
-            protocolListenerB.handleAckedTransmission(anyShort, withCapture(ackedB));
-            protocolListenerB.handleNotAckedTransmission(anyShort, withCapture(notAckedB));
-            protocolListenerB.handleOrderedTransmission(anyShort, withCapture(orderedB));
-            protocolListenerB.handleUnorderedTransmission(anyShort, withCapture(unorderedB));
+            protocolListenerB.handleAckedData(anyShort, withCapture(ackedB));
+            protocolListenerB.handleNotAckedData(anyShort, withCapture(notAckedB));
+            protocolListenerB.handleOrderedData(anyShort, withCapture(orderedB));
+            protocolListenerB.handleUnorderedData(anyShort, withCapture(unorderedB));
         }};
 
         new NonStrictExpectations() {{
@@ -208,12 +208,12 @@ public class DelayedTest {
 
         if (retransmit) {
             new Verifications() {{
-                protocolListenerA.handleNotAckedTransmission(anyShort, any); times = 0;
-                protocolListenerA.handleUnorderedTransmission(anyShort, any); times = 0;
+                protocolListenerA.handleNotAckedData(anyShort, any); times = 0;
+                protocolListenerA.handleUnorderedData(anyShort, any); times = 0;
             }};
             new Verifications() {{
-                protocolListenerB.handleNotAckedTransmission(anyShort, any); times = 0;
-                protocolListenerB.handleUnorderedTransmission(anyShort, any); times = 0;
+                protocolListenerB.handleNotAckedData(anyShort, any); times = 0;
+                protocolListenerB.handleUnorderedData(anyShort, any); times = 0;
             }};
         }
 
