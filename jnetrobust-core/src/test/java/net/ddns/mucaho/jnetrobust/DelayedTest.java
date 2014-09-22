@@ -25,6 +25,8 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(JUnitParamsRunner.class)
 public class DelayedTest {
+    private final static boolean DEBUG = false;
+
     private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
 
     @Injectable
@@ -42,7 +44,7 @@ public class DelayedTest {
 
     public Object[][] parametersForTestDelayed() {
         Object[][] out = {{
-                150, 200, 0.10f, 0.10f, 16, 100, true
+                150, 200, 0.10f, 0.10f, 16, 10, true
         }};
 
         return out;
@@ -64,9 +66,11 @@ public class DelayedTest {
                 minDelay, maxDelay, lossChance, dupChance);
 
 
+        ProtocolListener listenerA = DEBUG ?
+                new DebugProtocolListener(protocolListenerA, "A", Logger.getConsoleLogger()) :
+                protocolListenerA;
         final TestHost<Long> hostA = new TestHost<Long>(hostListenerA, new LongDataGenerator(),
-                bToA, aToB, retransmit, new ProtocolConfig(new DebugProtocolListener(
-                protocolListenerA, "A", Logger.getConsoleLogger())), "A");
+                bToA, aToB, retransmit, new ProtocolConfig(listenerA), "A", DEBUG);
         final List<Long> sentA = new ArrayList<Long>();
         final List<Long> lostSentA = new ArrayList<Long>();
         final List<Long> dupedSentA = new ArrayList<Long>();
@@ -78,9 +82,11 @@ public class DelayedTest {
         final List<Long> retransmitsA = new ArrayList<Long>();
 
 
+        ProtocolListener listenerB = DEBUG ?
+                new DebugProtocolListener(protocolListenerB, "B", Logger.getConsoleLogger()) :
+                protocolListenerB;
         final TestHost<Long> hostB = new TestHost<Long>(hostListenerB, new LongDataGenerator(),
-                aToB, bToA, retransmit, new ProtocolConfig(new DebugProtocolListener(
-                protocolListenerB, "B", Logger.getConsoleLogger())), "B");
+                aToB, bToA, retransmit, new ProtocolConfig(listenerB), "B", DEBUG);
         final List<Long> sentB = new ArrayList<Long>();
         final List<Long> lostSentB = new ArrayList<Long>();
         final List<Long> dupedSentB = new ArrayList<Long>();
@@ -121,7 +127,8 @@ public class DelayedTest {
                     for (MultiKeyValue data: dup.getDatas()) {
                         Long value = (Long) data.getValue();
                         dupedSentA.add(value);
-                        System.out.println("[A-dupedSent]: " + value);
+                        if (DEBUG)
+                            System.out.println("[A-dupedSent]: " + value);
                     }
                 }
             };
@@ -132,7 +139,8 @@ public class DelayedTest {
                     for (MultiKeyValue data: loss.getDatas()) {
                         Long value = (Long) data.getValue();
                         lostSentA.add(value);
-                        System.out.println("[A-lostSent]: " + value);
+                        if (DEBUG)
+                            System.out.println("[A-lostSent]: " + value);
                     }
                 }
             };
@@ -144,7 +152,8 @@ public class DelayedTest {
                     for (MultiKeyValue data: dup.getDatas()) {
                         Long value = (Long) data.getValue();
                         dupedSentB.add(value);
-                        System.out.println("[B-dupedSent]: " + value);
+                        if (DEBUG)
+                            System.out.println("[B-dupedSent]: " + value);
                     }
                 }
             };
@@ -155,7 +164,8 @@ public class DelayedTest {
                     for (MultiKeyValue data: loss.getDatas()) {
                         Long value = (Long) data.getValue();
                         lostSentB.add(value);
-                        System.out.println("[B-lostSent]: " + value);
+                        if (DEBUG)
+                            System.out.println("[B-lostSent]: " + value);
                     }
                 }
             };

@@ -126,16 +126,9 @@ public class SynchronizationGUI extends JFrame implements KeyListener {
     }
 
     void sendGUI(Vector2D data) throws IOException {
-        boolean isNewData = false;
-
         JPanel hostObject = getHostObject();
-        if (hostObject.getX() != data.getX() || hostObject.getY() != data.getY())
-            isNewData = true;
-
         data.setX(hostObject.getX());
         data.setY(hostObject.getY());
-
-        //FIXME if (isNewData)
     }
 
     void updateGUI(final Vector2D data) {

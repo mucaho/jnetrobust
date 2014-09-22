@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 
 public class TestHost<T> implements Runnable {
+    private final boolean debug;
     public interface TestHostListener<T> {
         public void notifySent(T value);
         public void notifyRetransmitted(T value);
@@ -32,10 +33,14 @@ public class TestHost<T> implements Runnable {
 
     public TestHost(TestHostListener<T> hostListener, TestHostDataGenerator<T> dataGenerator,
                     UnreliableQueue<Packet> inQueue, UnreliableQueue<Packet> outQueue, boolean retransmit,
-                    ProtocolConfig config, String name) {
+                    ProtocolConfig config, String name, boolean debug) {
+        this.debug = debug;
         this.hostListener = hostListener;
         this.dataGenerator = dataGenerator;
-        this.protocol = new DebugController(config, name, Logger.getConsoleLogger());
+        if (debug)
+            this.protocol = new DebugController(config, name, Logger.getConsoleLogger());
+        else
+            this.protocol = new RetransmissionController(config);
         this.inQueue = inQueue;
         this.outQueue = outQueue;
         this.shouldRetransmit = retransmit;
@@ -110,9 +115,11 @@ public class TestHost<T> implements Runnable {
         if (shouldRetransmit)
             retransmit();
         send();
-        System.out.println("E(X):\t" + protocol.getSmoothedRTT() +
-                "\tVar(X):\t" + protocol.getRTTVariation());
-        System.out.println();
+        if (debug) {
+            System.out.println("E(X):\t" + protocol.getSmoothedRTT() +
+                    "\tVar(X):\t" + protocol.getRTTVariation());
+            System.out.println();
+        }
     }
 
 }
