@@ -105,8 +105,6 @@ public class ChatMain {
 ```
 
 **Console Output** (debug output omitted)
-```
-[B]: Hi!
-[B]: How you doing?
-[A]: Howdy! Fine, thanks.
-```
+> [B]: Hi!   
+> [B]: How you doing?   
+> [A]: Howdy! Fine, thanks.
