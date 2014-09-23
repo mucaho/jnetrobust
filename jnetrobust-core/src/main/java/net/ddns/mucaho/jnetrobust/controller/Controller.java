@@ -5,12 +5,12 @@ import net.ddns.mucaho.jnetrobust.control.*;
 import net.ddns.mucaho.jnetrobust.control.Metadata;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 
-public class Controller {
+public class Controller<T> {
     protected short dataId = Short.MIN_VALUE;
-    protected ReceivedMapControl receivedMapHandler;
+    protected ReceivedMapControl<T> receivedMapHandler;
 
     protected short localSeq = Short.MIN_VALUE;
-    protected PendingMapControl pendingMapHandler;
+    protected PendingMapControl<T> pendingMapHandler;
 
     protected short remoteSeq = Short.MIN_VALUE;
     protected ReceivedBitsControl receivedBitsHandler;
@@ -18,11 +18,11 @@ public class Controller {
     protected RTTControl rttHandler;
 
 
-    public Controller(ProtocolConfig config) {
-        pendingMapHandler = new PendingMapControl(config.listener, config.getPacketQueueLimit(),
+    public Controller(ProtocolConfig<T> config) {
+        pendingMapHandler = new PendingMapControl<T>(config.listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
             @Override
-            protected void notifyAcked(Metadata ackedMetadata, boolean directlyAcked) {
+            protected void notifyAcked(Metadata<T> ackedMetadata, boolean directlyAcked) {
                 if (ackedMetadata != null && directlyAcked)
                     rttHandler.updateRTT(ackedMetadata.getTime()); // update RTT
 
@@ -31,7 +31,7 @@ public class Controller {
         };
 
         receivedBitsHandler = new ReceivedBitsControl(SequenceComparator.instance);
-        receivedMapHandler = new ReceivedMapControl(dataId, config.listener, config.getPacketQueueLimit(),
+        receivedMapHandler = new ReceivedMapControl<T>(dataId, config.listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
         rttHandler = new RTTControl(config.getK(), config.getG());
@@ -39,8 +39,8 @@ public class Controller {
 
 
 
-    public Packet produce() {
-        Packet packet = new Packet();
+    public Packet<T> produce() {
+        Packet<T> packet = new Packet<T>();
         // adapt remote seq
         packet.setAck(remoteSeq);
         // Handle remote sequences
@@ -49,12 +49,12 @@ public class Controller {
         return packet;
     }
 
-    public Metadata produce(Object data) {
+    public Metadata<T> produce(T data) {
         // Handle data id: adapt unique data id
-        return new Metadata(++dataId, data);
+        return new Metadata<T>(++dataId, data);
     }
 
-    public void send(Packet packet, Metadata metadata) {
+    public void send(Packet<T> packet, Metadata<T> metadata) {
         // adapt local seq
         localSeq++;
 
@@ -70,20 +70,20 @@ public class Controller {
 
 
 
-    public void consume(Packet packet) {
+    public void consume(Packet<T> packet) {
         // Handle local sequences
         pendingMapHandler.removeFromPending(packet.getAck(), packet.getLastAcks());
     }
 
-    public Metadata receive(Packet packet) {
-        Metadata metadata = packet.removeFirstMetadata();
+    public Metadata<T> receive(Packet<T> packet) {
+        Metadata<T> metadata = packet.removeFirstMetadata();
         if (metadata != null)
             receive(metadata);
 
         return metadata;
     }
 
-    private void receive(Metadata metadata) {
+    private void receive(Metadata<T> metadata) {
         short newRemoteSeq = metadata.getLastDynamicReference();
 
         // Handle remote sequences
@@ -96,7 +96,7 @@ public class Controller {
             remoteSeq = newRemoteSeq;
     }
 
-    public Object consume(Metadata metadata) {
+    public T consume(Metadata<T> metadata) {
         return metadata.getData();
     }
 

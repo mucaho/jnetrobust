@@ -4,7 +4,7 @@ import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.TimeUnit;
 
-public class UnreliableQueue<T extends Freezable> {
+public class UnreliableQueue<T extends Freezable<T>> {
     public interface QueueListener<T> {
         public void notifyLoss(T elem);
 

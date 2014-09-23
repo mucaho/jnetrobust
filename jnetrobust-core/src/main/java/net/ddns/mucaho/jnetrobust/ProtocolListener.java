@@ -3,21 +3,21 @@ package net.ddns.mucaho.jnetrobust;
 import net.ddns.mucaho.jnetrobust.control.PendingMapControl.TransmissionSuccessListener;
 import net.ddns.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderListener;
 
-public class ProtocolListener implements TransmissionSuccessListener, TransmissionOrderListener {
+public class ProtocolListener<T> implements TransmissionSuccessListener<T>, TransmissionOrderListener<T> {
 
     @Override
-    public void handleOrderedData(short dataId, Object orderedData) {
+    public void handleOrderedData(short dataId, T orderedData) {
     }
 
     @Override
-    public void handleUnorderedData(short dataId, Object unorderedData) {
+    public void handleUnorderedData(short dataId, T unorderedData) {
     }
 
     @Override
-    public void handleAckedData(short dataId, Object ackedData) {
+    public void handleAckedData(short dataId, T ackedData) {
     }
 
     @Override
-    public void handleNotAckedData(short dataId, Object unackedData) {
+    public void handleNotAckedData(short dataId, T unackedData) {
     }
 }

@@ -5,30 +5,31 @@ import net.ddns.mucaho.jnetrobust.util.EntryIterator;
 
 import java.util.*;
 
-public class MetadataMap {
-    private final NavigableMap<Short, Metadata> metadataMap;
-    private final NavigableMap<Short, Metadata> metadataMapOut;
-    private final EntryIterator<Short, Metadata> entryIterator = new MultiRefDataMapIterator();
+public class MetadataMap<T> {
+    private final NavigableMap<Short, Metadata<T>> metadataMap;
+    private final NavigableMap<Short, Metadata<T>> metadataMapOut;
+    private final EntryIterator<Short, Metadata<T>> entryIterator;
 
 
     public MetadataMap(Comparator<Short> comparator) {
-        this.metadataMap = new TreeMap<Short, Metadata>(comparator);
+        this.metadataMap = new TreeMap<Short, Metadata<T>>(comparator);
         this.metadataMapOut = CollectionUtils.unmodifiableNavigableMap(metadataMap);
+        this.entryIterator = new MultiRefDataMapIterator<T>(this);
     }
 
-    public Metadata get(Short ref) {
+    public Metadata<T> get(Short ref) {
         return metadataMap.get(ref);
     }
 
-    public NavigableMap<Short, Metadata> getMap() {
+    public NavigableMap<Short, Metadata<T>> getMap() {
         return metadataMapOut;
     }
 
-    void putAll(Metadata metadata) {
+    void putAll(Metadata<T> metadata) {
         putAll(metadata.getDynamicReferences(), metadata);
     }
 
-    void putAll(NavigableSet<Short> refs, Metadata metadata) {
+    void putAll(NavigableSet<Short> refs, Metadata<T> metadata) {
         Short nextKey = refs.first();
         while (nextKey != null) {
             put(nextKey, metadata);
@@ -36,21 +37,21 @@ public class MetadataMap {
         }
     }
 
-    void put(Short ref, Metadata metadata) {
+    void put(Short ref, Metadata<T> metadata) {
         if (metadata != null)
             metadata.addDynamicReference(ref);
-        Metadata replacedMetadata = metadataMap.put(ref, metadata);
+        Metadata<T> replacedMetadata = metadataMap.put(ref, metadata);
 
         if (replacedMetadata != null && replacedMetadata != metadata)
             replacedMetadata.removeDynamicReference(ref);
     }
 
 
-    Metadata removeAll(Short ref) {
+    Metadata<T> removeAll(Short ref) {
         return removeAll(get(ref));
     }
 
-    Metadata removeAll(Metadata metadata) {
+    Metadata<T> removeAll(Metadata<T> metadata) {
         if (metadata != null)
             removeAll(metadata.getDynamicReferences());
 
@@ -65,8 +66,8 @@ public class MetadataMap {
         }
     }
 
-    Metadata remove(Short ref) {
-        Metadata metadata = metadataMap.remove(ref);
+    Metadata<T> remove(Short ref) {
+        Metadata<T> metadata = metadataMap.remove(ref);
         if (metadata != null)
             metadata.removeDynamicReference(ref);
 
@@ -76,11 +77,11 @@ public class MetadataMap {
 
 
 
-    Metadata putStatic(Metadata metadata) {
+    Metadata<T> putStatic(Metadata<T> metadata) {
         return metadataMap.put(metadata.getStaticReference(), metadata);
     }
 
-    Metadata removeStatic(Short ref) {
+    Metadata<T> removeStatic(Short ref) {
         return metadataMap.remove(ref);
     }
 
@@ -112,8 +113,8 @@ public class MetadataMap {
 
     void clear(boolean thourough) {
         if (thourough) {
-            Collection<Metadata> metadatas = metadataMap.values();
-            for (Metadata metadata : metadatas) {
+            Collection<Metadata<T>> metadatas = metadataMap.values();
+            for (Metadata<T> metadata : metadatas) {
                 metadata.clearDynamicReferences();
             }
         }
@@ -125,37 +126,42 @@ public class MetadataMap {
     }
 
 
-    public EntryIterator<Short, Metadata> getIterator() {
+    public EntryIterator<Short, Metadata<T>> getIterator() {
         return entryIterator;
     }
 
-    private class MultiRefDataMapIterator implements EntryIterator<Short, Metadata> {
+    private static class MultiRefDataMapIterator<T> implements EntryIterator<Short, Metadata<T>> {
+        private final MetadataMap<T> metadataMap;
+        public MultiRefDataMapIterator(MetadataMap<T> metadataMap) {
+            this.metadataMap = metadataMap;
+        }
+
         @Override
         public Short getHigherKey(Short currentKey) {
             if (currentKey == null) {
-                return firstKey();
+                return metadataMap.firstKey();
             } else {
-                return higherKey(currentKey);
+                return metadataMap.higherKey(currentKey);
             }
         }
 
         @Override
         public Short getLowerKey(Short currentKey) {
             if (currentKey == null) {
-                return lastKey();
+                return metadataMap.lastKey();
             } else {
-                return lowerKey(currentKey);
+                return metadataMap.lowerKey(currentKey);
             }
         }
 
         @Override
-        public Metadata getValue(Short currentKey) {
-            return get(currentKey);
+        public Metadata<T> getValue(Short currentKey) {
+            return metadataMap.get(currentKey);
         }
 
         @Override
-        public Metadata removeValue(Short currentKey) {
-            return removeAll(currentKey);
+        public Metadata<T> removeValue(Short currentKey) {
+            return metadataMap.removeAll(currentKey);
         }
     }
 

@@ -24,13 +24,12 @@ public class PacketTest {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public final void testExceptions() {
-        Packet packet = new Packet();
+        Packet<Object> packet = new Packet<Object>();
         for (int i = 0; i <= Packet.MAX_DATAS_PER_PACKET; ++i) {
-            packet.addLastMetadata(new Metadata());
+            packet.addLastMetadata(new Metadata<Object>());
         }
     }
 
-    @SuppressWarnings("unchecked")
     public Object[][] parametersForTestSerialization() {
         Object[][] out = (Object[][])
                 $($(
@@ -46,15 +45,15 @@ public class PacketTest {
     @Test
     @Parameters
     public final void testSerialization(Short ack, Integer lastAcks) throws Exception {
-        Packet inPacket, outPacket;
+        Packet<Object> inPacket, outPacket;
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(outStream);
         {
-            outPacket = new Packet();
+            outPacket = new Packet<Object>();
             outPacket.setAck(ack);
             outPacket.setLastAcks(lastAcks);
-            Metadata metadata = new Metadata();
+            Metadata<Object> metadata = new Metadata<Object>();
             Deencapsulation.setField(metadata, "staticReference", Short.MIN_VALUE);
             Deencapsulation.invoke(metadata, "addDynamicReference", Short.MIN_VALUE);
             outPacket.addLastMetadata(metadata);
@@ -65,7 +64,7 @@ public class PacketTest {
         ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
         ObjectInputStream in = new ObjectInputStream(inStream);
         {
-            inPacket = new Packet();
+            inPacket = new Packet<Object>();
             inPacket.readExternal(in);
         }
         in.close();
@@ -76,7 +75,6 @@ public class PacketTest {
     }
 
 
-    @SuppressWarnings("unchecked")
     public Object[][] parametersForTestClone() {
         Object[][] out = (Object[][])
                 $($(
@@ -90,16 +88,17 @@ public class PacketTest {
 
     @Test
     @Parameters
+    @SuppressWarnings("unchecked")
     public final void testClone(Short ack, Integer lastAcks) throws Exception {
-        Packet original = new Packet();
+        Packet<Object> original = new Packet<Object>();
         original.setAck(ack);
         original.setLastAcks(lastAcks);
 
-        Metadata metadata = new Metadata();
+        Metadata<Object> metadata = new Metadata<Object>();
         Deencapsulation.setField(metadata, "staticReference", Short.MIN_VALUE);
         Deencapsulation.invoke(metadata, "addDynamicReference", Short.MIN_VALUE);
         original.addLastMetadata(metadata);
-        Packet clone = (Packet) original.clone();
+        Packet<Object> clone = (Packet<Object>) original.clone();
 
         assertEquals("ack mismatch", original.getAck(), clone.getAck());
         assertEquals("lastAck mismatch", original.getLastAcks(), clone.getLastAcks());
@@ -107,7 +106,7 @@ public class PacketTest {
 
         original.setAck((short) -1);
         original.setLastAcks(-1);
-        original.addLastMetadata(new Metadata());
+        original.addLastMetadata(new Metadata<Object>());
         assertEquals("Cloned ack did not change", ack.shortValue(), clone.getAck());
         assertEquals("Cloned lastAck did not change", lastAcks.intValue(), clone.getLastAcks());
         assertEquals("Cloned datas size did not changte", 1, clone.getMetadatas().size());

@@ -25,21 +25,21 @@ public class TestHost<T> implements Runnable {
 
     private final TestHostListener<T> hostListener;
     private final TestHostDataGenerator<T> dataGenerator;
-    private final UnreliableQueue<Packet> inQueue;
-    private final UnreliableQueue<Packet> outQueue;
-    private final RetransmissionController protocol;
+    private final UnreliableQueue<Packet<T>> inQueue;
+    private final UnreliableQueue<Packet<T>> outQueue;
+    private final RetransmissionController<T> protocol;
     private final boolean shouldRetransmit;
 
     public TestHost(TestHostListener<T> hostListener, TestHostDataGenerator<T> dataGenerator,
-                    UnreliableQueue<Packet> inQueue, UnreliableQueue<Packet> outQueue, boolean retransmit,
-                    ProtocolConfig config, String name, boolean debug) {
+                    UnreliableQueue<Packet<T>> inQueue, UnreliableQueue<Packet<T>> outQueue, boolean retransmit,
+                    ProtocolConfig<T> config, String name, boolean debug) {
         this.debug = debug;
         this.hostListener = hostListener;
         this.dataGenerator = dataGenerator;
         if (debug)
-            this.protocol = new DebugController(config, name, Logger.getConsoleLogger());
+            this.protocol = new DebugController<T>(config, name, Logger.getConsoleLogger());
         else
-            this.protocol = new RetransmissionController(config);
+            this.protocol = new RetransmissionController<T>(config);
         this.inQueue = inQueue;
         this.outQueue = outQueue;
         this.shouldRetransmit = retransmit;
@@ -47,27 +47,26 @@ public class TestHost<T> implements Runnable {
 
 
     public void receive() {
-        Packet packet;
+        Packet<T> packet;
         while ((packet = inQueue.poll()) != null) {
             receive(packet);
         }
     }
 
-    protected void receive(Packet packet) {
+    protected void receive(Packet<T> packet) {
         Queue<T> values = consume(packet);
         for (T value: values)
             hostListener.notifyReceived(value);
     }
 
-    @SuppressWarnings("unchecked")
-    protected Queue<T> consume(Packet packet) {
+    protected Queue<T> consume(Packet<T> packet) {
         //System.out.println("YYY"+packet.data.getDynamicReferences().size());
         Queue<T> outQueue = new LinkedList<T>();
 
         protocol.consume(packet);
-        Metadata metadata = protocol.receive(packet);
+        Metadata<T> metadata = protocol.receive(packet);
         while (metadata != null) {
-            outQueue.add((T) protocol.consume(metadata));
+            outQueue.add(protocol.consume(metadata));
             metadata = protocol.receive(packet);
         }
 
@@ -79,30 +78,28 @@ public class TestHost<T> implements Runnable {
         send(produce());
     }
 
-    protected Packet produce() {
-        Packet packet = protocol.produce();
+    protected Packet<T> produce() {
+        Packet<T> packet = protocol.produce();
         T data = dataGenerator.generateData();
         protocol.send(packet, protocol.produce(data));
         return packet;
     }
 
-    @SuppressWarnings("unchecked")
-    protected void send(Packet packet) {
+    protected void send(Packet<T> packet) {
         //System.out.println("WWW"+packet.data.getDynamicReferences().size());
         outQueue.offer(packet);
-        for (Metadata metadata: packet.getMetadatas())
-            hostListener.notifySent((T) metadata.getData());
+        for (Metadata<T> metadata: packet.getMetadatas())
+            hostListener.notifySent(metadata.getData());
     }
 
-    @SuppressWarnings("unchecked")
     public void retransmit() {
         if (!shouldRetransmit)
             return;
 
-        Packet packet = protocol.produce();
-        Collection<? extends Metadata> retransmits = protocol.retransmit();
-        for (Metadata retransmit : retransmits) {
-            hostListener.notifyRetransmitted((T) retransmit.getData());
+        Packet<T> packet = protocol.produce();
+        Collection<Metadata<T>> retransmits = protocol.retransmit();
+        for (Metadata<T> retransmit : retransmits) {
+            hostListener.notifyRetransmitted(retransmit.getData());
             protocol.send(packet, retransmit);
         }
         send(packet);

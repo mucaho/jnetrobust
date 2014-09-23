@@ -11,7 +11,7 @@ import java.io.ObjectOutput;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
-public class Metadata implements Timestamp, Freezable {
+public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     private transient long lastTouched = System.currentTimeMillis();
 
     private Short staticReference;
@@ -20,9 +20,9 @@ public class Metadata implements Timestamp, Freezable {
     private transient NavigableSet<Short> dynamicReferencesOut =
             CollectionUtils.unmodifiableNavigableSet(dynamicReferences);
 
-    private Object value;
+    private T value;
 
-    public Metadata(Short staticReference, Object value) {
+    public Metadata(Short staticReference, T value) {
         this.staticReference = staticReference;
         this.value = value;
     }
@@ -61,7 +61,7 @@ public class Metadata implements Timestamp, Freezable {
     }
 
 
-    public Object getData() {
+    public T getData() {
         return value;
     }
 
@@ -84,7 +84,7 @@ public class Metadata implements Timestamp, Freezable {
         for (Short reference : dynamicReferences)
             out += reference + " ";
         out += "]";
-        out += ": " + this.value.toString();
+        out += ": " + (value != null ? value.toString() : "null");
 
         return out;
     }
@@ -97,7 +97,7 @@ public class Metadata implements Timestamp, Freezable {
      * @param out           the {@link java.io.ObjectOutput} to write to
      * @throws IOException if an error occurs
      */
-    public static void writeExternalStatic(Metadata metadata, ObjectOutput out) throws IOException {
+    public static <T> void writeExternalStatic(Metadata<T> metadata, ObjectOutput out) throws IOException {
         metadata.writeExternal(out);
     }
 
@@ -110,8 +110,8 @@ public class Metadata implements Timestamp, Freezable {
      * @throws IOException            if an error occurs
      * @throws ClassNotFoundException if an error occurs.
      */
-    public static Metadata readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
-        Metadata metadata = new Metadata();
+    public static <T> Metadata<T> readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
+        Metadata<T> metadata = new Metadata<T>();
         metadata.readExternal(in);
         return metadata;
     }
@@ -124,15 +124,16 @@ public class Metadata implements Timestamp, Freezable {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         staticReference = in.readShort();
         dynamicReferences.add(in.readShort());
-        value = in.readObject();
+        value = (T) in.readObject();
     }
 
     @Override
-    public Object clone() {
-        Metadata clone = new Metadata();
+    public Metadata<T> clone() {
+        Metadata<T> clone = new Metadata<T>();
         clone.value = value;
         clone.staticReference = new Short(staticReference);
         clone.dynamicReferences.addAll(dynamicReferences);

@@ -1,15 +1,15 @@
 package net.ddns.mucaho.jnetrobust.control;
 
-public class ReceivedMapControl extends MapControl {
-    public interface TransmissionOrderListener {
-        public void handleOrderedData(short dataId, Object orderedData);
-        public void handleUnorderedData(short dataId, Object unorderedData);
+public class ReceivedMapControl<T> extends MapControl<T> {
+    public interface TransmissionOrderListener<T> {
+        public void handleOrderedData(short dataId, T orderedData);
+        public void handleUnorderedData(short dataId, T unorderedData);
     }
 
-    private final TransmissionOrderListener listener;
+    private final TransmissionOrderListener<T> listener;
     private short nextDataId;
 
-    public ReceivedMapControl(short dataId, TransmissionOrderListener listener, int maxEntries, int maxEntryOffset,
+    public ReceivedMapControl(short dataId, TransmissionOrderListener<T> listener, int maxEntries, int maxEntryOffset,
                               int maxEntryOccurrences, long maxEntryTimeout) {
         super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
         this.listener = listener;
@@ -19,9 +19,9 @@ public class ReceivedMapControl extends MapControl {
 
     @Override
     protected void createMap() {
-        dataMap = new MetadataMap(comparator) {
+        dataMap = new MetadataMap<T>(comparator) {
             @Override
-            Metadata putStatic(Metadata metadata) {
+            Metadata<T> putStatic(Metadata<T> metadata) {
                 if (comparator.compare(metadata.getStaticReference(), nextDataId) >= 0) {
 //					System.out.print("P["+ref+"]");
                     return super.putStatic(metadata);
@@ -32,7 +32,7 @@ public class ReceivedMapControl extends MapControl {
     }
 
 
-    public void addToReceived(Metadata metadata) {
+    public void addToReceived(Metadata<T> metadata) {
         // discard old entries in received map
         super.discardEntries();
 
@@ -61,12 +61,12 @@ public class ReceivedMapControl extends MapControl {
         notifyUnordered(dataMap.removeStatic(key));
     }
 
-    private void notifyUnordered(Metadata unorderedMetadata) {
+    private void notifyUnordered(Metadata<T> unorderedMetadata) {
         if (unorderedMetadata != null)
             listener.handleUnorderedData(unorderedMetadata.getStaticReference(), unorderedMetadata.getData());
     }
 
-    private void notifyOrdered(Metadata orderedMetadata) {
+    private void notifyOrdered(Metadata<T> orderedMetadata) {
         if (orderedMetadata != null)
             listener.handleOrderedData(orderedMetadata.getStaticReference(), orderedMetadata.getData());
 

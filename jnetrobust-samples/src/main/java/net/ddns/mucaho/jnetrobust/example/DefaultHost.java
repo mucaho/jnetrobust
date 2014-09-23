@@ -29,7 +29,7 @@ public class DefaultHost<T> {
     }
 
     // protocol fields
-    private final Protocol protocol;
+    private final Protocol<T> protocol;
     private final DataListener<T> listener;
 
     // serialization fields
@@ -63,16 +63,16 @@ public class DefaultHost<T> {
         objectOutput = new KryoObjectOutput(kryo, bufferOutput);
 
         // setup virtual protocol
-        ProtocolListener protocolListener = new ProtocolListener() {
-            @Override @SuppressWarnings("unchecked")
-            public void handleOrderedData(short dataId, Object orderedData) {
-                dataListener.handleOrderedData((T) orderedData);
+        ProtocolListener<T> protocolListener = new ProtocolListener<T>() {
+            @Override
+            public void handleOrderedData(short dataId, T orderedData) {
+                dataListener.handleOrderedData(orderedData);
             }
         };
         if (hostName != null)
-            this.protocol = new Protocol(protocolListener, hostName, Logger.getConsoleLogger());
+            this.protocol = new Protocol<T>(protocolListener, hostName, Logger.getConsoleLogger());
         else
-            this.protocol = new Protocol(protocolListener);
+            this.protocol = new Protocol<T>(protocolListener);
     }
 
     public void send() throws IOException {
@@ -91,7 +91,7 @@ public class DefaultHost<T> {
     private Queue<T> outQueue = new LinkedList<T>();
     private Short newestId = null;
     private T newestData = null;
-    @SuppressWarnings("unchecked")
+
     public Queue<T> receive() throws IOException, ClassNotFoundException {
         outQueue.clear();
 
@@ -101,13 +101,13 @@ public class DefaultHost<T> {
             buffer.flip();
             bufferInput.setBuffer(buffer);
 
-            NavigableMap<Short, Object> receivedDatas = protocol.receive(objectInput);
-            for (Object receivedData: receivedDatas.values())
-                outQueue.add((T) receivedData);
+            NavigableMap<Short, T> receivedDatas = protocol.receive(objectInput);
+            for (T receivedData: receivedDatas.values())
+                outQueue.add(receivedData);
             if (!receivedDatas.isEmpty() &&
                     (newestId == null || protocol.compare(receivedDatas.lastKey(), newestId) > 0)) {
                 newestId = receivedDatas.lastKey();
-                newestData = (T) receivedDatas.get(newestId);
+                newestData = receivedDatas.get(newestId);
             }
 
             buffer.clear();

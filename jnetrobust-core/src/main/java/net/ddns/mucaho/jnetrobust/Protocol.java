@@ -12,24 +12,24 @@ import java.io.ObjectOutput;
 import java.util.*;
 
 
-public class Protocol implements Comparator<Short> {
-    private final RetransmissionController controller;
+public class Protocol<T> implements Comparator<Short> {
+    private final RetransmissionController<T> controller;
 
-    public Protocol(ProtocolListener protocolListener) {
-        this(new ProtocolConfig(protocolListener));
+    public Protocol(ProtocolListener<T> protocolListener) {
+        this(new ProtocolConfig<T>(protocolListener));
     }
-    public Protocol(ProtocolConfig config) {
+    public Protocol(ProtocolConfig<T> config) {
         this(config, null, null);
     }
-    public Protocol(ProtocolListener protocolListener, String name, Logger logger) {
-        this(new ProtocolConfig(protocolListener), name, logger);
+    public Protocol(ProtocolListener<T> protocolListener, String name, Logger logger) {
+        this(new ProtocolConfig<T>(protocolListener), name, logger);
     }
-    public Protocol(ProtocolConfig config, String name, Logger logger) {
+    public Protocol(ProtocolConfig<T> config, String name, Logger logger) {
         if (name != null && logger != null) {
-            ProtocolListener debugListener = new DebugProtocolListener(config.listener, name, logger);
-            this.controller = new DebugController(new ProtocolConfig(debugListener, config), name, logger);
+            ProtocolListener<T> debugListener = new DebugProtocolListener<T>(config.listener, name, logger);
+            this.controller = new DebugController<T>(new ProtocolConfig<T>(debugListener, config), name, logger);
         } else {
-            this.controller = new RetransmissionController(config);
+            this.controller = new RetransmissionController<T>(config);
         }
 
     }
@@ -37,16 +37,16 @@ public class Protocol implements Comparator<Short> {
 
 
 
-    private final PacketEntry sentPacketOut = new PacketEntry();
+    private final PacketEntry<T> sentPacketOut = new PacketEntry<T>();
 
-    public synchronized Map.Entry<Short, Packet> send() {
+    public synchronized Map.Entry<Short, Packet<T>> send() {
         return send(null);
     }
 
-    public synchronized Map.Entry<Short, Packet> send(Object data) {
-        Packet packet = controller.produce();
-        Collection<? extends Metadata> retransmits = controller.retransmit();
-        for (Metadata retransmit : retransmits) {
+    public synchronized Map.Entry<Short, Packet<T>> send(T data) {
+        Packet<T> packet = controller.produce();
+        Collection<Metadata<T>> retransmits = controller.retransmit();
+        for (Metadata<T> retransmit : retransmits) {
             controller.send(packet, retransmit);
         }
         if (data != null)
@@ -57,22 +57,22 @@ public class Protocol implements Comparator<Short> {
         return sentPacketOut;
     }
 
-    public synchronized Map.Entry<Short, Packet> send(Object data, ObjectOutput objectOutput) throws IOException {
-        Map.Entry<Short, Packet> packetEntry = send(data);
-        Packet.writeExternalStatic(packetEntry.getValue(), objectOutput);
+    public synchronized Map.Entry<Short, Packet<T>> send(T data, ObjectOutput objectOutput) throws IOException {
+        Map.Entry<Short, Packet<T>> packetEntry = send(data);
+        Packet.<T>writeExternalStatic(packetEntry.getValue(), objectOutput);
         return packetEntry;
     }
 
 
 
-    private final NavigableMap<Short, Object> receivedDatas = new TreeMap<Short, Object>(SequenceComparator.instance);
-    private final NavigableMap<Short, Object> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
+    private final NavigableMap<Short, T> receivedDatas = new TreeMap<Short, T>(SequenceComparator.instance);
+    private final NavigableMap<Short, T> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
 
-    public synchronized NavigableMap<Short, Object> receive(Packet packet) {
+    public synchronized NavigableMap<Short, T> receive(Packet<T> packet) {
         receivedDatas.clear();
 
         controller.consume(packet);
-        Metadata metadata = controller.receive(packet);
+        Metadata<T> metadata = controller.receive(packet);
         while (metadata != null) {
             receivedDatas.put(metadata.getStaticReference(), controller.consume(metadata));
             metadata = controller.receive(packet);
@@ -82,8 +82,8 @@ public class Protocol implements Comparator<Short> {
     }
 
 
-    public synchronized NavigableMap<Short, Object> receive(ObjectInput objectInput) throws IOException, ClassNotFoundException {
-        Packet packet = Packet.readExternalStatic(objectInput);
+    public synchronized NavigableMap<Short, T> receive(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        Packet<T> packet = Packet.<T>readExternalStatic(objectInput);
         return receive(packet);
     }
 
@@ -103,9 +103,9 @@ public class Protocol implements Comparator<Short> {
         return controller.getRTTVariation();
     }
 
-    private static class PacketEntry implements Map.Entry<Short, Packet> {
+    private static class PacketEntry<T> implements Map.Entry<Short, Packet<T>> {
         private Short id;
-        private Packet packet;
+        private Packet<T> packet;
 
         public PacketEntry() {
         }
@@ -117,12 +117,12 @@ public class Protocol implements Comparator<Short> {
         }
 
         @Override
-        public Packet getValue() {
+        public Packet<T> getValue() {
             return packet;
         }
 
         @Override
-        public Packet setValue(Packet packet) {
+        public Packet<T> setValue(Packet<T> packet) {
             throw new UnsupportedOperationException();
         }
     }

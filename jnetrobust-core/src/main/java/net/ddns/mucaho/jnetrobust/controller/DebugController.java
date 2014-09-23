@@ -6,20 +6,20 @@ import net.ddns.mucaho.jnetrobust.Logger;
 
 import java.util.Collection;
 
-public class DebugController extends RetransmissionController {
+public class DebugController<T> extends RetransmissionController<T> {
     private final String name;
     private final Logger logger;
 
-    public DebugController(ProtocolConfig config, String name, Logger logger) {
+    public DebugController(ProtocolConfig<T> config, String name, Logger logger) {
         super(config);
         this.name = name;
         this.logger = logger;
     }
 
     @Override
-    public Metadata produce(Object data) {
-        Metadata out = super.produce(data);
-        Object value = out.getData();
+    public Metadata<T> produce(T data) {
+        Metadata<T> out = super.produce(data);
+        T value = out.getData();
 
         logger.log(name, Logger.LoggingEvent.SEND.toString(), String.valueOf(out.getStaticReference()),
                 value != null ? value.toString() : "null");
@@ -28,9 +28,8 @@ public class DebugController extends RetransmissionController {
     }
 
     @Override
-    public Object consume(Metadata metadata) {
-        Object value = metadata.getData();
-
+    public T consume(Metadata<T> metadata) {
+        T value = metadata.getData();
         logger.log(name, Logger.LoggingEvent.RECEIVE.toString(), String.valueOf(metadata.getStaticReference()),
                 value != null ? value.toString() : "null");
 
@@ -38,9 +37,9 @@ public class DebugController extends RetransmissionController {
     }
 
     @Override
-    public Collection<? extends Metadata> retransmit() {
-        Collection<? extends Metadata> retransmits = super.retransmit();
-        for (Metadata retransmit: retransmits)
+    public Collection<Metadata<T>> retransmit() {
+        Collection<Metadata<T>> retransmits = super.retransmit();
+        for (Metadata<T> retransmit: retransmits)
             logger.log(name, Logger.LoggingEvent.RETRANSMIT.toString(), String.valueOf(retransmit.getStaticReference()),
                     retransmit.getData() != null ? retransmit.getData().toString() : "null");
 

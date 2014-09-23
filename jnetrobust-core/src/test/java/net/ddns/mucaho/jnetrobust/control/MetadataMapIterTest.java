@@ -28,11 +28,11 @@ public class MetadataMapIterTest {
     @Test
     @Parameters
     public final void testIterator(Short[][] refGroups) {
-        MetadataMap dataMap = new MetadataMap(SequenceComparator.instance);
-        EntryIterator<Short, Metadata> iter = dataMap.getIterator();
+        MetadataMap<Object> dataMap = new MetadataMap<Object>(SequenceComparator.instance);
+        EntryIterator<Short, Metadata<Object>> iter = dataMap.getIterator();
         List<Short> refs = new ArrayList<Short>();
-        HashSet<Metadata> metadatas = new HashSet<Metadata>();
-        Metadata metadata;
+        HashSet<Metadata<Object>> metadatas = new HashSet<Metadata<Object>>();
+        Metadata<Object> metadata;
         int expectedCount, actualCount;
         Short key;
 
@@ -40,7 +40,7 @@ public class MetadataMapIterTest {
         expectedCount = 0;
         for (final Short[] refGroup : refGroups) {
             expectedCount += refGroup.length;
-            metadata = new Metadata(++dataId, refGroup);
+            metadata = new Metadata<Object>(++dataId, refGroup);
             dataMap.putAll(new TreeSet<Short>(Arrays.asList(refGroup)), metadata);
             metadatas.add(metadata);
             refs.addAll(Arrays.asList(refGroup));

@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 @RunWith(JUnitParamsRunner.class)
 public class MetadataTest {
     public Object[][] parametersForTestReferences() {
-        Metadata metadata = new Metadata();
+        Metadata<Object> metadata = new Metadata<Object>();
         Object[][] out = (Object[][])
                 $($(
                         metadata, true, $S(2), $S(2)
@@ -42,7 +42,7 @@ public class MetadataTest {
     @Test
     @Parameters
     @Ignore //FIXME unignore this and figure out why Maven test is not succeeding
-    public final void testReferences(Metadata metadata, boolean shouldAdd,
+    public final void testReferences(Metadata<Object> metadata, boolean shouldAdd,
                                      Short[] inRefs, Short[] expectedRefs) {
         if (shouldAdd) {
             for (short ref : inRefs)
@@ -80,12 +80,12 @@ public class MetadataTest {
     @Test
     @Parameters
     public final void testSerialization(Short[] refs, String value) throws Exception {
-        Metadata inMetadata, outMetadata;
+        Metadata<Object> inMetadata, outMetadata;
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(outStream);
         {
-            outMetadata = new Metadata(refs[0], value);
+            outMetadata = new Metadata<Object>(refs[0], value);
             for (Short ref : refs)
                 outMetadata.addDynamicReference(ref);
             outMetadata.writeExternal(out);
@@ -95,7 +95,7 @@ public class MetadataTest {
         ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
         ObjectInputStream in = new ObjectInputStream(inStream);
         {
-            inMetadata = new Metadata();
+            inMetadata = new Metadata<Object>();
             inMetadata.readExternal(in);
         }
         in.close();
@@ -120,11 +120,12 @@ public class MetadataTest {
 
     @Test
     @Parameters
+    @SuppressWarnings("unchecked")
     public final void testClone(Short[] refs, String value) throws Exception {
-        Metadata original = new Metadata(refs[0], value);
+        Metadata<Object> original = new Metadata<Object>(refs[0], value);
         for (Short ref : refs)
             original.addDynamicReference(ref);
-        Metadata clone = (Metadata) original.clone();
+        Metadata<Object> clone = (Metadata<Object>) original.clone();
 
         assertEquals("Value mismatch.", original.getData(), clone.getData());
         assertEquals("Value mismatch", original.getStaticReference(), clone.getStaticReference());

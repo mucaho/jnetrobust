@@ -24,8 +24,8 @@ public class MetadataMapOpTest {
     }
 
     @Mocked
-    private Metadata metadata;
-    private final static MetadataMap dataMap = new MetadataMap(SequenceComparator.instance);
+    private Metadata<Object> metadata;
+    private final static MetadataMap<Object> dataMap = new MetadataMap<Object>(SequenceComparator.instance);
 
     public enum Op {
         PUT,
@@ -78,9 +78,9 @@ public class MetadataMapOpTest {
     private void testDataOperations(Boolean createNew, final Short[] initialRefs,
                                     final Op op, final Short[] opRefs) {
 
-        final Metadata metadata;
+        final Metadata<Object> metadata;
         if (createNew) {
-            metadata = new Metadata();
+            metadata = new Metadata<Object>();
         } else {
             metadata = dataMap.get(initialRefs[0]);
             assertNotNull("There should be a valid metadata.", metadata);
@@ -149,7 +149,7 @@ public class MetadataMapOpTest {
         } else {
             int elementCount = 0;
 
-            Metadata metadata;
+            Metadata<Object> metadata;
             for (Short[] dataRefs : expectedDataMap) {
                 metadata = dataMap.get(dataRefs[0]);
                 assertNotNull("Shouldn't be null!", metadata);

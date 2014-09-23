@@ -4,22 +4,22 @@ import net.ddns.mucaho.jnetrobust.util.FastLog;
 
 import static net.ddns.mucaho.jnetrobust.util.BitConstants.OFFSET;
 
-public class PendingMapControl extends MapControl {
-    public interface TransmissionSuccessListener {
-        public void handleAckedData(short dataId, Object ackedData);
-        public void handleNotAckedData(short dataId, Object unackedData);
+public class PendingMapControl<T> extends MapControl<T> {
+    public interface TransmissionSuccessListener<T> {
+        public void handleAckedData(short dataId, T ackedData);
+        public void handleNotAckedData(short dataId, T unackedData);
     }
 
-    private final TransmissionSuccessListener listener;
+    private final TransmissionSuccessListener<T> listener;
 
-    public PendingMapControl(TransmissionSuccessListener listener, int maxEntries, int maxEntryOffset,
+    public PendingMapControl(TransmissionSuccessListener<T> listener, int maxEntries, int maxEntryOffset,
                              int maxEntryOccurrences, long maxEntryTimeout) {
         super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
         this.listener = listener;
     }
 
 
-    public void addToPending(short seqNo, Metadata metadata) {
+    public void addToPending(short seqNo, Metadata<T> metadata) {
         // discard old entries in pending map
         super.discardEntries();
 
@@ -58,12 +58,12 @@ public class PendingMapControl extends MapControl {
         notifyNotAcked(dataMap.removeAll(key));
     }
 
-    protected void notifyNotAcked(Metadata unackedMetadata) {
+    protected void notifyNotAcked(Metadata<T> unackedMetadata) {
         if (unackedMetadata != null)
             listener.handleNotAckedData(unackedMetadata.getStaticReference(), unackedMetadata.getData());
     }
 
-    protected void notifyAcked(Metadata ackedMetadata, boolean directlyAcked) {
+    protected void notifyAcked(Metadata<T> ackedMetadata, boolean directlyAcked) {
         if (ackedMetadata != null)
             listener.handleAckedData(ackedMetadata.getStaticReference(), ackedMetadata.getData());
     }

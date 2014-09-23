@@ -14,11 +14,11 @@ import static org.junit.Assert.assertTrue;
 
 public class SimpleMapControlTest extends MapControlTest {
     private final HashSet<Short> discardedKeys = new HashSet<Short>();
-    private final HashSet<Metadata> discardedMetadatas = new HashSet<Metadata>();
+    private final HashSet<Metadata<Object>> discardedMetadatas = new HashSet<Metadata<Object>>();
 
-    private final ProtocolConfig config = new ProtocolConfig(null);
+    private final ProtocolConfig<Object> config = new ProtocolConfig<Object>(null);
 
-    private MapControl control = new MapControl(config.getPacketQueueLimit(), config.getPacketOffsetLimit(),
+    private MapControl<Object> control = new MapControl<Object>(config.getPacketQueueLimit(), config.getPacketOffsetLimit(),
             config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
         @Override
         protected void discardEntry(short key) {
@@ -59,7 +59,7 @@ public class SimpleMapControlTest extends MapControlTest {
         Random rand = new Random();
 
         Short key;
-        Metadata metadata = null;
+        Metadata<Object> metadata = null;
         int dataCount = 0, max = -SequenceComparator.MAX_SEQUENCE / 2;
         for (int i = 0; i < loopCount; i++) {
             do {
@@ -68,7 +68,7 @@ public class SimpleMapControlTest extends MapControlTest {
             max = Math.max(key, max);
 
             if (metadata == null || decision.ok()) {
-                metadata = new Metadata(++dataId, i);
+                metadata = new Metadata<Object>(++dataId, i);
                 dataCount++;
             }
             dataMap.put(key, metadata);
@@ -82,7 +82,7 @@ public class SimpleMapControlTest extends MapControlTest {
             assertTrue("discarded keys are smaller then first key of dataMap",
                     discardedKey < dataMap.firstKey());
         }
-        HashSet<Metadata> allMetadatas = new HashSet<Metadata>(discardedMetadatas);
+        HashSet<Metadata<Object>> allMetadatas = new HashSet<Metadata<Object>>(discardedMetadatas);
         allMetadatas.addAll(dataMap.getMap().values());
         assertEquals("total dataCount matches", result.dataCount, allMetadatas.size());
     }
@@ -141,11 +141,11 @@ public class SimpleMapControlTest extends MapControlTest {
     public final void testDiscardTooOldEntries() {
         Random rand = new Random();
 
-        Metadata metadata = null;
+        Metadata<Object> metadata = null;
         int dataCount = 0;
         for (int i = 0; i < SequenceComparator.MAX_SEQUENCE; i++) {
             if (metadata == null || rand.nextBoolean()) {
-                metadata = new Metadata(++dataId, i);
+                metadata = new Metadata<Object>(++dataId, i);
                 dataCount++;
             }
 

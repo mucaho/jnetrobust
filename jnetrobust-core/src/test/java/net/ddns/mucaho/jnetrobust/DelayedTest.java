@@ -30,13 +30,13 @@ public class DelayedTest {
     private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
 
     @Injectable
-    private QueueListener<Packet> queueListenerAtoB;
+    private QueueListener<Packet<Long>> queueListenerAtoB;
     @Injectable
-    private QueueListener<Packet> queueListenerBtoA;
+    private QueueListener<Packet<Long>> queueListenerBtoA;
     @Injectable
-    private ProtocolListener protocolListenerA;
+    private ProtocolListener<Long> protocolListenerA;
     @Injectable
-    private ProtocolListener protocolListenerB;
+    private ProtocolListener<Long> protocolListenerB;
     @Injectable
     private TestHostListener<Long> hostListenerA;
     @Injectable
@@ -50,9 +50,9 @@ public class DelayedTest {
         return out;
     }
 
-    @SuppressWarnings({"unchecked"})
     @Test
     @Parameters
+    @SuppressWarnings("unchecked")
     public final void testDelayed(int minDelay, int maxDelay, float lossChance, float dupChance,
                                   int executeInterval, long executeTime, boolean retransmit)
             throws InterruptedException {
@@ -60,17 +60,17 @@ public class DelayedTest {
 		/*
 		 * Record phase
 		 */
-        final UnreliableQueue<Packet> aToB = new UnreliableQueue<Packet>(queueListenerAtoB,
+        final UnreliableQueue<Packet<Long>> aToB = new UnreliableQueue<Packet<Long>>(queueListenerAtoB,
                 minDelay, maxDelay, lossChance, dupChance);
-        final UnreliableQueue<Packet> bToA = new UnreliableQueue<Packet>(queueListenerBtoA,
+        final UnreliableQueue<Packet<Long>> bToA = new UnreliableQueue<Packet<Long>>(queueListenerBtoA,
                 minDelay, maxDelay, lossChance, dupChance);
 
 
-        ProtocolListener listenerA = DEBUG ?
-                new DebugProtocolListener(protocolListenerA, "A", Logger.getConsoleLogger()) :
+        ProtocolListener<Long> listenerA = DEBUG ?
+                new DebugProtocolListener<Long>(protocolListenerA, "A", Logger.getConsoleLogger()) :
                 protocolListenerA;
         final TestHost<Long> hostA = new TestHost<Long>(hostListenerA, new LongDataGenerator(),
-                bToA, aToB, retransmit, new ProtocolConfig(listenerA), "A", DEBUG);
+                bToA, aToB, retransmit, new ProtocolConfig<Long>(listenerA), "A", DEBUG);
         final List<Long> sentA = new ArrayList<Long>();
         final List<Long> lostSentA = new ArrayList<Long>();
         final List<Long> dupedSentA = new ArrayList<Long>();
@@ -82,11 +82,11 @@ public class DelayedTest {
         final List<Long> retransmitsA = new ArrayList<Long>();
 
 
-        ProtocolListener listenerB = DEBUG ?
-                new DebugProtocolListener(protocolListenerB, "B", Logger.getConsoleLogger()) :
+        ProtocolListener<Long> listenerB = DEBUG ?
+                new DebugProtocolListener<Long>(protocolListenerB, "B", Logger.getConsoleLogger()) :
                 protocolListenerB;
         final TestHost<Long> hostB = new TestHost<Long>(hostListenerB, new LongDataGenerator(),
-                aToB, bToA, retransmit, new ProtocolConfig(listenerB), "B", DEBUG);
+                aToB, bToA, retransmit, new ProtocolConfig<Long>(listenerB), "B", DEBUG);
         final List<Long> sentB = new ArrayList<Long>();
         final List<Long> lostSentB = new ArrayList<Long>();
         final List<Long> dupedSentB = new ArrayList<Long>();
@@ -121,51 +121,44 @@ public class DelayedTest {
         }};
 
         new NonStrictExpectations() {{
-            queueListenerAtoB.notifyDuplicate((Packet) any); result = new Delegate<Packet>() {
+            queueListenerAtoB.notifyDuplicate((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet dup) {
-                    for (Metadata metadata: dup.getMetadatas()) {
-                        Long value = (Long) metadata.getData();
-                        dupedSentA.add(value);
+                void delegate(Packet<Long> dup) {
+                    for (Metadata<Long> metadata: dup.getMetadatas()) {
+                        dupedSentA.add(metadata.getData());
                         if (DEBUG)
-                            System.out.println("[A-dupedSent]: " + value);
+                            System.out.println("[A-dupedSent]: " + metadata.getData());
                     }
                 }
             };
-            queueListenerAtoB.notifyLoss((Packet) any);
-            result = new Delegate<Packet>() {
+            queueListenerAtoB.notifyLoss((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet loss) {
-                    for (Metadata metadata: loss.getMetadatas()) {
-                        Long value = (Long) metadata.getData();
-                        lostSentA.add(value);
+                void delegate(Packet<Long> loss) {
+                    for (Metadata<Long> metadata: loss.getMetadatas()) {
+                        lostSentA.add(metadata.getData());
                         if (DEBUG)
-                            System.out.println("[A-lostSent]: " + value);
+                            System.out.println("[A-lostSent]: " + metadata.getData());
                     }
                 }
             };
 
-            queueListenerBtoA.notifyDuplicate((Packet) any);
-            result = new Delegate<Packet>() {
+            queueListenerBtoA.notifyDuplicate((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet dup) {
-                    for (Metadata metadata: dup.getMetadatas()) {
-                        Long value = (Long) metadata.getData();
-                        dupedSentB.add(value);
+                void delegate(Packet<Long> dup) {
+                    for (Metadata<Long> metadata: dup.getMetadatas()) {
+                        dupedSentB.add(metadata.getData());
                         if (DEBUG)
-                            System.out.println("[B-dupedSent]: " + value);
+                            System.out.println("[B-dupedSent]: " + metadata.getData());
                     }
                 }
             };
-            queueListenerBtoA.notifyLoss((Packet) any);
-            result = new Delegate<Packet>() {
+            queueListenerBtoA.notifyLoss((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet loss) {
-                    for (Metadata metadata: loss.getMetadatas()) {
-                        Long value = (Long) metadata.getData();
-                        lostSentB.add(value);
+                void delegate(Packet<Long> loss) {
+                    for (Metadata<Long> metadata: loss.getMetadatas()) {
+                        lostSentB.add(metadata.getData());
                         if (DEBUG)
-                            System.out.println("[B-lostSent]: " + value);
+                            System.out.println("[B-lostSent]: " + metadata.getData());
                     }
                 }
             };
@@ -218,12 +211,12 @@ public class DelayedTest {
 
         if (retransmit) {
             new Verifications() {{
-                protocolListenerA.handleNotAckedData(anyShort, any); times = 0;
-                protocolListenerA.handleUnorderedData(anyShort, any); times = 0;
+                protocolListenerA.handleNotAckedData(anyShort, anyLong); times = 0;
+                protocolListenerA.handleUnorderedData(anyShort, anyLong); times = 0;
             }};
             new Verifications() {{
-                protocolListenerB.handleNotAckedData(anyShort, any); times = 0;
-                protocolListenerB.handleUnorderedData(anyShort, any); times = 0;
+                protocolListenerB.handleNotAckedData(anyShort, anyLong); times = 0;
+                protocolListenerB.handleUnorderedData(anyShort, anyLong); times = 0;
             }};
         }
 

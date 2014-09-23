@@ -20,7 +20,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(JUnitParamsRunner.class)
 public class PendingMapControlTest extends MapControlTest {
 
-    protected PendingMapControl handler = new PendingMapControl(config.listener, config.getPacketQueueLimit(),
+    protected PendingMapControl<Object> handler = new PendingMapControl<Object>(config.listener, config.getPacketQueueLimit(),
             config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
     public PendingMapControlTest() {
@@ -73,10 +73,10 @@ public class PendingMapControlTest extends MapControlTest {
             public int invocations = 0;
         }
         final Wrapper wrapper = new Wrapper();
-        new MockUp<PendingMapControl>() {
+        new MockUp<PendingMapControl<Object>>() {
             @Mock
             @SuppressWarnings("unused")
-            protected void notifyAcked(Invocation invocation, Metadata ackedMetadata, boolean directlyAcked) {
+            protected void notifyAcked(Invocation invocation, Metadata<Object> ackedMetadata, boolean directlyAcked) {
                 if (ackedMetadata != null) {
                     assertEquals("Expected other value (insertion order must be remove order)",
                             wrapper.invocations, ackedMetadata.getData());
@@ -111,7 +111,7 @@ public class PendingMapControlTest extends MapControlTest {
     @Parameters
     public final void testAddToPending(final Short[][] referenceGroups) {
         for (Short[] referenceGroup : referenceGroups) {
-            Metadata metadata = new Metadata(++dataId, referenceGroup);
+            Metadata<Object> metadata = new Metadata<Object>(++dataId, referenceGroup);
             for (Short reference : referenceGroup) {
                 handler.addToPending(reference, metadata);
             }
@@ -124,11 +124,11 @@ public class PendingMapControlTest extends MapControlTest {
             referenceCount += referenceGroup.length;
         }
         assertEquals("Total data count match", dataCount,
-                new HashSet<Metadata>(handler.dataMap.getMap().values()).size());
+                new HashSet<Metadata<Object>>(handler.dataMap.getMap().values()).size());
         assertEquals("Total reference count match", referenceCount, handler.dataMap.getMap().keySet().size());
 
 
-        for (Metadata metadata : handler.dataMap.getMap().values()) {
+        for (Metadata<Object> metadata : handler.dataMap.getMap().values()) {
             Short[] dataValues = (Short[]) metadata.getData();
             assertEquals("Reference count match", dataValues.length, metadata.getDynamicReferences().size());
             for (Short dataValue : dataValues) {

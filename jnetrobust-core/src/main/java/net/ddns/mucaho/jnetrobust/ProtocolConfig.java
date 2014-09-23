@@ -3,7 +3,7 @@ package net.ddns.mucaho.jnetrobust;
 import net.ddns.mucaho.jnetrobust.controller.Packet;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 
-public class ProtocolConfig {
+public class ProtocolConfig<T> {
     public final static int MAX_PACKET_QUEUE_LIMIT = Packet.MAX_DATAS_PER_PACKET;
     public final static int MAX_PACKET_OFFSET_LIMIT = SequenceComparator.MAX_SEQUENCE / 4;
 
@@ -14,15 +14,15 @@ public class ProtocolConfig {
     private int K = 2;
     private int G = 25;
 
-    public final ProtocolListener listener;
+    public final ProtocolListener<T> listener;
 
-    public ProtocolConfig(ProtocolListener listener) {
+    public ProtocolConfig(ProtocolListener<T> listener) {
         super();
         this.listener = listener;
     }
 
 
-    public ProtocolConfig(ProtocolListener listener, ProtocolConfig config) {
+    public ProtocolConfig(ProtocolListener<T> listener, ProtocolConfig<T> config) {
         super();
         this.listener = listener;
         this.packetQueueLimit = config.packetQueueLimit;

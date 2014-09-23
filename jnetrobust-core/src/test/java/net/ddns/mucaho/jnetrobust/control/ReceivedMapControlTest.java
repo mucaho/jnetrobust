@@ -17,7 +17,7 @@ import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
 public class ReceivedMapControlTest extends MapControlTest {
-    protected static ReceivedMapControl handler = new ReceivedMapControl((short) 0, config.listener,
+    protected static ReceivedMapControl<Object> handler = new ReceivedMapControl<Object>((short) 0, config.listener,
             config.getPacketQueueLimit(), config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1,
             config.getPacketQueueTimeout());
 
@@ -61,17 +61,17 @@ public class ReceivedMapControlTest extends MapControlTest {
     @Parameters
     public final void testRemoveTail(final Short input, final Short[] outputs, final Short nextRemoteSeq) {
 
-        final LinkedHashSet<Metadata> orderedMetadatas = new LinkedHashSet<Metadata>();
-        new MockUp<ReceivedMapControl>() {
+        final LinkedHashSet<Metadata<Object>> orderedMetadatas = new LinkedHashSet<Metadata<Object>>();
+        new MockUp<ReceivedMapControl<Object>>() {
             @SuppressWarnings("unused")
             @Mock
-            private void notifyOrdered(Metadata orderedPackage) {
+            private void notifyOrdered(Metadata<Object> orderedPackage) {
                 if (orderedPackage != null)
                     orderedMetadatas.add(orderedPackage);
             }
         };
 
-        Metadata metadata = new Metadata(input, input);
+        Metadata<Object> metadata = new Metadata<Object>(input, input);
         dataMap.putStatic(metadata);
         Deencapsulation.invoke(handler, "removeTail");
 
@@ -85,13 +85,12 @@ public class ReceivedMapControlTest extends MapControlTest {
             assertEquals("No ordered metadata must have occured", 0, orderedMetadatas.size());
 
         int i = 0;
-        for (Metadata orderedMetadata : orderedMetadatas) {
+        for (Metadata<Object> orderedMetadata : orderedMetadatas) {
             assertEquals("Order and contents of datas must match", outputs[i], orderedMetadata.getData());
             i++;
         }
     }
 
-    @SuppressWarnings("unchecked")
     public Object[][] parametersForTestPut() {
         Object[][] out = (Object[][])
                 $($(
@@ -110,7 +109,7 @@ public class ReceivedMapControlTest extends MapControlTest {
         Deencapsulation.setField(handler, "nextDataId", (short) 1);
         dataMap.clear();
 
-        Metadata metadata = new Metadata(ref, ref);
+        Metadata<Object> metadata = new Metadata<Object>(ref, ref);
         dataMap.putStatic(metadata);
         if (addedRef)
             assertEquals("Ref was added as expected", metadata, dataMap.get(ref));
