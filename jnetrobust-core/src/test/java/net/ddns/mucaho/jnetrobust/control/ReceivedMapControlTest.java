@@ -61,18 +61,18 @@ public class ReceivedMapControlTest extends MapControlTest {
     @Parameters
     public final void testRemoveTail(final Short input, final Short[] outputs, final Short nextRemoteSeq) {
 
-        final LinkedHashSet<MultiKeyValue> orderedDatas = new LinkedHashSet<MultiKeyValue>();
+        final LinkedHashSet<MetadataUnit> orderedMetadatas = new LinkedHashSet<MetadataUnit>();
         new MockUp<ReceivedMapControl>() {
             @SuppressWarnings("unused")
             @Mock
-            private void notifyOrdered(MultiKeyValue orderedPackage) {
+            private void notifyOrdered(MetadataUnit orderedPackage) {
                 if (orderedPackage != null)
-                    orderedDatas.add(orderedPackage);
+                    orderedMetadatas.add(orderedPackage);
             }
         };
 
-        MultiKeyValue data = new MultiKeyValue(input, input);
-        dataMap.putStatic(data);
+        MetadataUnit metadata = new MetadataUnit(input, input);
+        dataMap.putStatic(metadata);
         Deencapsulation.invoke(handler, "removeTail");
 
 
@@ -80,13 +80,13 @@ public class ReceivedMapControlTest extends MapControlTest {
         assertEquals("Next remote sequence must match", nextRemoteSeq, actualNextRemoteSeq);
 
         if (outputs.length != 0)
-            assertEquals("Ordered data count must match", outputs.length, orderedDatas.size());
+            assertEquals("Ordered metadata count must match", outputs.length, orderedMetadatas.size());
         else
-            assertEquals("No ordered data must have occured", 0, orderedDatas.size());
+            assertEquals("No ordered metadata must have occured", 0, orderedMetadatas.size());
 
         int i = 0;
-        for (MultiKeyValue orderedData : orderedDatas) {
-            assertEquals("Order and contents of datas must match", outputs[i], orderedData.getValue());
+        for (MetadataUnit orderedMetadata : orderedMetadatas) {
+            assertEquals("Order and contents of datas must match", outputs[i], orderedMetadata.getValue());
             i++;
         }
     }
@@ -110,10 +110,10 @@ public class ReceivedMapControlTest extends MapControlTest {
         Deencapsulation.setField(handler, "nextDataId", (short) 1);
         dataMap.clear();
 
-        MultiKeyValue data = new MultiKeyValue(ref, ref);
-        dataMap.putStatic(data);
+        MetadataUnit metadata = new MetadataUnit(ref, ref);
+        dataMap.putStatic(metadata);
         if (addedRef)
-            assertEquals("Ref was added as expected", data, dataMap.get(ref));
+            assertEquals("Ref was added as expected", metadata, dataMap.get(ref));
         else
             assertNull("Ref was not added as expected", dataMap.get(ref));
 

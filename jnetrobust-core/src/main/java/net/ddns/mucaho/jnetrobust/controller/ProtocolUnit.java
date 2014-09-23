@@ -1,6 +1,6 @@
 package net.ddns.mucaho.jnetrobust.controller;
 
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.control.MetadataUnit;
 import net.ddns.mucaho.jnetrobust.util.CollectionUtils;
 import net.ddns.mucaho.jnetrobust.util.Freezable;
 
@@ -12,40 +12,40 @@ import java.util.Deque;
 import java.util.LinkedList;
 
 
-public class Packet implements Freezable {
+public class ProtocolUnit implements Freezable {
     public final static transient int MAX_DATAS_PER_PACKET = (Byte.MAX_VALUE - Byte.MIN_VALUE + 1) - 1;
 
-    public Packet() {
+    public ProtocolUnit() {
         super();
     }
 
-    private Deque<MultiKeyValue> datas = new LinkedList<MultiKeyValue>();
-    private transient Deque<MultiKeyValue> datasOut = CollectionUtils.unmodifiableDeque(datas);
+    private Deque<MetadataUnit> metadatas = new LinkedList<MetadataUnit>();
+    private transient Deque<MetadataUnit> metadatasOut = CollectionUtils.unmodifiableDeque(metadatas);
     private short ack;
     private int lastAcks;
 
 
-    public Deque<MultiKeyValue> getDatas() {
-        return datasOut;
+    public Deque<MetadataUnit> getMetadatas() {
+        return metadatasOut;
     }
 
-    public MultiKeyValue getFirstData() {
-        return datas.peekFirst();
+    public MetadataUnit getFirstMetadata() {
+        return metadatas.peekFirst();
     }
 
-    public MultiKeyValue getLastData() {
-        return datas.peekLast();
+    public MetadataUnit getLastMetadata() {
+        return metadatas.peekLast();
     }
 
-    void addLastData(MultiKeyValue data) {
-        if (datas.size() >= MAX_DATAS_PER_PACKET)
-            throw new IndexOutOfBoundsException("Cannot add more than " + MAX_DATAS_PER_PACKET + " datas to packet.");
+    void addLastMetadata(MetadataUnit metadata) {
+        if (metadatas.size() >= MAX_DATAS_PER_PACKET)
+            throw new IndexOutOfBoundsException("Cannot add more than " + MAX_DATAS_PER_PACKET + " metadatas to packet.");
 
-        datas.addLast(data);
+        metadatas.addLast(metadata);
     }
 
-    MultiKeyValue removeFirstData() {
-        return datas.pollFirst();
+    MetadataUnit removeFirstMetadata() {
+        return metadatas.pollFirst();
     }
 
     public short getAck() {
@@ -70,10 +70,10 @@ public class Packet implements Freezable {
     }
 
     public String toDebugString() {
-        return "Packet:" + "\t"
+        return "ProtocolUnit:" + "\t"
                 + "ack = " + ack + "\t"
                 + "lastAcks = " + String.format("%33s", Long.toBinaryString(lastAcks)) + "\t"
-                + "datas = " + Arrays.deepToString(datas.toArray()) + "\n";
+                + "metadatas = " + Arrays.deepToString(metadatas.toArray()) + "\n";
     }
 
     /**
@@ -84,21 +84,21 @@ public class Packet implements Freezable {
      * @param out    the {@link java.io.ObjectOutput} to write to
      * @throws IOException if an error occurs
      */
-    public static void writeExternalStatic(Packet packet, ObjectOutput out) throws IOException {
+    public static void writeExternalStatic(ProtocolUnit packet, ObjectOutput out) throws IOException {
         packet.writeExternal(out);
     }
 
     /**
-     * Deexternalize the packet.
+     * Deexternalize the protocolUnit.
      * Static method that does the same thing as {@link java.io.Externalizable#readExternal(java.io.ObjectInput)} .
      *
      * @param in the {@link java.io.ObjectInput} to read from
-     * @return a new packet instance, constructed by the data read
+     * @return a new protocolUnit instance, constructed by the data read
      * @throws IOException            if an error occurs
      * @throws ClassNotFoundException if an error occurs.
      */
-    public static Packet readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
-        Packet packet = new Packet();
+    public static ProtocolUnit readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
+        ProtocolUnit packet = new ProtocolUnit();
         packet.readExternal(in);
         return packet;
     }
@@ -108,9 +108,9 @@ public class Packet implements Freezable {
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeShort(ack);
         out.writeInt(lastAcks);
-        out.writeByte(datas.size());
-        for (MultiKeyValue data: datas)
-            MultiKeyValue.writeExternalStatic(data, out);
+        out.writeByte(metadatas.size());
+        for (MetadataUnit metadata: metadatas)
+            MetadataUnit.writeExternalStatic(metadata, out);
     }
 
     @Override
@@ -119,16 +119,16 @@ public class Packet implements Freezable {
         lastAcks = in.readInt();
         int size = in.readUnsignedByte();
         for (int i = 0; i < size; ++i)
-            datas.addLast(MultiKeyValue.readExternalStatic(in));
+            metadatas.addLast(MetadataUnit.readExternalStatic(in));
     }
 
     @Override
     public Object clone() {
-        Packet clone = new Packet();
+        ProtocolUnit clone = new ProtocolUnit();
         clone.ack = ack;
         clone.lastAcks = lastAcks;
-        for (MultiKeyValue data: datas)
-            clone.addLastData((MultiKeyValue) data.clone());
+        for (MetadataUnit metadata: metadatas)
+            clone.addLastMetadata((MetadataUnit) metadata.clone());
         return clone;
     }
 }

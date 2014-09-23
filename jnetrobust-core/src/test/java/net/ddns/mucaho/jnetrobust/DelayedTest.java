@@ -6,8 +6,8 @@ import mockit.Delegate;
 import mockit.Injectable;
 import mockit.NonStrictExpectations;
 import mockit.Verifications;
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.controller.Packet;
+import net.ddns.mucaho.jnetrobust.control.MetadataUnit;
+import net.ddns.mucaho.jnetrobust.controller.ProtocolUnit;
 import net.ddns.mucaho.jnetrobust.util.DebugProtocolListener;
 import net.ddns.mucaho.jnetrobust.util.TestHost;
 import net.ddns.mucaho.jnetrobust.util.TestHost.TestHostListener;
@@ -30,9 +30,9 @@ public class DelayedTest {
     private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
 
     @Injectable
-    private QueueListener<Packet> queueListenerAtoB;
+    private QueueListener<ProtocolUnit> queueListenerAtoB;
     @Injectable
-    private QueueListener<Packet> queueListenerBtoA;
+    private QueueListener<ProtocolUnit> queueListenerBtoA;
     @Injectable
     private ProtocolListener protocolListenerA;
     @Injectable
@@ -60,9 +60,9 @@ public class DelayedTest {
 		/*
 		 * Record phase
 		 */
-        final UnreliableQueue<Packet> aToB = new UnreliableQueue<Packet>(queueListenerAtoB,
+        final UnreliableQueue<ProtocolUnit> aToB = new UnreliableQueue<ProtocolUnit>(queueListenerAtoB,
                 minDelay, maxDelay, lossChance, dupChance);
-        final UnreliableQueue<Packet> bToA = new UnreliableQueue<Packet>(queueListenerBtoA,
+        final UnreliableQueue<ProtocolUnit> bToA = new UnreliableQueue<ProtocolUnit>(queueListenerBtoA,
                 minDelay, maxDelay, lossChance, dupChance);
 
 
@@ -121,23 +121,23 @@ public class DelayedTest {
         }};
 
         new NonStrictExpectations() {{
-            queueListenerAtoB.notifyDuplicate((Packet) any); result = new Delegate<Packet>() {
+            queueListenerAtoB.notifyDuplicate((ProtocolUnit) any); result = new Delegate<ProtocolUnit>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet dup) {
-                    for (MultiKeyValue data: dup.getDatas()) {
-                        Long value = (Long) data.getValue();
+                void delegate(ProtocolUnit dup) {
+                    for (MetadataUnit metadata: dup.getMetadatas()) {
+                        Long value = (Long) metadata.getValue();
                         dupedSentA.add(value);
                         if (DEBUG)
                             System.out.println("[A-dupedSent]: " + value);
                     }
                 }
             };
-            queueListenerAtoB.notifyLoss((Packet) any);
-            result = new Delegate<Packet>() {
+            queueListenerAtoB.notifyLoss((ProtocolUnit) any);
+            result = new Delegate<ProtocolUnit>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet loss) {
-                    for (MultiKeyValue data: loss.getDatas()) {
-                        Long value = (Long) data.getValue();
+                void delegate(ProtocolUnit loss) {
+                    for (MetadataUnit metadata: loss.getMetadatas()) {
+                        Long value = (Long) metadata.getValue();
                         lostSentA.add(value);
                         if (DEBUG)
                             System.out.println("[A-lostSent]: " + value);
@@ -145,24 +145,24 @@ public class DelayedTest {
                 }
             };
 
-            queueListenerBtoA.notifyDuplicate((Packet) any);
-            result = new Delegate<Packet>() {
+            queueListenerBtoA.notifyDuplicate((ProtocolUnit) any);
+            result = new Delegate<ProtocolUnit>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet dup) {
-                    for (MultiKeyValue data: dup.getDatas()) {
-                        Long value = (Long) data.getValue();
+                void delegate(ProtocolUnit dup) {
+                    for (MetadataUnit metadata: dup.getMetadatas()) {
+                        Long value = (Long) metadata.getValue();
                         dupedSentB.add(value);
                         if (DEBUG)
                             System.out.println("[B-dupedSent]: " + value);
                     }
                 }
             };
-            queueListenerBtoA.notifyLoss((Packet) any);
-            result = new Delegate<Packet>() {
+            queueListenerBtoA.notifyLoss((ProtocolUnit) any);
+            result = new Delegate<ProtocolUnit>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet loss) {
-                    for (MultiKeyValue data: loss.getDatas()) {
-                        Long value = (Long) data.getValue();
+                void delegate(ProtocolUnit loss) {
+                    for (MetadataUnit metadata: loss.getMetadatas()) {
+                        Long value = (Long) metadata.getValue();
                         lostSentB.add(value);
                         if (DEBUG)
                             System.out.println("[B-lostSent]: " + value);

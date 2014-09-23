@@ -19,12 +19,12 @@ public class ReceivedMapControl extends MapControl {
 
     @Override
     protected void createMap() {
-        dataMap = new MultiKeyValueMap(comparator) {
+        dataMap = new MetadataUnitMap(comparator) {
             @Override
-            MultiKeyValue putStatic(MultiKeyValue data) {
-                if (comparator.compare(data.getStaticReference(), nextDataId) >= 0) {
+            MetadataUnit putStatic(MetadataUnit metadata) {
+                if (comparator.compare(metadata.getStaticReference(), nextDataId) >= 0) {
 //					System.out.print("P["+ref+"]");
-                    return super.putStatic(data);
+                    return super.putStatic(metadata);
                 }
                 return null;
             }
@@ -32,12 +32,12 @@ public class ReceivedMapControl extends MapControl {
     }
 
 
-    public void addToReceived(MultiKeyValue data) {
+    public void addToReceived(MetadataUnit metadata) {
         // discard old entries in received map
         super.discardEntries();
 
         // add original to received map
-        dataMap.putStatic(data);
+        dataMap.putStatic(metadata);
 
         // remove multiple from map -> least, consecutive, ordered elements
         removeTail();
@@ -61,14 +61,14 @@ public class ReceivedMapControl extends MapControl {
         notifyUnordered(dataMap.removeStatic(key));
     }
 
-    private void notifyUnordered(MultiKeyValue unorderedPkg) {
-        if (unorderedPkg != null)
-            listener.handleUnorderedData(unorderedPkg.getStaticReference(), unorderedPkg.getValue());
+    private void notifyUnordered(MetadataUnit unorderedMetadata) {
+        if (unorderedMetadata != null)
+            listener.handleUnorderedData(unorderedMetadata.getStaticReference(), unorderedMetadata.getValue());
     }
 
-    private void notifyOrdered(MultiKeyValue orderedPackage) {
-        if (orderedPackage != null)
-            listener.handleOrderedData(orderedPackage.getStaticReference(), orderedPackage.getValue());
+    private void notifyOrdered(MetadataUnit orderedMetadata) {
+        if (orderedMetadata != null)
+            listener.handleOrderedData(orderedMetadata.getStaticReference(), orderedMetadata.getValue());
 
     }
 }

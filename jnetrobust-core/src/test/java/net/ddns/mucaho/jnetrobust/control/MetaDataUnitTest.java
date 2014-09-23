@@ -3,8 +3,6 @@ package net.ddns.mucaho.jnetrobust.control;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.Deencapsulation;
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
-import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -19,22 +17,22 @@ import static net.ddns.mucaho.jarrayliterals.ArrayShortcuts.$S;
 import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
-public class MultiKeyValueTest {
+public class MetadataUnitTest {
     public Object[][] parametersForTestReferences() {
-        MultiKeyValue data = new MultiKeyValue();
+        MetadataUnit metadata = new MetadataUnit();
         Object[][] out = (Object[][])
                 $($(
-                        data, true, $S(2), $S(2)
+                        metadata, true, $S(2), $S(2)
                 ), $(
-                        data, false, $S(2), $S
+                        metadata, false, $S(2), $S
                 ), $(
-                        data, true, $S(2, 2), $S(2)
+                        metadata, true, $S(2, 2), $S(2)
                 ), $(
-                        data, false, $S(2, 2), $S
+                        metadata, false, $S(2, 2), $S
                 ), $(
-                        data, true, $S(5, 3, 4), $S(3, 4, 5)
+                        metadata, true, $S(5, 3, 4), $S(3, 4, 5)
                 ), $(
-                        data, false, $S(4), $S(3, 5)
+                        metadata, false, $S(4), $S(3, 5)
                 ));
 
         return out;
@@ -44,21 +42,21 @@ public class MultiKeyValueTest {
     @Test
     @Parameters
     @Ignore //FIXME unignore this and figure out why Maven test is not succeeding
-    public final void testReferences(MultiKeyValue data, boolean shouldAdd,
+    public final void testReferences(MetadataUnit metadata, boolean shouldAdd,
                                      Short[] inRefs, Short[] expectedRefs) {
         if (shouldAdd) {
             for (short ref : inRefs)
-                data.addDynamicReference(ref);
+                metadata.addDynamicReference(ref);
         } else {
             for (short ref : inRefs)
-                data.removeDynamicReference(ref);
+                metadata.removeDynamicReference(ref);
         }
 
         assertEquals("Reference count mismatch.",
-                expectedRefs.length, data.getDynamicReferences().size());
+                expectedRefs.length, metadata.getDynamicReferences().size());
 
         int i = 0;
-        for (short ref : data.getDynamicReferences()) {
+        for (short ref : metadata.getDynamicReferences()) {
             assertEquals("Reference does not match.", expectedRefs[i++], (Short) ref);
         }
     }
@@ -82,30 +80,30 @@ public class MultiKeyValueTest {
     @Test
     @Parameters
     public final void testSerialization(Short[] refs, String value) throws Exception {
-        MultiKeyValue inData, outData;
+        MetadataUnit inMetadata, outMetadata;
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(outStream);
         {
-            outData = new MultiKeyValue(refs[0], value);
+            outMetadata = new MetadataUnit(refs[0], value);
             for (Short ref : refs)
-                outData.addDynamicReference(ref);
-            outData.writeExternal(out);
+                outMetadata.addDynamicReference(ref);
+            outMetadata.writeExternal(out);
         }
         out.close();
 
         ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
         ObjectInputStream in = new ObjectInputStream(inStream);
         {
-            inData = new MultiKeyValue();
-            inData.readExternal(in);
+            inMetadata = new MetadataUnit();
+            inMetadata.readExternal(in);
         }
         in.close();
 
-        assertEquals("Value mismatch.", outData.getValue(), inData.getValue());
-        assertEquals("Static reference mismatch", outData.getStaticReference(), inData.getStaticReference());
-        assertEquals("Reference count mismatch.", 1, inData.getDynamicReferences().size());
-        assertEquals("Dynamic reference mismatch", outData.getLastDynamicReference(), inData.getLastDynamicReference());
+        assertEquals("Value mismatch.", outMetadata.getValue(), inMetadata.getValue());
+        assertEquals("Static reference mismatch", outMetadata.getStaticReference(), inMetadata.getStaticReference());
+        assertEquals("Reference count mismatch.", 1, inMetadata.getDynamicReferences().size());
+        assertEquals("Dynamic reference mismatch", outMetadata.getLastDynamicReference(), inMetadata.getLastDynamicReference());
     }
 
 
@@ -123,10 +121,10 @@ public class MultiKeyValueTest {
     @Test
     @Parameters
     public final void testClone(Short[] refs, String value) throws Exception {
-        MultiKeyValue original = new MultiKeyValue(refs[0], value);
+        MetadataUnit original = new MetadataUnit(refs[0], value);
         for (Short ref : refs)
             original.addDynamicReference(ref);
-        MultiKeyValue clone = (MultiKeyValue) original.clone();
+        MetadataUnit clone = (MetadataUnit) original.clone();
 
         assertEquals("Value mismatch.", original.getValue(), clone.getValue());
         assertEquals("Value mismatch", original.getStaticReference(), clone.getStaticReference());

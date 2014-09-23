@@ -1,9 +1,9 @@
 package net.ddns.mucaho.jnetrobust;
 
+import net.ddns.mucaho.jnetrobust.control.MetadataUnit;
 import net.ddns.mucaho.jnetrobust.controller.DebugController;
+import net.ddns.mucaho.jnetrobust.controller.ProtocolUnit;
 import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.controller.Packet;
 import net.ddns.mucaho.jnetrobust.util.*;
 
 import java.io.IOException;
@@ -37,24 +37,24 @@ public class Protocol implements Comparator<Short> {
 
 
 
-    private final PacketEntry sentPacketOut = new PacketEntry();
+    private final ProtocolUnitEntry sentPacketOut = new ProtocolUnitEntry();
 
-    public synchronized Map.Entry<Short, Packet> send(Object data) {
-        Packet packet = controller.produce();
-        Collection<? extends MultiKeyValue> retransmits = controller.retransmit();
-        for (MultiKeyValue retransmit : retransmits) {
+    public synchronized Map.Entry<Short, ProtocolUnit> send(Object data) {
+        ProtocolUnit packet = controller.produce();
+        Collection<? extends MetadataUnit> retransmits = controller.retransmit();
+        for (MetadataUnit retransmit : retransmits) {
             controller.send(packet, retransmit);
         }
         controller.send(packet, controller.produce(data));
 
         sentPacketOut.packet = packet;
-        sentPacketOut.id = packet.getLastData().getStaticReference();
+        sentPacketOut.id = packet.getLastMetadata().getStaticReference();
         return sentPacketOut;
     }
 
-    public synchronized Map.Entry<Short, Packet> send(Object data, ObjectOutput objectOutput) throws IOException {
-        Map.Entry<Short, Packet> packetEntry = send(data);
-        Packet.writeExternalStatic(packetEntry.getValue(), objectOutput);
+    public synchronized Map.Entry<Short, ProtocolUnit> send(Object data, ObjectOutput objectOutput) throws IOException {
+        Map.Entry<Short, ProtocolUnit> packetEntry = send(data);
+        ProtocolUnit.writeExternalStatic(packetEntry.getValue(), objectOutput);
         return packetEntry;
     }
 
@@ -63,14 +63,14 @@ public class Protocol implements Comparator<Short> {
     private final NavigableMap<Short, Object> receivedDatas = new TreeMap<Short, Object>(SequenceComparator.instance);
     private final NavigableMap<Short, Object> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
 
-    public synchronized NavigableMap<Short, Object> receive(Packet packet) {
+    public synchronized NavigableMap<Short, Object> receive(ProtocolUnit protocolUnit) {
         receivedDatas.clear();
 
-        controller.consume(packet);
-        MultiKeyValue multiKeyValue = controller.receive(packet);
-        while (multiKeyValue != null) {
-            receivedDatas.put(multiKeyValue.getStaticReference(), controller.consume(multiKeyValue));
-            multiKeyValue = controller.receive(packet);
+        controller.consume(protocolUnit);
+        MetadataUnit metadata = controller.receive(protocolUnit);
+        while (metadata != null) {
+            receivedDatas.put(metadata.getStaticReference(), controller.consume(metadata));
+            metadata = controller.receive(protocolUnit);
         }
 
         return receivedDatasOut;
@@ -78,7 +78,7 @@ public class Protocol implements Comparator<Short> {
 
 
     public synchronized NavigableMap<Short, Object> receive(ObjectInput objectInput) throws IOException, ClassNotFoundException {
-        Packet packet = Packet.readExternalStatic(objectInput);
+        ProtocolUnit packet = ProtocolUnit.readExternalStatic(objectInput);
         return receive(packet);
     }
 
@@ -98,11 +98,11 @@ public class Protocol implements Comparator<Short> {
         return controller.getRTTVariation();
     }
 
-    private static class PacketEntry implements Map.Entry<Short, Packet> {
+    private static class ProtocolUnitEntry implements Map.Entry<Short, ProtocolUnit> {
         private Short id;
-        private Packet packet;
+        private ProtocolUnit packet;
 
-        public PacketEntry() {
+        public ProtocolUnitEntry() {
         }
 
 
@@ -112,12 +112,12 @@ public class Protocol implements Comparator<Short> {
         }
 
         @Override
-        public Packet getValue() {
+        public ProtocolUnit getValue() {
             return packet;
         }
 
         @Override
-        public Packet setValue(Packet value) {
+        public ProtocolUnit setValue(ProtocolUnit protocolUnit) {
             throw new UnsupportedOperationException();
         }
     }

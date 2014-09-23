@@ -2,8 +2,6 @@ package net.ddns.mucaho.jnetrobust.control;
 
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValueMap;
 import net.ddns.mucaho.jnetrobust.util.EntryIterator;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 import org.junit.Test;
@@ -16,7 +14,7 @@ import static net.ddns.mucaho.jarrayliterals.ArrayShortcuts.$S;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
-public class MultiKeyValueMapIterTest {
+public class MetadataUnitMapIterTest {
     private static short dataId = Short.MIN_VALUE;
 
     public Object[][] parametersForTestIterator() {
@@ -30,11 +28,11 @@ public class MultiKeyValueMapIterTest {
     @Test
     @Parameters
     public final void testIterator(Short[][] refGroups) {
-        MultiKeyValueMap dataMap = new MultiKeyValueMap(SequenceComparator.instance);
-        EntryIterator<Short, MultiKeyValue> iter = dataMap.getIterator();
+        MetadataUnitMap dataMap = new MetadataUnitMap(SequenceComparator.instance);
+        EntryIterator<Short, MetadataUnit> iter = dataMap.getIterator();
         List<Short> refs = new ArrayList<Short>();
-        HashSet<MultiKeyValue> datas = new HashSet<MultiKeyValue>();
-        MultiKeyValue data;
+        HashSet<MetadataUnit> metadatas = new HashSet<MetadataUnit>();
+        MetadataUnit metadata;
         int expectedCount, actualCount;
         Short key;
 
@@ -42,9 +40,9 @@ public class MultiKeyValueMapIterTest {
         expectedCount = 0;
         for (final Short[] refGroup : refGroups) {
             expectedCount += refGroup.length;
-            data = new MultiKeyValue(++dataId, refGroup);
-            dataMap.putAll(new TreeSet<Short>(Arrays.asList(refGroup)), data);
-            datas.add(data);
+            metadata = new MetadataUnit(++dataId, refGroup);
+            dataMap.putAll(new TreeSet<Short>(Arrays.asList(refGroup)), metadata);
+            metadatas.add(metadata);
             refs.addAll(Arrays.asList(refGroup));
         }
 
@@ -52,13 +50,13 @@ public class MultiKeyValueMapIterTest {
         key = iter.getHigherKey(null);
         while (key != null) {
             actualCount++;
-            datas.remove(iter.getValue(key));
+            metadatas.remove(iter.getValue(key));
             refs.remove(key);
             key = iter.getHigherKey(key);
         }
         assertEquals("Iterator didn't iterate over all datas!", expectedCount, actualCount);
         assertEquals("All refs should have been removed.", 0, refs.size());
-        assertEquals("All datas should have been removed.", 0, datas.size());
+        assertEquals("All metadatas should have been removed.", 0, metadatas.size());
 
 
         actualCount = 0;

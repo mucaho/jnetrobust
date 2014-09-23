@@ -1,7 +1,7 @@
 package net.ddns.mucaho.jnetrobust.controller;
 
 import net.ddns.mucaho.jnetrobust.ProtocolConfig;
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.control.MetadataUnit;
 import net.ddns.mucaho.jnetrobust.Logger;
 
 import java.util.Collection;
@@ -17,8 +17,8 @@ public class DebugController extends RetransmissionController {
     }
 
     @Override
-    public MultiKeyValue produce(Object data) {
-        MultiKeyValue out = super.produce(data);
+    public MetadataUnit produce(Object data) {
+        MetadataUnit out = super.produce(data);
         Object value = out.getValue();
 
         logger.log(name, Logger.LoggingEvent.SEND.toString(), String.valueOf(out.getStaticReference()),
@@ -28,19 +28,19 @@ public class DebugController extends RetransmissionController {
     }
 
     @Override
-    public Object consume(MultiKeyValue multiKeyValue) {
-        Object value = multiKeyValue.getValue();
+    public Object consume(MetadataUnit metadata) {
+        Object value = metadata.getValue();
 
-        logger.log(name, Logger.LoggingEvent.RECEIVE.toString(), String.valueOf(multiKeyValue.getStaticReference()),
+        logger.log(name, Logger.LoggingEvent.RECEIVE.toString(), String.valueOf(metadata.getStaticReference()),
                 value != null ? value.toString() : "null");
 
-        return super.consume(multiKeyValue);
+        return super.consume(metadata);
     }
 
     @Override
-    public Collection<? extends MultiKeyValue> retransmit() {
-        Collection<? extends MultiKeyValue> retransmits = super.retransmit();
-        for (MultiKeyValue retransmit: retransmits)
+    public Collection<? extends MetadataUnit> retransmit() {
+        Collection<? extends MetadataUnit> retransmits = super.retransmit();
+        for (MetadataUnit retransmit: retransmits)
             logger.log(name, Logger.LoggingEvent.RETRANSMIT.toString(), String.valueOf(retransmit.getStaticReference()),
                     retransmit.getValue() != null ? retransmit.getValue().toString() : "null");
 

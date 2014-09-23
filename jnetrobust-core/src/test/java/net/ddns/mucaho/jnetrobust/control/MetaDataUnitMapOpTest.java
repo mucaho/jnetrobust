@@ -5,8 +5,6 @@ import junitparams.Parameters;
 import mockit.FullVerificationsInOrder;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValueMap;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -20,14 +18,14 @@ import static net.ddns.mucaho.jarrayliterals.ArrayShortcuts.*;
 import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
-public class MultiKeyValueMapOpTest {
+public class MetadataUnitMapOpTest {
     static {
         System.setProperty("jmockit-mockParameters", "annotated");
     }
 
     @Mocked
-    private MultiKeyValue multiRefData;
-    private final static MultiKeyValueMap dataMap = new MultiKeyValueMap(SequenceComparator.instance);
+    private MetadataUnit metadataUnit;
+    private final static MetadataUnitMap dataMap = new MetadataUnitMap(SequenceComparator.instance);
 
     public enum Op {
         PUT,
@@ -80,34 +78,34 @@ public class MultiKeyValueMapOpTest {
     private void testDataOperations(Boolean createNew, final Short[] initialRefs,
                                     final Op op, final Short[] opRefs) {
 
-        final MultiKeyValue data;
+        final MetadataUnit metadata;
         if (createNew) {
-            data = new MultiKeyValue();
+            metadata = new MetadataUnit();
         } else {
-            data = dataMap.get(initialRefs[0]);
-            assertNotNull("There should be a valid data.", data);
+            metadata = dataMap.get(initialRefs[0]);
+            assertNotNull("There should be a valid metadata.", metadata);
         }
 
         final List<Short> addRefs = new ArrayList<Short>();
         final List<Short> removeRefs = new ArrayList<Short>();
         new NonStrictExpectations() {{
-            onInstance(data).getDynamicReferences();
+            onInstance(metadata).getDynamicReferences();
             result = new TreeSet<Short>(Arrays.asList(initialRefs));
-            onInstance(data).addDynamicReference(withCapture(addRefs));
+            onInstance(metadata).addDynamicReference(withCapture(addRefs));
             result = true;
-            onInstance(data).removeDynamicReference(withCapture(removeRefs));
+            onInstance(metadata).removeDynamicReference(withCapture(removeRefs));
             result = true;
         }};
 
         switch (op) {
             case PUT:
-                dataMap.put(opRefs[0], data);
+                dataMap.put(opRefs[0], metadata);
                 break;
             case PUTALL_DATA:
-                dataMap.putAll(data);
+                dataMap.putAll(metadata);
                 break;
             case PUTALL_REFS:
-                dataMap.putAll(new TreeSet<Short>(Arrays.asList(opRefs)), data);
+                dataMap.putAll(new TreeSet<Short>(Arrays.asList(opRefs)), metadata);
                 break;
             case REMOVE:
                 dataMap.remove(opRefs[0]);
@@ -116,30 +114,30 @@ public class MultiKeyValueMapOpTest {
                 dataMap.removeAll(opRefs[0]);
                 break;
             case REMOVEALL_DATA:
-                dataMap.removeAll(data);
+                dataMap.removeAll(metadata);
                 break;
             case REMOVEALL_REFS:
                 dataMap.removeAll(new TreeSet<Short>(Arrays.asList(opRefs)));
                 break;
             case REPLACE:
-                dataMap.put(opRefs[0], data);
+                dataMap.put(opRefs[0], metadata);
                 break;
         }
 
         new FullVerificationsInOrder() {{
             if (op == Op.PUTALL_DATA || op == Op.REMOVEALL_REF || op == Op.REMOVEALL_DATA)
-                onInstance(data).getDynamicReferences();
+                onInstance(metadata).getDynamicReferences();
 
             if (op.toString().startsWith(Op.PUT.toString())) {
                 for (Short addRef : addRefs)
-                    onInstance(data).addDynamicReference(withEqual(addRef));
+                    onInstance(metadata).addDynamicReference(withEqual(addRef));
             } else if (op.toString().startsWith(Op.REMOVE.toString())) {
                 for (Short removeRef : removeRefs)
-                    onInstance(data).removeDynamicReference(withEqual(removeRef));
+                    onInstance(metadata).removeDynamicReference(withEqual(removeRef));
             } else if (op == Op.REPLACE) {
                 for (Short addRef : addRefs)
-                    onInstance(data).addDynamicReference(withEqual(addRef));
-                multiRefData.removeDynamicReference(opRefs[0]);
+                    onInstance(metadata).addDynamicReference(withEqual(addRef));
+                metadataUnit.removeDynamicReference(opRefs[0]);
             }
         }};
     }
@@ -151,17 +149,17 @@ public class MultiKeyValueMapOpTest {
         } else {
             int elementCount = 0;
 
-            MultiKeyValue element;
+            MetadataUnit metadata;
             for (Short[] dataRefs : expectedDataMap) {
-                element = dataMap.get(dataRefs[0]);
-                assertNotNull("Shouldn't be null!", element);
+                metadata = dataMap.get(dataRefs[0]);
+                assertNotNull("Shouldn't be null!", metadata);
                 for (Short dataRef : dataRefs) {
-                    assertSame("Should be same object!", element, dataMap.get(dataRef));
+                    assertSame("Should be same object!", metadata, dataMap.get(dataRef));
                     elementCount++;
                 }
             }
 
-            assertEquals("Data map element count mismatch.", elementCount, dataMap.size());
+            assertEquals("Data map metadata count mismatch.", elementCount, dataMap.size());
         }
     }
 }

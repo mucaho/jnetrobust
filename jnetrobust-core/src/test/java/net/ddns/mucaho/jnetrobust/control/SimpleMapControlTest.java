@@ -2,8 +2,6 @@ package net.ddns.mucaho.jnetrobust.control;
 
 import mockit.Deencapsulation;
 import net.ddns.mucaho.jnetrobust.ProtocolConfig;
-import net.ddns.mucaho.jnetrobust.controller.Packet;
-import net.ddns.mucaho.jnetrobust.util.BitConstants;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 import org.junit.Before;
 import org.junit.Test;
@@ -16,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 
 public class SimpleMapControlTest extends MapControlTest {
     private final HashSet<Short> discardedKeys = new HashSet<Short>();
-    private final HashSet<MultiKeyValue> discardedDatas = new HashSet<MultiKeyValue>();
+    private final HashSet<MetadataUnit> discardedMetadatas = new HashSet<MetadataUnit>();
 
     private final ProtocolConfig config = new ProtocolConfig(null);
 
@@ -25,7 +23,7 @@ public class SimpleMapControlTest extends MapControlTest {
         @Override
         protected void discardEntry(short key) {
             discardedKeys.add(key);
-            discardedDatas.add(dataMap.removeAll(key));
+            discardedMetadatas.add(dataMap.removeAll(key));
         }
     };
 
@@ -37,7 +35,7 @@ public class SimpleMapControlTest extends MapControlTest {
     public final void prepareDiscardTest() {
         dataMap.clear();
         discardedKeys.clear();
-        discardedDatas.clear();
+        discardedMetadatas.clear();
     }
 
     private interface Decision {
@@ -61,7 +59,7 @@ public class SimpleMapControlTest extends MapControlTest {
         Random rand = new Random();
 
         Short key;
-        MultiKeyValue data = null;
+        MetadataUnit metadata = null;
         int dataCount = 0, max = -SequenceComparator.MAX_SEQUENCE / 2;
         for (int i = 0; i < loopCount; i++) {
             do {
@@ -69,11 +67,11 @@ public class SimpleMapControlTest extends MapControlTest {
             } while (dataMap.get(key) != null || discardedKeys.contains(key));
             max = Math.max(key, max);
 
-            if (data == null || decision.ok()) {
-                data = new MultiKeyValue(++dataId, i);
+            if (metadata == null || decision.ok()) {
+                metadata = new MetadataUnit(++dataId, i);
                 dataCount++;
             }
-            dataMap.put(key, data);
+            dataMap.put(key, metadata);
         }
 
         return new Result(loopCount, max, dataCount);
@@ -84,9 +82,9 @@ public class SimpleMapControlTest extends MapControlTest {
             assertTrue("discarded keys are smaller then first key of dataMap",
                     discardedKey < dataMap.firstKey());
         }
-        HashSet<MultiKeyValue> allDatas = new HashSet<MultiKeyValue>(discardedDatas);
-        allDatas.addAll(dataMap.getMap().values());
-        assertEquals("total dataCount matches", result.dataCount, allDatas.size());
+        HashSet<MetadataUnit> allMetadatas = new HashSet<MetadataUnit>(discardedMetadatas);
+        allMetadatas.addAll(dataMap.getMap().values());
+        assertEquals("total dataCount matches", result.dataCount, allMetadatas.size());
     }
 
     @Test
@@ -136,22 +134,22 @@ public class SimpleMapControlTest extends MapControlTest {
 
         assertTrue("dataMap is empty", dataMap.isEmpty());
         assertEquals("discarded key size is 1", 1, discardedKeys.size());
-        assertEquals("discarded data size is 1", 1, discardedDatas.size());
+        assertEquals("discarded data size is 1", 1, discardedMetadatas.size());
     }
 
     @Test
     public final void testDiscardTooOldEntries() {
         Random rand = new Random();
 
-        MultiKeyValue data = null;
+        MetadataUnit metadata = null;
         int dataCount = 0;
         for (int i = 0; i < SequenceComparator.MAX_SEQUENCE; i++) {
-            if (data == null || rand.nextBoolean()) {
-                data = new MultiKeyValue(++dataId, i);
+            if (metadata == null || rand.nextBoolean()) {
+                metadata = new MetadataUnit(++dataId, i);
                 dataCount++;
             }
 
-            dataMap.put((short) i, data);
+            dataMap.put((short) i, metadata);
 
             if (i % control.maxEntryOffset == 0) {
                 Deencapsulation.invoke(control, "discardTooOldEntries");

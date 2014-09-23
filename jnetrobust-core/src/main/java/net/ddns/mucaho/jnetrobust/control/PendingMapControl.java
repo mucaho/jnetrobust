@@ -19,12 +19,12 @@ public class PendingMapControl extends MapControl {
     }
 
 
-    public void addToPending(short seqNo, MultiKeyValue data) {
+    public void addToPending(short seqNo, MetadataUnit metadata) {
         // discard old entries in pending map
         super.discardEntries();
 
         // add to pending map
-        dataMap.put(seqNo, data);
+        dataMap.put(seqNo, metadata);
     }
 
 
@@ -58,13 +58,13 @@ public class PendingMapControl extends MapControl {
         notifyNotAcked(dataMap.removeAll(key));
     }
 
-    protected void notifyNotAcked(MultiKeyValue timedoutPkg) {
-        if (timedoutPkg != null)
-            listener.handleNotAckedData(timedoutPkg.getStaticReference(), timedoutPkg.getValue());
+    protected void notifyNotAcked(MetadataUnit unackedMetadata) {
+        if (unackedMetadata != null)
+            listener.handleNotAckedData(unackedMetadata.getStaticReference(), unackedMetadata.getValue());
     }
 
-    protected void notifyAcked(MultiKeyValue ackedPkg, boolean directlyAcked) {
-        if (ackedPkg != null)
-            listener.handleAckedData(ackedPkg.getStaticReference(), ackedPkg.getValue());
+    protected void notifyAcked(MetadataUnit ackedMetadata, boolean directlyAcked) {
+        if (ackedMetadata != null)
+            listener.handleAckedData(ackedMetadata.getStaticReference(), ackedMetadata.getValue());
     }
 }

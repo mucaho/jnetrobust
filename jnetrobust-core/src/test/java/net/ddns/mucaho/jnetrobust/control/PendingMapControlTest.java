@@ -76,10 +76,10 @@ public class PendingMapControlTest extends MapControlTest {
         new MockUp<PendingMapControl>() {
             @Mock
             @SuppressWarnings("unused")
-            protected void notifyAcked(Invocation invocation, MultiKeyValue ackedPkg, boolean directlyAcked) {
-                if (ackedPkg != null) {
+            protected void notifyAcked(Invocation invocation, MetadataUnit ackedMetadata, boolean directlyAcked) {
+                if (ackedMetadata != null) {
                     assertEquals("Expected other value (insertion order must be remove order)",
-                            wrapper.invocations, ackedPkg.getValue());
+                            wrapper.invocations, ackedMetadata.getValue());
                     wrapper.invocations++;
                 }
             }
@@ -111,9 +111,9 @@ public class PendingMapControlTest extends MapControlTest {
     @Parameters
     public final void testAddToPending(final Short[][] referenceGroups) {
         for (Short[] referenceGroup : referenceGroups) {
-            MultiKeyValue data = new MultiKeyValue(++dataId, referenceGroup);
+            MetadataUnit metadata = new MetadataUnit(++dataId, referenceGroup);
             for (Short reference : referenceGroup) {
-                handler.addToPending(reference, data);
+                handler.addToPending(reference, metadata);
             }
         }
 
@@ -124,15 +124,15 @@ public class PendingMapControlTest extends MapControlTest {
             referenceCount += referenceGroup.length;
         }
         assertEquals("Total data count match", dataCount,
-                new HashSet<MultiKeyValue>(handler.dataMap.getMap().values()).size());
+                new HashSet<MetadataUnit>(handler.dataMap.getMap().values()).size());
         assertEquals("Total reference count match", referenceCount, handler.dataMap.getMap().keySet().size());
 
 
-        for (MultiKeyValue data : handler.dataMap.getMap().values()) {
-            Short[] dataValues = (Short[]) data.getValue();
-            assertEquals("Reference count match", dataValues.length, data.getDynamicReferences().size());
+        for (MetadataUnit metadata : handler.dataMap.getMap().values()) {
+            Short[] dataValues = (Short[]) metadata.getValue();
+            assertEquals("Reference count match", dataValues.length, metadata.getDynamicReferences().size());
             for (Short dataValue : dataValues) {
-                assertTrue("Reference match", data.getDynamicReferences().contains(dataValue));
+                assertTrue("Reference match", metadata.getDynamicReferences().contains(dataValue));
             }
         }
 

@@ -11,7 +11,7 @@ import java.io.ObjectOutput;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
-public class MultiKeyValue implements Timestamp, Freezable {
+public class MetadataUnit implements Timestamp, Freezable {
     private transient long lastTouched = System.currentTimeMillis();
 
     private Short staticReference;
@@ -22,12 +22,12 @@ public class MultiKeyValue implements Timestamp, Freezable {
 
     private Object value;
 
-    public MultiKeyValue(Short staticReference, Object value) {
+    public MetadataUnit(Short staticReference, Object value) {
         this.staticReference = staticReference;
         this.value = value;
     }
 
-    public MultiKeyValue() {
+    public MetadataUnit() {
         super();
     }
 
@@ -90,15 +90,15 @@ public class MultiKeyValue implements Timestamp, Freezable {
     }
 
     /**
-     * Externalize the multiKeyValue.
+     * Externalize the metadata.
      * Static method that does the same thing as {@link java.io.Externalizable#writeExternal(java.io.ObjectOutput)} .
      *
-     * @param multiKeyValue the instance to write
+     * @param metadata the instance to write
      * @param out           the {@link java.io.ObjectOutput} to write to
      * @throws IOException if an error occurs
      */
-    public static void writeExternalStatic(MultiKeyValue multiKeyValue, ObjectOutput out) throws IOException {
-        multiKeyValue.writeExternal(out);
+    public static void writeExternalStatic(MetadataUnit metadata, ObjectOutput out) throws IOException {
+        metadata.writeExternal(out);
     }
 
     /**
@@ -110,10 +110,10 @@ public class MultiKeyValue implements Timestamp, Freezable {
      * @throws IOException            if an error occurs
      * @throws ClassNotFoundException if an error occurs.
      */
-    public static MultiKeyValue readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
-        MultiKeyValue multiKeyValue = new MultiKeyValue();
-        multiKeyValue.readExternal(in);
-        return multiKeyValue;
+    public static MetadataUnit readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
+        MetadataUnit metadata = new MetadataUnit();
+        metadata.readExternal(in);
+        return metadata;
     }
 
     @Override
@@ -132,7 +132,7 @@ public class MultiKeyValue implements Timestamp, Freezable {
 
     @Override
     public Object clone() {
-        MultiKeyValue clone = new MultiKeyValue();
+        MetadataUnit clone = new MetadataUnit();
         clone.value = value;
         clone.staticReference = new Short(staticReference);
         clone.dynamicReferences.addAll(dynamicReferences);

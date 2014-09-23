@@ -11,8 +11,8 @@ import java.util.NavigableMap;
 public abstract class MapControl {
     protected final static Comparator<Short> comparator = SequenceComparator.instance;
 
-    private final TimeoutHandler<MultiKeyValue> entryTimeoutHandler =
-            new TimeoutHandler<MultiKeyValue>();
+    private final TimeoutHandler<MetadataUnit> entryTimeoutHandler =
+            new TimeoutHandler<MetadataUnit>();
 
     protected final int maxEntries;
     protected final int maxEntryOffset;
@@ -22,7 +22,7 @@ public abstract class MapControl {
     /*
      * [lastSeq]-...-[seq-32]-[seq-31]-...-[seq-1]-[seq]
      */
-    protected MultiKeyValueMap dataMap;
+    protected MetadataUnitMap dataMap;
 
     public MapControl(int maxEntries, int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
         this.maxEntries = maxEntries;
@@ -33,10 +33,10 @@ public abstract class MapControl {
     }
 
     protected void createMap() {
-        dataMap = new MultiKeyValueMap(comparator);
+        dataMap = new MetadataUnitMap(comparator);
     }
 
-    public NavigableMap<Short, MultiKeyValue> getMap() {
+    public NavigableMap<Short, MetadataUnit> getMap() {
         return dataMap.getMap();
     }
 
@@ -69,9 +69,9 @@ public abstract class MapControl {
 
     private void discardTimedoutEntries() {
         if (maxEntryTimeout > 0) {
-            Collection<MultiKeyValue> timedOuts =
+            Collection<MetadataUnit> timedOuts =
                     entryTimeoutHandler.filterTimedOut(dataMap.getMap().values(), maxEntryTimeout);
-            for (MultiKeyValue timedOut : timedOuts)
+            for (MetadataUnit timedOut : timedOuts)
                 discardEntry(timedOut.getFirstDynamicReference());
         }
     }

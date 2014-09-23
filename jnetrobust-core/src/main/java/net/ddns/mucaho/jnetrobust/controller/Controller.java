@@ -1,11 +1,8 @@
 package net.ddns.mucaho.jnetrobust.controller;
 
 import net.ddns.mucaho.jnetrobust.ProtocolConfig;
-import net.ddns.mucaho.jnetrobust.control.PendingMapControl;
-import net.ddns.mucaho.jnetrobust.control.RTTControl;
-import net.ddns.mucaho.jnetrobust.control.ReceivedBitsControl;
-import net.ddns.mucaho.jnetrobust.control.ReceivedMapControl;
-import net.ddns.mucaho.jnetrobust.control.MultiKeyValue;
+import net.ddns.mucaho.jnetrobust.control.*;
+import net.ddns.mucaho.jnetrobust.control.MetadataUnit;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 
 public class Controller {
@@ -25,11 +22,11 @@ public class Controller {
         pendingMapHandler = new PendingMapControl(config.listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
             @Override
-            protected void notifyAcked(MultiKeyValue ackedObject, boolean directlyAcked) {
-                if (ackedObject != null && directlyAcked)
-                    rttHandler.updateRTT(ackedObject.getTime()); // update RTT
+            protected void notifyAcked(MetadataUnit ackedMetadata, boolean directlyAcked) {
+                if (ackedMetadata != null && directlyAcked)
+                    rttHandler.updateRTT(ackedMetadata.getTime()); // update RTT
 
-                super.notifyAcked(ackedObject, directlyAcked);
+                super.notifyAcked(ackedMetadata, directlyAcked);
             }
         };
 
@@ -42,8 +39,8 @@ public class Controller {
 
 
 
-    public Packet produce() {
-        Packet packet = new Packet();
+    public ProtocolUnit produce() {
+        ProtocolUnit packet = new ProtocolUnit();
         // adapt remote seq
         packet.setAck(remoteSeq);
         // Handle remote sequences
@@ -52,55 +49,55 @@ public class Controller {
         return packet;
     }
 
-    public MultiKeyValue produce(Object data) {
+    public MetadataUnit produce(Object data) {
         // Handle data id: adapt unique data id
-        return new MultiKeyValue(++dataId, data);
+        return new MetadataUnit(++dataId, data);
     }
 
-    public void send(Packet packet, MultiKeyValue data) {
+    public void send(ProtocolUnit packet, MetadataUnit metadata) {
         // adapt local seq
         localSeq++;
 
         // Handle local sequences
-        pendingMapHandler.addToPending(localSeq, data);
+        pendingMapHandler.addToPending(localSeq, metadata);
 
 //		System.out.print("C");
-//		for (Short ref: data.getDynamicReferences())
+//		for (Short ref: metadata.getDynamicReferences())
 //			System.out.print("["+ref+"]");
 
-        packet.addLastData(data);
+        packet.addLastMetadata(metadata);
     }
 
 
 
-    public void consume(Packet packet) {
+    public void consume(ProtocolUnit packet) {
         // Handle local sequences
         pendingMapHandler.removeFromPending(packet.getAck(), packet.getLastAcks());
     }
 
-    public MultiKeyValue receive(Packet packet) {
-        MultiKeyValue data = packet.removeFirstData();
-        if (data != null)
-            receive(data);
+    public MetadataUnit receive(ProtocolUnit packet) {
+        MetadataUnit metadata = packet.removeFirstMetadata();
+        if (metadata != null)
+            receive(metadata);
 
-        return data;
+        return metadata;
     }
 
-    private void receive(MultiKeyValue data) {
-        short newRemoteSeq = data.getLastDynamicReference();
+    private void receive(MetadataUnit metadata) {
+        short newRemoteSeq = metadata.getLastDynamicReference();
 
         // Handle remote sequences
-        receivedBitsHandler.addToReceived(data.getDynamicReferences(), remoteSeq);
-        // Handle data id
-        receivedMapHandler.addToReceived(data);
+        receivedBitsHandler.addToReceived(metadata.getDynamicReferences(), remoteSeq);
+        // Handle metadata id
+        receivedMapHandler.addToReceived(metadata);
 
         // adapt remote seq
         if (SequenceComparator.instance.compare(remoteSeq, newRemoteSeq) < 0)
             remoteSeq = newRemoteSeq;
     }
 
-    public Object consume(MultiKeyValue multiKeyValue) {
-        return multiKeyValue.getValue();
+    public Object consume(MetadataUnit metadata) {
+        return metadata.getValue();
     }
 
 
