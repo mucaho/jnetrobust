@@ -61,9 +61,6 @@ public class Controller<T> {
         // Handle local sequences
         pendingMapHandler.addToPending(localSeq, metadata);
 
-//		System.out.print("C");
-//		for (Short ref: metadata.getDynamicReferences())
-//			System.out.print("["+ref+"]");
 
         packet.addLastMetadata(metadata);
     }

@@ -23,7 +23,6 @@ public class ReceivedMapControl<T> extends MapControl<T> {
             @Override
             Metadata<T> putStatic(Metadata<T> metadata) {
                 if (comparator.compare(metadata.getStaticReference(), nextDataId) >= 0) {
-//					System.out.print("P["+ref+"]");
                     return super.putStatic(metadata);
                 }
                 return null;
@@ -46,7 +45,6 @@ public class ReceivedMapControl<T> extends MapControl<T> {
     private void removeTail() {
         Short key = dataMap.firstKey();
         while (key != null && key == nextDataId) {
-//			System.out.print("R["+key+"]");
             notifyOrdered(dataMap.removeStatic(key));
 
             key = dataMap.higherKey(key);

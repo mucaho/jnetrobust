@@ -30,7 +30,6 @@ public class ReceivedBitsControl {
     public void addToReceived(Collection<Short> references, final short remoteSeq) {
         int diff;
         for (short ref : references) {
-//			System.out.print("B["+ref+"]");
             diff = comparator.compare(remoteSeq, ref);
             addToReceived(diff);
         }

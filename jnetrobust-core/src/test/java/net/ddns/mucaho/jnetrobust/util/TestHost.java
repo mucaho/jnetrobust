@@ -60,7 +60,6 @@ public class TestHost<T> implements Runnable {
     }
 
     protected Queue<T> consume(Packet<T> packet) {
-        //System.out.println("YYY"+packet.data.getDynamicReferences().size());
         Queue<T> outQueue = new LinkedList<T>();
 
         protocol.consume(packet);
@@ -86,7 +85,6 @@ public class TestHost<T> implements Runnable {
     }
 
     protected void send(Packet<T> packet) {
-        //System.out.println("WWW"+packet.data.getDynamicReferences().size());
         outQueue.offer(packet);
         for (Metadata<T> metadata: packet.getMetadatas())
             hostListener.notifySent(metadata.getData());

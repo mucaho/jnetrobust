@@ -33,8 +33,6 @@ public class PendingMapControl<T> extends MapControl<T> {
         removeOnBits(ackNo, lastAcks);
 
         // remove newest from pending map
-//		System.out.print("A["+ack+"]");
-//		System.out.print(dataMap.get(ack));
         notifyAcked(dataMap.removeAll(ackNo), true);
     }
 
@@ -44,8 +42,6 @@ public class PendingMapControl<T> extends MapControl<T> {
         while (lastLocalSeqs != 0) {
             msbIndex = FastLog.log2(lastLocalSeqs);
             lastLocalSeq = (short) (localSeq - msbIndex - OFFSET);
-//			System.out.print("A["+lastLocalSeq+"]");
-//			System.out.print(dataMap.get(lastLocalSeq));
             notifyAcked(dataMap.removeAll(lastLocalSeq), false);
             lastLocalSeqs &= ~(0x1 << msbIndex);
         }
