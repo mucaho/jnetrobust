@@ -39,16 +39,21 @@ public class Protocol implements Comparator<Short> {
 
     private final PacketEntry sentPacketOut = new PacketEntry();
 
+    public synchronized Map.Entry<Short, Packet> send() {
+        return send(null);
+    }
+
     public synchronized Map.Entry<Short, Packet> send(Object data) {
         Packet packet = controller.produce();
         Collection<? extends Metadata> retransmits = controller.retransmit();
         for (Metadata retransmit : retransmits) {
             controller.send(packet, retransmit);
         }
-        controller.send(packet, controller.produce(data));
+        if (data != null)
+            controller.send(packet, controller.produce(data));
 
         sentPacketOut.packet = packet;
-        sentPacketOut.id = packet.getLastMetadata().getStaticReference();
+        sentPacketOut.id = data != null ? packet.getLastMetadata().getStaticReference() : null;
         return sentPacketOut;
     }
 

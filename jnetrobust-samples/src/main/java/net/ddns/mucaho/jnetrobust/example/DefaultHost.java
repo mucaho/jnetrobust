@@ -63,13 +63,20 @@ public class DefaultHost<T> {
         objectOutput = new KryoObjectOutput(kryo, bufferOutput);
 
         // setup virtual protocol
-        this.protocol = new Protocol(new ProtocolListener() {
-            @Override
-            @SuppressWarnings("unchecked")
+        ProtocolListener protocolListener = new ProtocolListener() {
+            @Override @SuppressWarnings("unchecked")
             public void handleOrderedData(short dataId, Object orderedData) {
-               dataListener.handleOrderedData((T) orderedData);
+                dataListener.handleOrderedData((T) orderedData);
             }
-        }, hostName, Logger.getConsoleLogger());
+        };
+        if (hostName != null)
+            this.protocol = new Protocol(protocolListener, hostName, Logger.getConsoleLogger());
+        else
+            this.protocol = new Protocol(protocolListener);
+    }
+
+    public void send() throws IOException {
+        send(null);
     }
 
     public void send(T data) throws IOException {
@@ -93,15 +100,15 @@ public class DefaultHost<T> {
         while (senderAddress != null) {
             buffer.flip();
             bufferInput.setBuffer(buffer);
-            NavigableMap<Short, Object> receivedDatas = protocol.receive(objectInput);
 
-            if (newestId == null || protocol.compare(receivedDatas.lastKey(), newestId) > 0) {
+            NavigableMap<Short, Object> receivedDatas = protocol.receive(objectInput);
+            for (Object receivedData: receivedDatas.values())
+                outQueue.add((T) receivedData);
+            if (!receivedDatas.isEmpty() &&
+                    (newestId == null || protocol.compare(receivedDatas.lastKey(), newestId) > 0)) {
                 newestId = receivedDatas.lastKey();
                 newestData = (T) receivedDatas.get(newestId);
             }
-
-            for (Object receivedData: receivedDatas.values())
-                outQueue.add((T) receivedData);
 
             buffer.clear();
             senderAddress = channel.receive(buffer);
