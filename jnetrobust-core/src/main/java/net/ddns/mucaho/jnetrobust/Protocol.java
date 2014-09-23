@@ -37,7 +37,7 @@ public class Protocol implements Comparator<Short> {
 
 
 
-    private final ProtocolUnitEntry sentPacketOut = new ProtocolUnitEntry();
+    private final PacketEntry sentPacketOut = new PacketEntry();
 
     public synchronized Map.Entry<Short, Packet> send(Object data) {
         Packet packet = controller.produce();
@@ -98,11 +98,11 @@ public class Protocol implements Comparator<Short> {
         return controller.getRTTVariation();
     }
 
-    private static class ProtocolUnitEntry implements Map.Entry<Short, Packet> {
+    private static class PacketEntry implements Map.Entry<Short, Packet> {
         private Short id;
         private Packet packet;
 
-        public ProtocolUnitEntry() {
+        public PacketEntry() {
         }
 
 
