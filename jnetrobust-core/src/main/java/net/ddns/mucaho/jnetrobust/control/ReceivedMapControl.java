@@ -19,9 +19,9 @@ public class ReceivedMapControl extends MapControl {
 
     @Override
     protected void createMap() {
-        dataMap = new MetadataUnitMap(comparator) {
+        dataMap = new MetadataMap(comparator) {
             @Override
-            MetadataUnit putStatic(MetadataUnit metadata) {
+            Metadata putStatic(Metadata metadata) {
                 if (comparator.compare(metadata.getStaticReference(), nextDataId) >= 0) {
 //					System.out.print("P["+ref+"]");
                     return super.putStatic(metadata);
@@ -32,7 +32,7 @@ public class ReceivedMapControl extends MapControl {
     }
 
 
-    public void addToReceived(MetadataUnit metadata) {
+    public void addToReceived(Metadata metadata) {
         // discard old entries in received map
         super.discardEntries();
 
@@ -61,14 +61,14 @@ public class ReceivedMapControl extends MapControl {
         notifyUnordered(dataMap.removeStatic(key));
     }
 
-    private void notifyUnordered(MetadataUnit unorderedMetadata) {
+    private void notifyUnordered(Metadata unorderedMetadata) {
         if (unorderedMetadata != null)
-            listener.handleUnorderedData(unorderedMetadata.getStaticReference(), unorderedMetadata.getValue());
+            listener.handleUnorderedData(unorderedMetadata.getStaticReference(), unorderedMetadata.getData());
     }
 
-    private void notifyOrdered(MetadataUnit orderedMetadata) {
+    private void notifyOrdered(Metadata orderedMetadata) {
         if (orderedMetadata != null)
-            listener.handleOrderedData(orderedMetadata.getStaticReference(), orderedMetadata.getValue());
+            listener.handleOrderedData(orderedMetadata.getStaticReference(), orderedMetadata.getData());
 
     }
 }

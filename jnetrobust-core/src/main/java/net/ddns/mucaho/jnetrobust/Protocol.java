@@ -1,8 +1,8 @@
 package net.ddns.mucaho.jnetrobust;
 
-import net.ddns.mucaho.jnetrobust.control.MetadataUnit;
+import net.ddns.mucaho.jnetrobust.control.Metadata;
 import net.ddns.mucaho.jnetrobust.controller.DebugController;
-import net.ddns.mucaho.jnetrobust.controller.ProtocolUnit;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
 import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
 import net.ddns.mucaho.jnetrobust.util.*;
 
@@ -39,10 +39,10 @@ public class Protocol implements Comparator<Short> {
 
     private final ProtocolUnitEntry sentPacketOut = new ProtocolUnitEntry();
 
-    public synchronized Map.Entry<Short, ProtocolUnit> send(Object data) {
-        ProtocolUnit packet = controller.produce();
-        Collection<? extends MetadataUnit> retransmits = controller.retransmit();
-        for (MetadataUnit retransmit : retransmits) {
+    public synchronized Map.Entry<Short, Packet> send(Object data) {
+        Packet packet = controller.produce();
+        Collection<? extends Metadata> retransmits = controller.retransmit();
+        for (Metadata retransmit : retransmits) {
             controller.send(packet, retransmit);
         }
         controller.send(packet, controller.produce(data));
@@ -52,9 +52,9 @@ public class Protocol implements Comparator<Short> {
         return sentPacketOut;
     }
 
-    public synchronized Map.Entry<Short, ProtocolUnit> send(Object data, ObjectOutput objectOutput) throws IOException {
-        Map.Entry<Short, ProtocolUnit> packetEntry = send(data);
-        ProtocolUnit.writeExternalStatic(packetEntry.getValue(), objectOutput);
+    public synchronized Map.Entry<Short, Packet> send(Object data, ObjectOutput objectOutput) throws IOException {
+        Map.Entry<Short, Packet> packetEntry = send(data);
+        Packet.writeExternalStatic(packetEntry.getValue(), objectOutput);
         return packetEntry;
     }
 
@@ -63,14 +63,14 @@ public class Protocol implements Comparator<Short> {
     private final NavigableMap<Short, Object> receivedDatas = new TreeMap<Short, Object>(SequenceComparator.instance);
     private final NavigableMap<Short, Object> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
 
-    public synchronized NavigableMap<Short, Object> receive(ProtocolUnit protocolUnit) {
+    public synchronized NavigableMap<Short, Object> receive(Packet packet) {
         receivedDatas.clear();
 
-        controller.consume(protocolUnit);
-        MetadataUnit metadata = controller.receive(protocolUnit);
+        controller.consume(packet);
+        Metadata metadata = controller.receive(packet);
         while (metadata != null) {
             receivedDatas.put(metadata.getStaticReference(), controller.consume(metadata));
-            metadata = controller.receive(protocolUnit);
+            metadata = controller.receive(packet);
         }
 
         return receivedDatasOut;
@@ -78,7 +78,7 @@ public class Protocol implements Comparator<Short> {
 
 
     public synchronized NavigableMap<Short, Object> receive(ObjectInput objectInput) throws IOException, ClassNotFoundException {
-        ProtocolUnit packet = ProtocolUnit.readExternalStatic(objectInput);
+        Packet packet = Packet.readExternalStatic(objectInput);
         return receive(packet);
     }
 
@@ -98,9 +98,9 @@ public class Protocol implements Comparator<Short> {
         return controller.getRTTVariation();
     }
 
-    private static class ProtocolUnitEntry implements Map.Entry<Short, ProtocolUnit> {
+    private static class ProtocolUnitEntry implements Map.Entry<Short, Packet> {
         private Short id;
-        private ProtocolUnit packet;
+        private Packet packet;
 
         public ProtocolUnitEntry() {
         }
@@ -112,12 +112,12 @@ public class Protocol implements Comparator<Short> {
         }
 
         @Override
-        public ProtocolUnit getValue() {
+        public Packet getValue() {
             return packet;
         }
 
         @Override
-        public ProtocolUnit setValue(ProtocolUnit protocolUnit) {
+        public Packet setValue(Packet packet) {
             throw new UnsupportedOperationException();
         }
     }

@@ -9,8 +9,8 @@ import com.esotericsoftware.kryo.io.KryoObjectOutput;
 import net.ddns.mucaho.jnetrobust.Logger;
 import net.ddns.mucaho.jnetrobust.Protocol;
 import net.ddns.mucaho.jnetrobust.ProtocolListener;
-import net.ddns.mucaho.jnetrobust.control.MetadataUnit;
-import net.ddns.mucaho.jnetrobust.controller.ProtocolUnit;
+import net.ddns.mucaho.jnetrobust.control.Metadata;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -56,8 +56,8 @@ public class DefaultHost<T> {
 
         // setup serialization
         kryo = new Kryo();
-        kryo.register(ProtocolUnit.class); // add argument `new ExternalizableSerializer()` if needed
-        kryo.register(MetadataUnit.class); // add argument `new ExternalizableSerializer()` if needed
+        kryo.register(Packet.class); // add argument `new ExternalizableSerializer()` if needed
+        kryo.register(Metadata.class); // add argument `new ExternalizableSerializer()` if needed
         kryo.register(dataClass);
         objectInput = new KryoObjectInput(kryo, bufferInput);
         objectOutput = new KryoObjectOutput(kryo, bufferOutput);

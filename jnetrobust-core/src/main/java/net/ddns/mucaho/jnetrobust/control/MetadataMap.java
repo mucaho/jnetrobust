@@ -5,30 +5,30 @@ import net.ddns.mucaho.jnetrobust.util.EntryIterator;
 
 import java.util.*;
 
-public class MetadataUnitMap {
-    private final NavigableMap<Short, MetadataUnit> metadataMap;
-    private final NavigableMap<Short, MetadataUnit> metadataMapOut;
-    private final EntryIterator<Short, MetadataUnit> entryIterator = new MultiRefDataMapIterator();
+public class MetadataMap {
+    private final NavigableMap<Short, Metadata> metadataMap;
+    private final NavigableMap<Short, Metadata> metadataMapOut;
+    private final EntryIterator<Short, Metadata> entryIterator = new MultiRefDataMapIterator();
 
 
-    public MetadataUnitMap(Comparator<Short> comparator) {
-        this.metadataMap = new TreeMap<Short, MetadataUnit>(comparator);
+    public MetadataMap(Comparator<Short> comparator) {
+        this.metadataMap = new TreeMap<Short, Metadata>(comparator);
         this.metadataMapOut = CollectionUtils.unmodifiableNavigableMap(metadataMap);
     }
 
-    public MetadataUnit get(Short ref) {
+    public Metadata get(Short ref) {
         return metadataMap.get(ref);
     }
 
-    public NavigableMap<Short, MetadataUnit> getMap() {
+    public NavigableMap<Short, Metadata> getMap() {
         return metadataMapOut;
     }
 
-    void putAll(MetadataUnit metadata) {
+    void putAll(Metadata metadata) {
         putAll(metadata.getDynamicReferences(), metadata);
     }
 
-    void putAll(NavigableSet<Short> refs, MetadataUnit metadata) {
+    void putAll(NavigableSet<Short> refs, Metadata metadata) {
         Short nextKey = refs.first();
         while (nextKey != null) {
             put(nextKey, metadata);
@@ -36,21 +36,21 @@ public class MetadataUnitMap {
         }
     }
 
-    void put(Short ref, MetadataUnit metadata) {
+    void put(Short ref, Metadata metadata) {
         if (metadata != null)
             metadata.addDynamicReference(ref);
-        MetadataUnit replacedMetadata = metadataMap.put(ref, metadata);
+        Metadata replacedMetadata = metadataMap.put(ref, metadata);
 
         if (replacedMetadata != null && replacedMetadata != metadata)
             replacedMetadata.removeDynamicReference(ref);
     }
 
 
-    MetadataUnit removeAll(Short ref) {
+    Metadata removeAll(Short ref) {
         return removeAll(get(ref));
     }
 
-    MetadataUnit removeAll(MetadataUnit metadata) {
+    Metadata removeAll(Metadata metadata) {
         if (metadata != null)
             removeAll(metadata.getDynamicReferences());
 
@@ -65,8 +65,8 @@ public class MetadataUnitMap {
         }
     }
 
-    MetadataUnit remove(Short ref) {
-        MetadataUnit metadata = metadataMap.remove(ref);
+    Metadata remove(Short ref) {
+        Metadata metadata = metadataMap.remove(ref);
         if (metadata != null)
             metadata.removeDynamicReference(ref);
 
@@ -76,11 +76,11 @@ public class MetadataUnitMap {
 
 
 
-    MetadataUnit putStatic(MetadataUnit metadata) {
+    Metadata putStatic(Metadata metadata) {
         return metadataMap.put(metadata.getStaticReference(), metadata);
     }
 
-    MetadataUnit removeStatic(Short ref) {
+    Metadata removeStatic(Short ref) {
         return metadataMap.remove(ref);
     }
 
@@ -112,8 +112,8 @@ public class MetadataUnitMap {
 
     void clear(boolean thourough) {
         if (thourough) {
-            Collection<MetadataUnit> metadatas = metadataMap.values();
-            for (MetadataUnit metadata : metadatas) {
+            Collection<Metadata> metadatas = metadataMap.values();
+            for (Metadata metadata : metadatas) {
                 metadata.clearDynamicReferences();
             }
         }
@@ -125,11 +125,11 @@ public class MetadataUnitMap {
     }
 
 
-    public EntryIterator<Short, MetadataUnit> getIterator() {
+    public EntryIterator<Short, Metadata> getIterator() {
         return entryIterator;
     }
 
-    private class MultiRefDataMapIterator implements EntryIterator<Short, MetadataUnit> {
+    private class MultiRefDataMapIterator implements EntryIterator<Short, Metadata> {
         @Override
         public Short getHigherKey(Short currentKey) {
             if (currentKey == null) {
@@ -149,12 +149,12 @@ public class MetadataUnitMap {
         }
 
         @Override
-        public MetadataUnit getValue(Short currentKey) {
+        public Metadata getValue(Short currentKey) {
             return get(currentKey);
         }
 
         @Override
-        public MetadataUnit removeValue(Short currentKey) {
+        public Metadata removeValue(Short currentKey) {
             return removeAll(currentKey);
         }
     }

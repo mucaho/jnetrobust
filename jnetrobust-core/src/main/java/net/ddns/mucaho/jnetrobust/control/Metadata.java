@@ -11,7 +11,7 @@ import java.io.ObjectOutput;
 import java.util.NavigableSet;
 import java.util.TreeSet;
 
-public class MetadataUnit implements Timestamp, Freezable {
+public class Metadata implements Timestamp, Freezable {
     private transient long lastTouched = System.currentTimeMillis();
 
     private Short staticReference;
@@ -22,12 +22,12 @@ public class MetadataUnit implements Timestamp, Freezable {
 
     private Object value;
 
-    public MetadataUnit(Short staticReference, Object value) {
+    public Metadata(Short staticReference, Object value) {
         this.staticReference = staticReference;
         this.value = value;
     }
 
-    public MetadataUnit() {
+    public Metadata() {
         super();
     }
 
@@ -61,7 +61,7 @@ public class MetadataUnit implements Timestamp, Freezable {
     }
 
 
-    public Object getValue() {
+    public Object getData() {
         return value;
     }
 
@@ -97,7 +97,7 @@ public class MetadataUnit implements Timestamp, Freezable {
      * @param out           the {@link java.io.ObjectOutput} to write to
      * @throws IOException if an error occurs
      */
-    public static void writeExternalStatic(MetadataUnit metadata, ObjectOutput out) throws IOException {
+    public static void writeExternalStatic(Metadata metadata, ObjectOutput out) throws IOException {
         metadata.writeExternal(out);
     }
 
@@ -110,8 +110,8 @@ public class MetadataUnit implements Timestamp, Freezable {
      * @throws IOException            if an error occurs
      * @throws ClassNotFoundException if an error occurs.
      */
-    public static MetadataUnit readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
-        MetadataUnit metadata = new MetadataUnit();
+    public static Metadata readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
+        Metadata metadata = new Metadata();
         metadata.readExternal(in);
         return metadata;
     }
@@ -132,7 +132,7 @@ public class MetadataUnit implements Timestamp, Freezable {
 
     @Override
     public Object clone() {
-        MetadataUnit clone = new MetadataUnit();
+        Metadata clone = new Metadata();
         clone.value = value;
         clone.staticReference = new Short(staticReference);
         clone.dynamicReferences.addAll(dynamicReferences);

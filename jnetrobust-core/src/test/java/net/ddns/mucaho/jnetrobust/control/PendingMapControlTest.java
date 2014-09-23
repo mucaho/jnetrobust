@@ -76,10 +76,10 @@ public class PendingMapControlTest extends MapControlTest {
         new MockUp<PendingMapControl>() {
             @Mock
             @SuppressWarnings("unused")
-            protected void notifyAcked(Invocation invocation, MetadataUnit ackedMetadata, boolean directlyAcked) {
+            protected void notifyAcked(Invocation invocation, Metadata ackedMetadata, boolean directlyAcked) {
                 if (ackedMetadata != null) {
                     assertEquals("Expected other value (insertion order must be remove order)",
-                            wrapper.invocations, ackedMetadata.getValue());
+                            wrapper.invocations, ackedMetadata.getData());
                     wrapper.invocations++;
                 }
             }
@@ -111,7 +111,7 @@ public class PendingMapControlTest extends MapControlTest {
     @Parameters
     public final void testAddToPending(final Short[][] referenceGroups) {
         for (Short[] referenceGroup : referenceGroups) {
-            MetadataUnit metadata = new MetadataUnit(++dataId, referenceGroup);
+            Metadata metadata = new Metadata(++dataId, referenceGroup);
             for (Short reference : referenceGroup) {
                 handler.addToPending(reference, metadata);
             }
@@ -124,12 +124,12 @@ public class PendingMapControlTest extends MapControlTest {
             referenceCount += referenceGroup.length;
         }
         assertEquals("Total data count match", dataCount,
-                new HashSet<MetadataUnit>(handler.dataMap.getMap().values()).size());
+                new HashSet<Metadata>(handler.dataMap.getMap().values()).size());
         assertEquals("Total reference count match", referenceCount, handler.dataMap.getMap().keySet().size());
 
 
-        for (MetadataUnit metadata : handler.dataMap.getMap().values()) {
-            Short[] dataValues = (Short[]) metadata.getValue();
+        for (Metadata metadata : handler.dataMap.getMap().values()) {
+            Short[] dataValues = (Short[]) metadata.getData();
             assertEquals("Reference count match", dataValues.length, metadata.getDynamicReferences().size());
             for (Short dataValue : dataValues) {
                 assertTrue("Reference match", metadata.getDynamicReferences().contains(dataValue));

@@ -2,9 +2,9 @@ package net.ddns.mucaho.jnetrobust.util;
 
 import net.ddns.mucaho.jnetrobust.Logger;
 import net.ddns.mucaho.jnetrobust.ProtocolConfig;
-import net.ddns.mucaho.jnetrobust.control.MetadataUnit;
+import net.ddns.mucaho.jnetrobust.control.Metadata;
 import net.ddns.mucaho.jnetrobust.controller.DebugController;
-import net.ddns.mucaho.jnetrobust.controller.ProtocolUnit;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
 import net.ddns.mucaho.jnetrobust.controller.RetransmissionController;
 
 import java.util.Collection;
@@ -25,13 +25,13 @@ public class TestHost<T> implements Runnable {
 
     private final TestHostListener<T> hostListener;
     private final TestHostDataGenerator<T> dataGenerator;
-    private final UnreliableQueue<ProtocolUnit> inQueue;
-    private final UnreliableQueue<ProtocolUnit> outQueue;
+    private final UnreliableQueue<Packet> inQueue;
+    private final UnreliableQueue<Packet> outQueue;
     private final RetransmissionController protocol;
     private final boolean shouldRetransmit;
 
     public TestHost(TestHostListener<T> hostListener, TestHostDataGenerator<T> dataGenerator,
-                    UnreliableQueue<ProtocolUnit> inQueue, UnreliableQueue<ProtocolUnit> outQueue, boolean retransmit,
+                    UnreliableQueue<Packet> inQueue, UnreliableQueue<Packet> outQueue, boolean retransmit,
                     ProtocolConfig config, String name, boolean debug) {
         this.debug = debug;
         this.hostListener = hostListener;
@@ -47,25 +47,25 @@ public class TestHost<T> implements Runnable {
 
 
     public void receive() {
-        ProtocolUnit packet;
+        Packet packet;
         while ((packet = inQueue.poll()) != null) {
             receive(packet);
         }
     }
 
-    protected void receive(ProtocolUnit packet) {
+    protected void receive(Packet packet) {
         Queue<T> values = consume(packet);
         for (T value: values)
             hostListener.notifyReceived(value);
     }
 
     @SuppressWarnings("unchecked")
-    protected Queue<T> consume(ProtocolUnit packet) {
+    protected Queue<T> consume(Packet packet) {
         //System.out.println("YYY"+packet.data.getDynamicReferences().size());
         Queue<T> outQueue = new LinkedList<T>();
 
         protocol.consume(packet);
-        MetadataUnit metadata = protocol.receive(packet);
+        Metadata metadata = protocol.receive(packet);
         while (metadata != null) {
             outQueue.add((T) protocol.consume(metadata));
             metadata = protocol.receive(packet);
@@ -79,19 +79,19 @@ public class TestHost<T> implements Runnable {
         send(produce());
     }
 
-    protected ProtocolUnit produce() {
-        ProtocolUnit packet = protocol.produce();
+    protected Packet produce() {
+        Packet packet = protocol.produce();
         T data = dataGenerator.generateData();
         protocol.send(packet, protocol.produce(data));
         return packet;
     }
 
     @SuppressWarnings("unchecked")
-    protected void send(ProtocolUnit packet) {
+    protected void send(Packet packet) {
         //System.out.println("WWW"+packet.data.getDynamicReferences().size());
         outQueue.offer(packet);
-        for (MetadataUnit metadata: packet.getMetadatas())
-            hostListener.notifySent((T) metadata.getValue());
+        for (Metadata metadata: packet.getMetadatas())
+            hostListener.notifySent((T) metadata.getData());
     }
 
     @SuppressWarnings("unchecked")
@@ -99,10 +99,10 @@ public class TestHost<T> implements Runnable {
         if (!shouldRetransmit)
             return;
 
-        ProtocolUnit packet = protocol.produce();
-        Collection<? extends MetadataUnit> retransmits = protocol.retransmit();
-        for (MetadataUnit retransmit : retransmits) {
-            hostListener.notifyRetransmitted((T) retransmit.getValue());
+        Packet packet = protocol.produce();
+        Collection<? extends Metadata> retransmits = protocol.retransmit();
+        for (Metadata retransmit : retransmits) {
+            hostListener.notifyRetransmitted((T) retransmit.getData());
             protocol.send(packet, retransmit);
         }
         send(packet);

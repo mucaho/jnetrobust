@@ -17,9 +17,9 @@ import static net.ddns.mucaho.jarrayliterals.ArrayShortcuts.$S;
 import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
-public class MetadataUnitTest {
+public class MetadataTest {
     public Object[][] parametersForTestReferences() {
-        MetadataUnit metadata = new MetadataUnit();
+        Metadata metadata = new Metadata();
         Object[][] out = (Object[][])
                 $($(
                         metadata, true, $S(2), $S(2)
@@ -42,7 +42,7 @@ public class MetadataUnitTest {
     @Test
     @Parameters
     @Ignore //FIXME unignore this and figure out why Maven test is not succeeding
-    public final void testReferences(MetadataUnit metadata, boolean shouldAdd,
+    public final void testReferences(Metadata metadata, boolean shouldAdd,
                                      Short[] inRefs, Short[] expectedRefs) {
         if (shouldAdd) {
             for (short ref : inRefs)
@@ -80,12 +80,12 @@ public class MetadataUnitTest {
     @Test
     @Parameters
     public final void testSerialization(Short[] refs, String value) throws Exception {
-        MetadataUnit inMetadata, outMetadata;
+        Metadata inMetadata, outMetadata;
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(outStream);
         {
-            outMetadata = new MetadataUnit(refs[0], value);
+            outMetadata = new Metadata(refs[0], value);
             for (Short ref : refs)
                 outMetadata.addDynamicReference(ref);
             outMetadata.writeExternal(out);
@@ -95,12 +95,12 @@ public class MetadataUnitTest {
         ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
         ObjectInputStream in = new ObjectInputStream(inStream);
         {
-            inMetadata = new MetadataUnit();
+            inMetadata = new Metadata();
             inMetadata.readExternal(in);
         }
         in.close();
 
-        assertEquals("Value mismatch.", outMetadata.getValue(), inMetadata.getValue());
+        assertEquals("Value mismatch.", outMetadata.getData(), inMetadata.getData());
         assertEquals("Static reference mismatch", outMetadata.getStaticReference(), inMetadata.getStaticReference());
         assertEquals("Reference count mismatch.", 1, inMetadata.getDynamicReferences().size());
         assertEquals("Dynamic reference mismatch", outMetadata.getLastDynamicReference(), inMetadata.getLastDynamicReference());
@@ -121,12 +121,12 @@ public class MetadataUnitTest {
     @Test
     @Parameters
     public final void testClone(Short[] refs, String value) throws Exception {
-        MetadataUnit original = new MetadataUnit(refs[0], value);
+        Metadata original = new Metadata(refs[0], value);
         for (Short ref : refs)
             original.addDynamicReference(ref);
-        MetadataUnit clone = (MetadataUnit) original.clone();
+        Metadata clone = (Metadata) original.clone();
 
-        assertEquals("Value mismatch.", original.getValue(), clone.getValue());
+        assertEquals("Value mismatch.", original.getData(), clone.getData());
         assertEquals("Value mismatch", original.getStaticReference(), clone.getStaticReference());
         assertArrayEquals("References mismatch",
                 original.getDynamicReferences().toArray(), clone.getDynamicReferences().toArray());

@@ -14,7 +14,7 @@ import static org.junit.Assert.assertTrue;
 
 public class SimpleMapControlTest extends MapControlTest {
     private final HashSet<Short> discardedKeys = new HashSet<Short>();
-    private final HashSet<MetadataUnit> discardedMetadatas = new HashSet<MetadataUnit>();
+    private final HashSet<Metadata> discardedMetadatas = new HashSet<Metadata>();
 
     private final ProtocolConfig config = new ProtocolConfig(null);
 
@@ -59,7 +59,7 @@ public class SimpleMapControlTest extends MapControlTest {
         Random rand = new Random();
 
         Short key;
-        MetadataUnit metadata = null;
+        Metadata metadata = null;
         int dataCount = 0, max = -SequenceComparator.MAX_SEQUENCE / 2;
         for (int i = 0; i < loopCount; i++) {
             do {
@@ -68,7 +68,7 @@ public class SimpleMapControlTest extends MapControlTest {
             max = Math.max(key, max);
 
             if (metadata == null || decision.ok()) {
-                metadata = new MetadataUnit(++dataId, i);
+                metadata = new Metadata(++dataId, i);
                 dataCount++;
             }
             dataMap.put(key, metadata);
@@ -82,7 +82,7 @@ public class SimpleMapControlTest extends MapControlTest {
             assertTrue("discarded keys are smaller then first key of dataMap",
                     discardedKey < dataMap.firstKey());
         }
-        HashSet<MetadataUnit> allMetadatas = new HashSet<MetadataUnit>(discardedMetadatas);
+        HashSet<Metadata> allMetadatas = new HashSet<Metadata>(discardedMetadatas);
         allMetadatas.addAll(dataMap.getMap().values());
         assertEquals("total dataCount matches", result.dataCount, allMetadatas.size());
     }
@@ -141,11 +141,11 @@ public class SimpleMapControlTest extends MapControlTest {
     public final void testDiscardTooOldEntries() {
         Random rand = new Random();
 
-        MetadataUnit metadata = null;
+        Metadata metadata = null;
         int dataCount = 0;
         for (int i = 0; i < SequenceComparator.MAX_SEQUENCE; i++) {
             if (metadata == null || rand.nextBoolean()) {
-                metadata = new MetadataUnit(++dataId, i);
+                metadata = new Metadata(++dataId, i);
                 dataCount++;
             }
 

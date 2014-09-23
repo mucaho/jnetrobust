@@ -14,7 +14,7 @@ import static net.ddns.mucaho.jarrayliterals.ArrayShortcuts.$S;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
-public class MetadataUnitMapIterTest {
+public class MetadataMapIterTest {
     private static short dataId = Short.MIN_VALUE;
 
     public Object[][] parametersForTestIterator() {
@@ -28,11 +28,11 @@ public class MetadataUnitMapIterTest {
     @Test
     @Parameters
     public final void testIterator(Short[][] refGroups) {
-        MetadataUnitMap dataMap = new MetadataUnitMap(SequenceComparator.instance);
-        EntryIterator<Short, MetadataUnit> iter = dataMap.getIterator();
+        MetadataMap dataMap = new MetadataMap(SequenceComparator.instance);
+        EntryIterator<Short, Metadata> iter = dataMap.getIterator();
         List<Short> refs = new ArrayList<Short>();
-        HashSet<MetadataUnit> metadatas = new HashSet<MetadataUnit>();
-        MetadataUnit metadata;
+        HashSet<Metadata> metadatas = new HashSet<Metadata>();
+        Metadata metadata;
         int expectedCount, actualCount;
         Short key;
 
@@ -40,7 +40,7 @@ public class MetadataUnitMapIterTest {
         expectedCount = 0;
         for (final Short[] refGroup : refGroups) {
             expectedCount += refGroup.length;
-            metadata = new MetadataUnit(++dataId, refGroup);
+            metadata = new Metadata(++dataId, refGroup);
             dataMap.putAll(new TreeSet<Short>(Arrays.asList(refGroup)), metadata);
             metadatas.add(metadata);
             refs.addAll(Arrays.asList(refGroup));

@@ -18,14 +18,14 @@ import static net.ddns.mucaho.jarrayliterals.ArrayShortcuts.*;
 import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
-public class MetadataUnitMapOpTest {
+public class MetadataMapOpTest {
     static {
         System.setProperty("jmockit-mockParameters", "annotated");
     }
 
     @Mocked
-    private MetadataUnit metadataUnit;
-    private final static MetadataUnitMap dataMap = new MetadataUnitMap(SequenceComparator.instance);
+    private Metadata metadata;
+    private final static MetadataMap dataMap = new MetadataMap(SequenceComparator.instance);
 
     public enum Op {
         PUT,
@@ -78,9 +78,9 @@ public class MetadataUnitMapOpTest {
     private void testDataOperations(Boolean createNew, final Short[] initialRefs,
                                     final Op op, final Short[] opRefs) {
 
-        final MetadataUnit metadata;
+        final Metadata metadata;
         if (createNew) {
-            metadata = new MetadataUnit();
+            metadata = new Metadata();
         } else {
             metadata = dataMap.get(initialRefs[0]);
             assertNotNull("There should be a valid metadata.", metadata);
@@ -137,7 +137,7 @@ public class MetadataUnitMapOpTest {
             } else if (op == Op.REPLACE) {
                 for (Short addRef : addRefs)
                     onInstance(metadata).addDynamicReference(withEqual(addRef));
-                metadataUnit.removeDynamicReference(opRefs[0]);
+                MetadataMapOpTest.this.metadata.removeDynamicReference(opRefs[0]);
             }
         }};
     }
@@ -149,7 +149,7 @@ public class MetadataUnitMapOpTest {
         } else {
             int elementCount = 0;
 
-            MetadataUnit metadata;
+            Metadata metadata;
             for (Short[] dataRefs : expectedDataMap) {
                 metadata = dataMap.get(dataRefs[0]);
                 assertNotNull("Shouldn't be null!", metadata);

@@ -61,17 +61,17 @@ public class ReceivedMapControlTest extends MapControlTest {
     @Parameters
     public final void testRemoveTail(final Short input, final Short[] outputs, final Short nextRemoteSeq) {
 
-        final LinkedHashSet<MetadataUnit> orderedMetadatas = new LinkedHashSet<MetadataUnit>();
+        final LinkedHashSet<Metadata> orderedMetadatas = new LinkedHashSet<Metadata>();
         new MockUp<ReceivedMapControl>() {
             @SuppressWarnings("unused")
             @Mock
-            private void notifyOrdered(MetadataUnit orderedPackage) {
+            private void notifyOrdered(Metadata orderedPackage) {
                 if (orderedPackage != null)
                     orderedMetadatas.add(orderedPackage);
             }
         };
 
-        MetadataUnit metadata = new MetadataUnit(input, input);
+        Metadata metadata = new Metadata(input, input);
         dataMap.putStatic(metadata);
         Deencapsulation.invoke(handler, "removeTail");
 
@@ -85,8 +85,8 @@ public class ReceivedMapControlTest extends MapControlTest {
             assertEquals("No ordered metadata must have occured", 0, orderedMetadatas.size());
 
         int i = 0;
-        for (MetadataUnit orderedMetadata : orderedMetadatas) {
-            assertEquals("Order and contents of datas must match", outputs[i], orderedMetadata.getValue());
+        for (Metadata orderedMetadata : orderedMetadatas) {
+            assertEquals("Order and contents of datas must match", outputs[i], orderedMetadata.getData());
             i++;
         }
     }
@@ -110,7 +110,7 @@ public class ReceivedMapControlTest extends MapControlTest {
         Deencapsulation.setField(handler, "nextDataId", (short) 1);
         dataMap.clear();
 
-        MetadataUnit metadata = new MetadataUnit(ref, ref);
+        Metadata metadata = new Metadata(ref, ref);
         dataMap.putStatic(metadata);
         if (addedRef)
             assertEquals("Ref was added as expected", metadata, dataMap.get(ref));

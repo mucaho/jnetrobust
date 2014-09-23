@@ -1,16 +1,16 @@
 package net.ddns.mucaho.jnetrobust;
 
-import net.ddns.mucaho.jnetrobust.controller.ProtocolUnit;
+import net.ddns.mucaho.jnetrobust.controller.Packet;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 
 public class ProtocolConfig {
-    public final static int MAX_PACKET_QUEUE_LIMIT = ProtocolUnit.MAX_DATAS_PER_PACKET;
+    public final static int MAX_PACKET_QUEUE_LIMIT = Packet.MAX_DATAS_PER_PACKET;
     public final static int MAX_PACKET_OFFSET_LIMIT = SequenceComparator.MAX_SEQUENCE / 4;
 
     private int packetQueueLimit = MAX_PACKET_QUEUE_LIMIT;
     private int packetOffsetLimit = MAX_PACKET_OFFSET_LIMIT;
     private long packetQueueTimeout = -1L;
-    private int packetRetransmitLimit = -1; //FIXME set to ProtocolUnit.MAX_DATAS_PER_PACKET;
+    private int packetRetransmitLimit = -1; //FIXME set to Packet.MAX_DATAS_PER_PACKET;
     private int K = 2;
     private int G = 25;
 

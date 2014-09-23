@@ -2,7 +2,7 @@ package net.ddns.mucaho.jnetrobust.controller;
 
 import net.ddns.mucaho.jnetrobust.ProtocolConfig;
 import net.ddns.mucaho.jnetrobust.control.*;
-import net.ddns.mucaho.jnetrobust.control.MetadataUnit;
+import net.ddns.mucaho.jnetrobust.control.Metadata;
 import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
 
 public class Controller {
@@ -22,7 +22,7 @@ public class Controller {
         pendingMapHandler = new PendingMapControl(config.listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
             @Override
-            protected void notifyAcked(MetadataUnit ackedMetadata, boolean directlyAcked) {
+            protected void notifyAcked(Metadata ackedMetadata, boolean directlyAcked) {
                 if (ackedMetadata != null && directlyAcked)
                     rttHandler.updateRTT(ackedMetadata.getTime()); // update RTT
 
@@ -39,8 +39,8 @@ public class Controller {
 
 
 
-    public ProtocolUnit produce() {
-        ProtocolUnit packet = new ProtocolUnit();
+    public Packet produce() {
+        Packet packet = new Packet();
         // adapt remote seq
         packet.setAck(remoteSeq);
         // Handle remote sequences
@@ -49,12 +49,12 @@ public class Controller {
         return packet;
     }
 
-    public MetadataUnit produce(Object data) {
+    public Metadata produce(Object data) {
         // Handle data id: adapt unique data id
-        return new MetadataUnit(++dataId, data);
+        return new Metadata(++dataId, data);
     }
 
-    public void send(ProtocolUnit packet, MetadataUnit metadata) {
+    public void send(Packet packet, Metadata metadata) {
         // adapt local seq
         localSeq++;
 
@@ -70,20 +70,20 @@ public class Controller {
 
 
 
-    public void consume(ProtocolUnit packet) {
+    public void consume(Packet packet) {
         // Handle local sequences
         pendingMapHandler.removeFromPending(packet.getAck(), packet.getLastAcks());
     }
 
-    public MetadataUnit receive(ProtocolUnit packet) {
-        MetadataUnit metadata = packet.removeFirstMetadata();
+    public Metadata receive(Packet packet) {
+        Metadata metadata = packet.removeFirstMetadata();
         if (metadata != null)
             receive(metadata);
 
         return metadata;
     }
 
-    private void receive(MetadataUnit metadata) {
+    private void receive(Metadata metadata) {
         short newRemoteSeq = metadata.getLastDynamicReference();
 
         // Handle remote sequences
@@ -96,8 +96,8 @@ public class Controller {
             remoteSeq = newRemoteSeq;
     }
 
-    public Object consume(MetadataUnit metadata) {
-        return metadata.getValue();
+    public Object consume(Metadata metadata) {
+        return metadata.getData();
     }
 
 

@@ -5,20 +5,20 @@ import net.ddns.mucaho.jnetrobust.util.TimeoutHandler;
 import java.util.Collection;
 
 public class ResponseControl {
-    private final TimeoutHandler<MetadataUnit> pendingDataTimeoutHandler =
-            new TimeoutHandler<MetadataUnit>();
+    private final TimeoutHandler<Metadata> pendingDataTimeoutHandler =
+            new TimeoutHandler<Metadata>();
 
-    private final Collection<MetadataUnit> pendingDatas;
+    private final Collection<Metadata> pendingDatas;
 
-    public ResponseControl(Collection<MetadataUnit> pendingMetadatas) {
+    public ResponseControl(Collection<Metadata> pendingMetadatas) {
         this.pendingDatas = pendingMetadatas;
     }
 
-    public void resetPendingTime(MetadataUnit pendingMetadata) {
+    public void resetPendingTime(Metadata pendingMetadata) {
         pendingMetadata.updateTime();
     }
 
-    public Collection<MetadataUnit> updatePendingTime(long maxWaitTime) {
+    public Collection<Metadata> updatePendingTime(long maxWaitTime) {
         return pendingDataTimeoutHandler.filterTimedOut(pendingDatas, maxWaitTime);
     }
 }
