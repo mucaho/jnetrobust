@@ -37,21 +37,23 @@ public class ChatMain {
         hostA.send("Hi!");
         hostA.send("How you doing?");
 
+        System.out.println();
         Thread.sleep(100);
 
         // receive at B
         receivedMessages = hostB.receive();
         for (String receivedMessage: receivedMessages)
-            System.out.println("[B]: "+receivedMessage);
+            System.out.println("<B>\t"+receivedMessage);
 
         // send from B
         hostB.send("Howdy! Fine, thanks.");
 
+        System.out.println();
         Thread.sleep(100);
 
         // receive at A
         receivedMessages = hostA.receive();
         for (String receivedMessage: receivedMessages)
-            System.out.println("[A]: "+receivedMessage);
+            System.out.println("<A>\t"+receivedMessage);
     }
 }
