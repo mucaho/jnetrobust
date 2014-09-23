@@ -118,7 +118,6 @@ public class TestHost<T> implements Runnable {
         if (debug) {
             System.out.println("E(X):\t" + protocol.getSmoothedRTT() +
                     "\tVar(X):\t" + protocol.getRTTVariation());
-            System.out.println();
         }
     }
 
