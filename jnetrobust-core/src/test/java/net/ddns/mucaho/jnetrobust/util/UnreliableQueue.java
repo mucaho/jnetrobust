@@ -31,12 +31,11 @@ public class UnreliableQueue<T extends Freezable<T>> {
         this.lossChance = lossChance;
     }
 
-    @SuppressWarnings("unchecked")
     public synchronized boolean offer(T e) {
         int counter = 0;
         if (Math.random() > lossChance) {
             do {
-                queue.offer(new UnreliableDelayed((T) e.clone(), calculateLag()));
+                queue.offer(new UnreliableDelayed(e.clone(), calculateLag()));
                 if (counter > 0)
                     listener.notifyDuplicate(e);
                 counter++;

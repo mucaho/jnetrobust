@@ -123,7 +123,6 @@ public class Packet<T> implements Freezable<Packet<T>> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Packet<T> clone() {
         Packet<T> clone = new Packet<T>();
         clone.ack = ack;

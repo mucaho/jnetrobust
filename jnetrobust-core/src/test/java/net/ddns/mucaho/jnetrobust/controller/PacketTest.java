@@ -88,7 +88,6 @@ public class PacketTest {
 
     @Test
     @Parameters
-    @SuppressWarnings("unchecked")
     public final void testClone(Short ack, Integer lastAcks) throws Exception {
         Packet<Object> original = new Packet<Object>();
         original.setAck(ack);
@@ -98,7 +97,7 @@ public class PacketTest {
         Deencapsulation.setField(metadata, "staticReference", Short.MIN_VALUE);
         Deencapsulation.invoke(metadata, "addDynamicReference", Short.MIN_VALUE);
         original.addLastMetadata(metadata);
-        Packet<Object> clone = (Packet<Object>) original.clone();
+        Packet<Object> clone = original.clone();
 
         assertEquals("ack mismatch", original.getAck(), clone.getAck());
         assertEquals("lastAck mismatch", original.getLastAcks(), clone.getLastAcks());

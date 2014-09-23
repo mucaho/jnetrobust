@@ -120,12 +120,11 @@ public class MetadataTest {
 
     @Test
     @Parameters
-    @SuppressWarnings("unchecked")
     public final void testClone(Short[] refs, String value) throws Exception {
         Metadata<Object> original = new Metadata<Object>(refs[0], value);
         for (Short ref : refs)
             original.addDynamicReference(ref);
-        Metadata<Object> clone = (Metadata<Object>) original.clone();
+        Metadata<Object> clone = original.clone();
 
         assertEquals("Value mismatch.", original.getData(), clone.getData());
         assertEquals("Value mismatch", original.getStaticReference(), clone.getStaticReference());
