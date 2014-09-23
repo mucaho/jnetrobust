@@ -77,23 +77,43 @@ public class ChatMain {
         hostA.send("Hi!");
         hostA.send("How you doing?");
 
+        System.out.println();
         Thread.sleep(100);
 
         // receive at B
         receivedMessages = hostB.receive();
         for (String receivedMessage: receivedMessages)
-            System.out.println("[B]: "+receivedMessage);
+            System.out.println("<B>\t"+receivedMessage);
 
         // send from B
         hostB.send("Howdy! Fine, thanks.");
 
+        System.out.println();
         Thread.sleep(100);
 
         // receive at A
         receivedMessages = hostA.receive();
         for (String receivedMessage: receivedMessages)
-            System.out.println("[A]: "+receivedMessage);
+            System.out.println("<A>\t"+receivedMessage);
     }
 }
 ```
+**Console Output**
+```
+ A	Data sent	                     -32767	      Hi!	 
+ A	Data sent	                     -32766	      How you doing?	   
 
+ B	Data received ordered	         -32767	      Hi!	  
+ B	Data received	                 -32767	      Hi!	  
+ B	Data received ordered	         -32766	      How you doing?	  
+ B	Data received	                 -32766	      How you doing?
+ <B>: Hi!  
+ <B>: How you doing?   
+ B	Data sent	                     -32767	      Howdy! Fine, thanks.	  
+
+ A	Data was received at other end   -32767	      Hi!	  
+ A	Data was received at other end	 -32766	      How you doing?	  
+ A	Data received ordered	         -32767	      Howdy! Fine, thanks.	  
+ A	Data received	                 -32767	      Howdy! Fine, thanks.	  
+ <A>: Howdy! Fine, thanks.  
+```
