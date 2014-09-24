@@ -14,17 +14,31 @@ import java.util.*;
 
 public class Protocol<T> implements Comparator<Short> {
     private final RetransmissionController<T> controller;
+    private final boolean shouldRetransmit;
 
     public Protocol(ProtocolListener<T> protocolListener) {
-        this(new ProtocolConfig<T>(protocolListener));
+        this(protocolListener, true);
     }
     public Protocol(ProtocolConfig<T> config) {
-        this(config, null, null);
+        this(config, true);
+    }
+    public Protocol(ProtocolListener<T> protocolListener, boolean shouldRetransmit) {
+        this(protocolListener, shouldRetransmit, null, null);
+    }
+    public Protocol(ProtocolConfig<T> config, boolean shouldRetransmit) {
+        this(config, shouldRetransmit, null, null);
     }
     public Protocol(ProtocolListener<T> protocolListener, String name, Logger logger) {
-        this(new ProtocolConfig<T>(protocolListener), name, logger);
+        this(protocolListener, true, name, logger);
     }
     public Protocol(ProtocolConfig<T> config, String name, Logger logger) {
+        this(config, true, name, logger);
+    }
+    public Protocol(ProtocolListener<T> protocolListener, boolean shouldRetransmit, String name, Logger logger) {
+        this(new ProtocolConfig<T>(protocolListener), shouldRetransmit, name, logger);
+    }
+    public Protocol(ProtocolConfig<T> config, boolean shouldRetransmit, String name, Logger logger) {
+        this.shouldRetransmit = shouldRetransmit;
         if (name != null && logger != null) {
             ProtocolListener<T> debugListener = new DebugProtocolListener<T>(config.listener, name, logger);
             this.controller = new DebugController<T>(new ProtocolConfig<T>(debugListener, config), name, logger);
@@ -45,9 +59,11 @@ public class Protocol<T> implements Comparator<Short> {
 
     public synchronized Map.Entry<Short, Packet<T>> send(T data) {
         Packet<T> packet = controller.produce();
-        Collection<Metadata<T>> retransmits = controller.retransmit();
-        for (Metadata<T> retransmit : retransmits) {
-            controller.send(packet, retransmit);
+        if (shouldRetransmit) {
+            Collection<Metadata<T>> retransmits = controller.retransmit();
+            for (Metadata<T> retransmit : retransmits) {
+                controller.send(packet, retransmit);
+            }
         }
         if (data != null)
             controller.send(packet, controller.produce(data));
@@ -91,8 +107,8 @@ public class Protocol<T> implements Comparator<Short> {
 
 
     @Override
-    public int compare(Short o1, Short o2) {
-        return IdComparator.instance.compare(o1, o2);
+    public int compare(Short id1, Short id2) {
+        return IdComparator.instance.compare(id1, id2);
     }
 
     public long getSmoothedRTT() {
