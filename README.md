@@ -17,12 +17,13 @@ It provides some benefits from both transport layer protocols that are accessibl
 * reliability of transmitted data - like TCP   
    counters network characteristics like out-of-order delivery, package loss, package duplication
 * received, unvalidated data is available immediately - like UDP   
-   unlike in TCP where the protocol provides you the data only after it can guarantee in-order delivery
+   this is different from TCP, as TCP provides you the data only after it can guarantee in-order delivery
 * the package is bigger than UDP's package, but smaller than TCP's package
 
 **Caveats**
 * no flow control - unlike TCP
-* no congestion control - unlike TCP
+* currently no congestion control - unlike TCP   
+   [future releases](https://github.com/mucaho/jnetrobust/issues/11) may include this feature
 
 Why should you use it?
 ----------------------
