@@ -1,0 +1,18 @@
+JNetRobust
+Copyright 2014 mucaho
+
+This software includes modified example code from jgn - Java Game
+Networking (https://code.google.com/p/jgn/).
+
+This software includes other software developed by mucaho,
+namely JNetEmu (http://mucaho.ddns.net/jnetemu) and
+JArrayLiterals (http://mucaho.ddns.net/jarrayliterals).
+
+This software depends on other software that is specified
+in this software's pom.xml (Maven configuration) files.
+
+This software is based on concepts introduced by Glenn Fiedler
+(gafferongames) in the article Relability and Flow Control
+on his website (http://gafferongames.com/networking-for-game-programmers/reliability-and-flow-control/).
+
+This software partly implements RFC 6298 (http://tools.ietf.org/html/rfc6298).
