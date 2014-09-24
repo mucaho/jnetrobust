@@ -104,7 +104,7 @@ public class DelayedTest {
             hostListenerA.notifyRetransmitted(withCapture(retransmitsA));
 
             protocolListenerA.handleAckedData(anyShort, withCapture(ackedA));
-            protocolListenerA.handleNotAckedData(anyShort, withCapture(notAckedA));
+            protocolListenerA.handleUnackedData(anyShort, withCapture(notAckedA));
             protocolListenerA.handleOrderedData(anyShort, withCapture(orderedA));
             protocolListenerA.handleUnorderedData(anyShort, withCapture(unorderedA));
         }};
@@ -115,7 +115,7 @@ public class DelayedTest {
             hostListenerB.notifyRetransmitted(withCapture(retransmitsB));
 
             protocolListenerB.handleAckedData(anyShort, withCapture(ackedB));
-            protocolListenerB.handleNotAckedData(anyShort, withCapture(notAckedB));
+            protocolListenerB.handleUnackedData(anyShort, withCapture(notAckedB));
             protocolListenerB.handleOrderedData(anyShort, withCapture(orderedB));
             protocolListenerB.handleUnorderedData(anyShort, withCapture(unorderedB));
         }};
@@ -211,11 +211,11 @@ public class DelayedTest {
 
         if (retransmit) {
             new Verifications() {{
-                protocolListenerA.handleNotAckedData(anyShort, anyLong); times = 0;
+                protocolListenerA.handleUnackedData(anyShort, anyLong); times = 0;
                 protocolListenerA.handleUnorderedData(anyShort, anyLong); times = 0;
             }};
             new Verifications() {{
-                protocolListenerB.handleNotAckedData(anyShort, anyLong); times = 0;
+                protocolListenerB.handleUnackedData(anyShort, anyLong); times = 0;
                 protocolListenerB.handleUnorderedData(anyShort, anyLong); times = 0;
             }};
         }

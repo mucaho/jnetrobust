@@ -13,7 +13,7 @@ import java.util.Random;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
-public class SequenceComparatorTest {
+public class IdComparatorTest {
 
     public Collection<Object[]> parametersForTestCompare() {
         ArrayList<Object[]> list = new ArrayList<Object[]>();
@@ -32,25 +32,25 @@ public class SequenceComparatorTest {
 
 
         Random rand = new Random();
-        short randomSeq1;
-        short randomSeq2;
+        short randomId1;
+        short randomId2;
         int diff;
-        final int MAX_SEQUENCE = SequenceComparator.MAX_SEQUENCE;
+        final int MAX_SEQUENCE = IdComparator.MAX_SEQUENCE;
 
         for (int i = 0; i < 100; ++i) {
-            randomSeq1 = (short) rand.nextInt(Short.MAX_VALUE);
-            randomSeq2 = (short) rand.nextInt(Short.MAX_VALUE);
-            diff = randomSeq1 - randomSeq2;
-            list.add(new Object[]{randomSeq1, randomSeq2, diff});
+            randomId1 = (short) rand.nextInt(Short.MAX_VALUE);
+            randomId2 = (short) rand.nextInt(Short.MAX_VALUE);
+            diff = randomId1 - randomId2;
+            list.add(new Object[]{randomId1, randomId2, diff});
         }
 
         for (int i = 0; i < 100; ++i) {
-            randomSeq1 = (short) (rand.nextInt(MAX_SEQUENCE / 4) + MAX_SEQUENCE / 4 - 1);
-            randomSeq2 = (short) -(rand.nextInt(MAX_SEQUENCE / 4) + MAX_SEQUENCE / 4 - 1);
-            diff = randomSeq1 - randomSeq2;
+            randomId1 = (short) (rand.nextInt(MAX_SEQUENCE / 4) + MAX_SEQUENCE / 4 - 1);
+            randomId2 = (short) -(rand.nextInt(MAX_SEQUENCE / 4) + MAX_SEQUENCE / 4 - 1);
+            diff = randomId1 - randomId2;
             diff = MAX_SEQUENCE - diff;
-            list.add(new Object[]{randomSeq1, randomSeq2, -diff});
-            list.add(new Object[]{randomSeq2, randomSeq1, diff});
+            list.add(new Object[]{randomId1, randomId2, -diff});
+            list.add(new Object[]{randomId2, randomId1, diff});
         }
 
         return list;
@@ -58,8 +58,8 @@ public class SequenceComparatorTest {
 
     @Test
     @Parameters
-    public final void testCompare(short seq1, short seq2, int expectedDiff) {
-        assertEquals("compare(" + seq1 + ", " + seq2 + ") != " + expectedDiff,
-                expectedDiff, SequenceComparator.instance.compare(seq1, seq2));
+    public final void testCompare(short id1, short id2, int expectedDiff) {
+        assertEquals("compare(" + id1 + ", " + id2 + ") != " + expectedDiff,
+                expectedDiff, IdComparator.instance.compare(id1, id2));
     }
 }

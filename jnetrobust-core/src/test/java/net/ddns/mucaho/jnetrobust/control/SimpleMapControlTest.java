@@ -2,7 +2,7 @@ package net.ddns.mucaho.jnetrobust.control;
 
 import mockit.Deencapsulation;
 import net.ddns.mucaho.jnetrobust.ProtocolConfig;
-import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
+import net.ddns.mucaho.jnetrobust.util.IdComparator;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,10 +60,10 @@ public class SimpleMapControlTest extends MapControlTest {
 
         Short key;
         Metadata<Object> metadata = null;
-        int dataCount = 0, max = -SequenceComparator.MAX_SEQUENCE / 2;
+        int dataCount = 0, max = -IdComparator.MAX_SEQUENCE / 2;
         for (int i = 0; i < loopCount; i++) {
             do {
-                key = (short) (rand.nextInt(SequenceComparator.MAX_SEQUENCE / 2) - SequenceComparator.MAX_SEQUENCE / 4);
+                key = (short) (rand.nextInt(IdComparator.MAX_SEQUENCE / 2) - IdComparator.MAX_SEQUENCE / 4);
             } while (dataMap.get(key) != null || discardedKeys.contains(key));
             max = Math.max(key, max);
 
@@ -143,7 +143,7 @@ public class SimpleMapControlTest extends MapControlTest {
 
         Metadata<Object> metadata = null;
         int dataCount = 0;
-        for (int i = 0; i < SequenceComparator.MAX_SEQUENCE; i++) {
+        for (int i = 0; i < IdComparator.MAX_SEQUENCE; i++) {
             if (metadata == null || rand.nextBoolean()) {
                 metadata = new Metadata<Object>(++dataId, i);
                 dataCount++;
@@ -158,9 +158,9 @@ public class SimpleMapControlTest extends MapControlTest {
         Deencapsulation.invoke(control, "discardTooOldEntries");
 
         assertTrue("first key of map is smaller than last key",
-                SequenceComparator.instance.compare(dataMap.firstKey(), dataMap.lastKey()) <= 0);
+                IdComparator.instance.compare(dataMap.firstKey(), dataMap.lastKey()) <= 0);
         assertTrue("first key of map is less than offset smaller than last key",
-                SequenceComparator.instance.compare(dataMap.firstKey(), dataMap.lastKey()) >=
+                IdComparator.instance.compare(dataMap.firstKey(), dataMap.lastKey()) >=
                         -control.maxEntryOffset);
     }
 

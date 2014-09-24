@@ -3,16 +3,16 @@ package net.ddns.mucaho.jnetrobust.controller;
 import net.ddns.mucaho.jnetrobust.ProtocolConfig;
 import net.ddns.mucaho.jnetrobust.control.*;
 import net.ddns.mucaho.jnetrobust.control.Metadata;
-import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
+import net.ddns.mucaho.jnetrobust.util.IdComparator;
 
 public class Controller<T> {
     protected short dataId = Short.MIN_VALUE;
     protected ReceivedMapControl<T> receivedMapHandler;
 
-    protected short localSeq = Short.MIN_VALUE;
+    protected short localTransmissionId = Short.MIN_VALUE;
     protected PendingMapControl<T> pendingMapHandler;
 
-    protected short remoteSeq = Short.MIN_VALUE;
+    protected short remoteTransmissionId = Short.MIN_VALUE;
     protected ReceivedBitsControl receivedBitsHandler;
 
     protected RTTControl rttHandler;
@@ -30,7 +30,7 @@ public class Controller<T> {
             }
         };
 
-        receivedBitsHandler = new ReceivedBitsControl(SequenceComparator.instance);
+        receivedBitsHandler = new ReceivedBitsControl(IdComparator.instance);
         receivedMapHandler = new ReceivedMapControl<T>(dataId, config.listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
@@ -41,25 +41,27 @@ public class Controller<T> {
 
     public Packet<T> produce() {
         Packet<T> packet = new Packet<T>();
-        // adapt remote seq
-        packet.setAck(remoteSeq);
-        // Handle remote sequences
-        packet.setLastAcks((int) receivedBitsHandler.getReceivedRemoteBits());
+
+        // apply remote transmissionId
+        packet.setTransmissionAck(remoteTransmissionId);
+
+        // apply remote precedingTransmissionIds
+        packet.setPrecedingTransmissionAcks((int) receivedBitsHandler.getReceivedRemoteBits());
 
         return packet;
     }
 
     public Metadata<T> produce(T data) {
-        // Handle data id: adapt unique data id
+        // apply unique data id; increment unique data id
         return new Metadata<T>(++dataId, data);
     }
 
     public void send(Packet<T> packet, Metadata<T> metadata) {
-        // adapt local seq
-        localSeq++;
+        // increment local transmissionId
+        localTransmissionId++;
 
-        // Handle local sequences
-        pendingMapHandler.addToPending(localSeq, metadata);
+        // add pending, local transmissionIds
+        pendingMapHandler.addToPending(localTransmissionId, metadata);
 
 
         packet.addLastMetadata(metadata);
@@ -68,8 +70,8 @@ public class Controller<T> {
 
 
     public void consume(Packet<T> packet) {
-        // Handle local sequences
-        pendingMapHandler.removeFromPending(packet.getAck(), packet.getLastAcks());
+        // remove pending, local transmissionIds
+        pendingMapHandler.removeFromPending(packet.getTransmissionAck(), packet.getPrecedingTransmissionAcks());
     }
 
     public Metadata<T> receive(Packet<T> packet) {
@@ -81,16 +83,17 @@ public class Controller<T> {
     }
 
     private void receive(Metadata<T> metadata) {
-        short newRemoteSeq = metadata.getLastDynamicReference();
+        short newRemoteTransmissionId = metadata.getLastTransmissionId();
 
-        // Handle remote sequences
-        receivedBitsHandler.addToReceived(metadata.getDynamicReferences(), remoteSeq);
-        // Handle metadata id
+        // add received, remote transmissionIds
+        receivedBitsHandler.addToReceived(metadata.getTransmissionIds(), remoteTransmissionId);
+
+        // add received, remote dataIds
         receivedMapHandler.addToReceived(metadata);
 
-        // adapt remote seq
-        if (SequenceComparator.instance.compare(remoteSeq, newRemoteSeq) < 0)
-            remoteSeq = newRemoteSeq;
+        // change remote transmissionId
+        if (IdComparator.instance.compare(remoteTransmissionId, newRemoteTransmissionId) < 0)
+            remoteTransmissionId = newRemoteTransmissionId;
     }
 
     public T consume(Metadata<T> metadata) {
@@ -106,8 +109,8 @@ public class Controller<T> {
     public String toString() {
         return "Controller:\t"
                 + "DataId = " + dataId + "\t"
-                + "LocalSeqNo = " + localSeq + "\t"
-                + "RmoteSeqNo = " + remoteSeq;
+                + "LocalTransmissionId = " + localTransmissionId + "\t"
+                + "RemoteTransmissionId = " + remoteTransmissionId;
     }
 
     public long getSmoothedRTT() {

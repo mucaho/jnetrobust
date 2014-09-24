@@ -21,7 +21,7 @@ public class DebugController<T> extends RetransmissionController<T> {
         Metadata<T> out = super.produce(data);
         T value = out.getData();
 
-        logger.log(name, Logger.LoggingEvent.SEND.toString(), String.valueOf(out.getStaticReference()),
+        logger.log(name, Logger.LoggingEvent.SEND.toString(), String.valueOf(out.getDataId()),
                 value != null ? value.toString() : "null");
 
         return out;
@@ -30,7 +30,7 @@ public class DebugController<T> extends RetransmissionController<T> {
     @Override
     public T consume(Metadata<T> metadata) {
         T value = metadata.getData();
-        logger.log(name, Logger.LoggingEvent.RECEIVE.toString(), String.valueOf(metadata.getStaticReference()),
+        logger.log(name, Logger.LoggingEvent.RECEIVE.toString(), String.valueOf(metadata.getDataId()),
                 value != null ? value.toString() : "null");
 
         return super.consume(metadata);
@@ -40,7 +40,7 @@ public class DebugController<T> extends RetransmissionController<T> {
     public Collection<Metadata<T>> retransmit() {
         Collection<Metadata<T>> retransmits = super.retransmit();
         for (Metadata<T> retransmit: retransmits)
-            logger.log(name, Logger.LoggingEvent.RETRANSMIT.toString(), String.valueOf(retransmit.getStaticReference()),
+            logger.log(name, Logger.LoggingEvent.RETRANSMIT.toString(), String.valueOf(retransmit.getDataId()),
                     retransmit.getData() != null ? retransmit.getData().toString() : "null");
 
         return retransmits;

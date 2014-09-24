@@ -130,9 +130,9 @@ public class PendingMapControlTest extends MapControlTest {
 
         for (Metadata<Object> metadata : handler.dataMap.getMap().values()) {
             Short[] dataValues = (Short[]) metadata.getData();
-            assertEquals("Reference count match", dataValues.length, metadata.getDynamicReferences().size());
+            assertEquals("Reference count match", dataValues.length, metadata.getTransmissionIds().size());
             for (Short dataValue : dataValues) {
-                assertTrue("Reference match", metadata.getDynamicReferences().contains(dataValue));
+                assertTrue("Reference match", metadata.getTransmissionIds().contains(dataValue));
             }
         }
 

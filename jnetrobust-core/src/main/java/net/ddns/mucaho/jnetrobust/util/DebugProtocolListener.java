@@ -38,8 +38,8 @@ public class DebugProtocolListener<T> extends ProtocolListener<T> {
     }
 
     @Override
-    public void handleNotAckedData(short dataId, T unackedData) {
+    public void handleUnackedData(short dataId, T unackedData) {
         logger.log(name, Logger.LoggingEvent.NOTACKED.toString(), String.valueOf(dataId),
                 unackedData != null ? unackedData.toString() : "null");
-        delegate.handleNotAckedData(dataId, unackedData);    }
+        delegate.handleUnackedData(dataId, unackedData);    }
 }

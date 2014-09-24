@@ -21,8 +21,8 @@ public class Packet<T> implements Freezable<Packet<T>> {
 
     private Deque<Metadata<T>> metadatas = new LinkedList<Metadata<T>>();
     private transient Deque<Metadata<T>> metadatasOut = CollectionUtils.unmodifiableDeque(metadatas);
-    private short ack;
-    private int lastAcks;
+    private short transmissionAck;
+    private int precedingTransmissionAcks;
 
 
     public Deque<Metadata<T>> getMetadatas() {
@@ -48,20 +48,20 @@ public class Packet<T> implements Freezable<Packet<T>> {
         return metadatas.pollFirst();
     }
 
-    public short getAck() {
-        return ack;
+    public short getTransmissionAck() {
+        return transmissionAck;
     }
 
-    void setAck(short ack) {
-        this.ack = ack;
+    void setTransmissionAck(short ack) {
+        this.transmissionAck = ack;
     }
 
-    public int getLastAcks() {
-        return lastAcks;
+    public int getPrecedingTransmissionAcks() {
+        return precedingTransmissionAcks;
     }
 
-    void setLastAcks(int lastAcks) {
-        this.lastAcks = lastAcks;
+    void setPrecedingTransmissionAcks(int lastAcks) {
+        this.precedingTransmissionAcks = lastAcks;
     }
 
     @Override
@@ -71,8 +71,8 @@ public class Packet<T> implements Freezable<Packet<T>> {
 
     public String toDebugString() {
         return "Packet:" + "\t"
-                + "ack = " + ack + "\t"
-                + "lastAcks = " + String.format("%33s", Long.toBinaryString(lastAcks)) + "\t"
+                + "transmissionAck = " + transmissionAck + "\t"
+                + "precedingTransmissionAcks = " + String.format("%33s", Long.toBinaryString(precedingTransmissionAcks)) + "\t"
                 + "metadatas = " + Arrays.deepToString(metadatas.toArray()) + "\n";
     }
 
@@ -106,8 +106,8 @@ public class Packet<T> implements Freezable<Packet<T>> {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeShort(ack);
-        out.writeInt(lastAcks);
+        out.writeShort(transmissionAck);
+        out.writeInt(precedingTransmissionAcks);
         out.writeByte(metadatas.size());
         for (Metadata<T> metadata: metadatas)
             Metadata.<T>writeExternalStatic(metadata, out);
@@ -115,8 +115,8 @@ public class Packet<T> implements Freezable<Packet<T>> {
 
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        ack = in.readShort();
-        lastAcks = in.readInt();
+        transmissionAck = in.readShort();
+        precedingTransmissionAcks = in.readInt();
         int size = in.readUnsignedByte();
         for (int i = 0; i < size; ++i)
             metadatas.addLast(Metadata.<T>readExternalStatic(in));
@@ -125,8 +125,8 @@ public class Packet<T> implements Freezable<Packet<T>> {
     @Override
     public Packet<T> clone() {
         Packet<T> clone = new Packet<T>();
-        clone.ack = ack;
-        clone.lastAcks = lastAcks;
+        clone.transmissionAck = transmissionAck;
+        clone.precedingTransmissionAcks = precedingTransmissionAcks;
         for (Metadata<T> metadata: metadatas)
             clone.addLastMetadata(metadata.clone());
         return clone;

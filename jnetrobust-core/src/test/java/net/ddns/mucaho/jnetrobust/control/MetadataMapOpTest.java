@@ -5,7 +5,7 @@ import junitparams.Parameters;
 import mockit.FullVerificationsInOrder;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
-import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
+import net.ddns.mucaho.jnetrobust.util.IdComparator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -25,7 +25,7 @@ public class MetadataMapOpTest {
 
     @Mocked
     private Metadata<Object> metadata;
-    private final static MetadataMap<Object> dataMap = new MetadataMap<Object>(SequenceComparator.instance);
+    private final static MetadataMap<Object> dataMap = new MetadataMap<Object>(IdComparator.instance);
 
     public enum Op {
         PUT,
@@ -89,11 +89,11 @@ public class MetadataMapOpTest {
         final List<Short> addRefs = new ArrayList<Short>();
         final List<Short> removeRefs = new ArrayList<Short>();
         new NonStrictExpectations() {{
-            onInstance(metadata).getDynamicReferences();
+            onInstance(metadata).getTransmissionIds();
             result = new TreeSet<Short>(Arrays.asList(initialRefs));
-            onInstance(metadata).addDynamicReference(withCapture(addRefs));
+            onInstance(metadata).addTransmissionId(withCapture(addRefs));
             result = true;
-            onInstance(metadata).removeDynamicReference(withCapture(removeRefs));
+            onInstance(metadata).removeTransmissionId(withCapture(removeRefs));
             result = true;
         }};
 
@@ -126,18 +126,18 @@ public class MetadataMapOpTest {
 
         new FullVerificationsInOrder() {{
             if (op == Op.PUTALL_DATA || op == Op.REMOVEALL_REF || op == Op.REMOVEALL_DATA)
-                onInstance(metadata).getDynamicReferences();
+                onInstance(metadata).getTransmissionIds();
 
             if (op.toString().startsWith(Op.PUT.toString())) {
                 for (Short addRef : addRefs)
-                    onInstance(metadata).addDynamicReference(withEqual(addRef));
+                    onInstance(metadata).addTransmissionId(withEqual(addRef));
             } else if (op.toString().startsWith(Op.REMOVE.toString())) {
                 for (Short removeRef : removeRefs)
-                    onInstance(metadata).removeDynamicReference(withEqual(removeRef));
+                    onInstance(metadata).removeTransmissionId(withEqual(removeRef));
             } else if (op == Op.REPLACE) {
                 for (Short addRef : addRefs)
-                    onInstance(metadata).addDynamicReference(withEqual(addRef));
-                MetadataMapOpTest.this.metadata.removeDynamicReference(opRefs[0]);
+                    onInstance(metadata).addTransmissionId(withEqual(addRef));
+                MetadataMapOpTest.this.metadata.removeTransmissionId(opRefs[0]);
             }
         }};
     }

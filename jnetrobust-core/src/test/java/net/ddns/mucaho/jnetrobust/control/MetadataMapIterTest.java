@@ -3,7 +3,7 @@ package net.ddns.mucaho.jnetrobust.control;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import net.ddns.mucaho.jnetrobust.util.EntryIterator;
-import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
+import net.ddns.mucaho.jnetrobust.util.IdComparator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -28,7 +28,7 @@ public class MetadataMapIterTest {
     @Test
     @Parameters
     public final void testIterator(Short[][] refGroups) {
-        MetadataMap<Object> dataMap = new MetadataMap<Object>(SequenceComparator.instance);
+        MetadataMap<Object> dataMap = new MetadataMap<Object>(IdComparator.instance);
         EntryIterator<Short, Metadata<Object>> iter = dataMap.getIterator();
         List<Short> refs = new ArrayList<Short>();
         HashSet<Metadata<Object>> metadatas = new HashSet<Metadata<Object>>();

@@ -18,6 +18,6 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>, Tran
     }
 
     @Override
-    public void handleNotAckedData(short dataId, T unackedData) {
+    public void handleUnackedData(short dataId, T unackedData) {
     }
 }

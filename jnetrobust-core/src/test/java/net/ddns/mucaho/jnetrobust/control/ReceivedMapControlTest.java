@@ -72,7 +72,7 @@ public class ReceivedMapControlTest extends MapControlTest {
         };
 
         Metadata<Object> metadata = new Metadata<Object>(input, input);
-        dataMap.putStatic(metadata);
+        dataMap.putDataId(metadata);
         Deencapsulation.invoke(handler, "removeTail");
 
 
@@ -110,7 +110,7 @@ public class ReceivedMapControlTest extends MapControlTest {
         dataMap.clear();
 
         Metadata<Object> metadata = new Metadata<Object>(ref, ref);
-        dataMap.putStatic(metadata);
+        dataMap.putDataId(metadata);
         if (addedRef)
             assertEquals("Ref was added as expected", metadata, dataMap.get(ref));
         else

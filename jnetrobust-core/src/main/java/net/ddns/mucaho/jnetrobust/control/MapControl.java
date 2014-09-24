@@ -1,6 +1,6 @@
 package net.ddns.mucaho.jnetrobust.control;
 
-import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
+import net.ddns.mucaho.jnetrobust.util.IdComparator;
 import net.ddns.mucaho.jnetrobust.util.TimeoutHandler;
 
 import java.util.Collection;
@@ -9,7 +9,7 @@ import java.util.NavigableMap;
 
 
 public abstract class MapControl<T> {
-    protected final static Comparator<Short> comparator = SequenceComparator.instance;
+    protected final static Comparator<Short> comparator = IdComparator.instance;
 
     private final TimeoutHandler<Metadata<T>> entryTimeoutHandler =
             new TimeoutHandler<Metadata<T>>();
@@ -72,7 +72,7 @@ public abstract class MapControl<T> {
             Collection<Metadata<T>> timedOuts =
                     entryTimeoutHandler.filterTimedOut(dataMap.getMap().values(), maxEntryTimeout);
             for (Metadata<T> timedOut : timedOuts)
-                discardEntry(timedOut.getFirstDynamicReference());
+                discardEntry(timedOut.getFirstTransmissionId());
         }
     }
 
@@ -80,7 +80,7 @@ public abstract class MapControl<T> {
         if (maxEntryOccurrences > 0) {
             Short key = dataMap.firstKey();
             while (key != null) {
-                if (dataMap.get(key).getDynamicReferences().size() > maxEntryOccurrences)
+                if (dataMap.get(key).getTransmissionIds().size() > maxEntryOccurrences)
                     discardEntry(key);
                 key = dataMap.higherKey(key);
             }

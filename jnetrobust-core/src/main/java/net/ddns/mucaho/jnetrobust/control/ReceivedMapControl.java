@@ -21,9 +21,9 @@ public class ReceivedMapControl<T> extends MapControl<T> {
     protected void createMap() {
         dataMap = new MetadataMap<T>(comparator) {
             @Override
-            Metadata<T> putStatic(Metadata<T> metadata) {
-                if (comparator.compare(metadata.getStaticReference(), nextDataId) >= 0) {
-                    return super.putStatic(metadata);
+            Metadata<T> putDataId(Metadata<T> metadata) {
+                if (comparator.compare(metadata.getDataId(), nextDataId) >= 0) {
+                    return super.putDataId(metadata);
                 }
                 return null;
             }
@@ -36,7 +36,7 @@ public class ReceivedMapControl<T> extends MapControl<T> {
         super.discardEntries();
 
         // add original to received map
-        dataMap.putStatic(metadata);
+        dataMap.putDataId(metadata);
 
         // remove multiple from map -> least, consecutive, ordered elements
         removeTail();
@@ -45,7 +45,7 @@ public class ReceivedMapControl<T> extends MapControl<T> {
     private void removeTail() {
         Short key = dataMap.firstKey();
         while (key != null && key == nextDataId) {
-            notifyOrdered(dataMap.removeStatic(key));
+            notifyOrdered(dataMap.removeDataId(key));
 
             key = dataMap.higherKey(key);
             nextDataId++;
@@ -56,17 +56,17 @@ public class ReceivedMapControl<T> extends MapControl<T> {
     protected void discardEntry(short key) {
         nextDataId = comparator.compare((short) (key + 1), nextDataId) > 0 ?
                 (short) (key + 1) : nextDataId;
-        notifyUnordered(dataMap.removeStatic(key));
+        notifyUnordered(dataMap.removeDataId(key));
     }
 
     private void notifyUnordered(Metadata<T> unorderedMetadata) {
         if (unorderedMetadata != null)
-            listener.handleUnorderedData(unorderedMetadata.getStaticReference(), unorderedMetadata.getData());
+            listener.handleUnorderedData(unorderedMetadata.getDataId(), unorderedMetadata.getData());
     }
 
     private void notifyOrdered(Metadata<T> orderedMetadata) {
         if (orderedMetadata != null)
-            listener.handleOrderedData(orderedMetadata.getStaticReference(), orderedMetadata.getData());
+            listener.handleOrderedData(orderedMetadata.getDataId(), orderedMetadata.getData());
 
     }
 }

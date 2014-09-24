@@ -46,17 +46,17 @@ public class MetadataTest {
                                      Short[] inRefs, Short[] expectedRefs) {
         if (shouldAdd) {
             for (short ref : inRefs)
-                metadata.addDynamicReference(ref);
+                metadata.addTransmissionId(ref);
         } else {
             for (short ref : inRefs)
-                metadata.removeDynamicReference(ref);
+                metadata.removeTransmissionId(ref);
         }
 
         assertEquals("Reference count mismatch.",
-                expectedRefs.length, metadata.getDynamicReferences().size());
+                expectedRefs.length, metadata.getTransmissionIds().size());
 
         int i = 0;
-        for (short ref : metadata.getDynamicReferences()) {
+        for (short ref : metadata.getTransmissionIds()) {
             assertEquals("Reference does not match.", expectedRefs[i++], (Short) ref);
         }
     }
@@ -87,7 +87,7 @@ public class MetadataTest {
         {
             outMetadata = new Metadata<Object>(refs[0], value);
             for (Short ref : refs)
-                outMetadata.addDynamicReference(ref);
+                outMetadata.addTransmissionId(ref);
             outMetadata.writeExternal(out);
         }
         out.close();
@@ -101,9 +101,9 @@ public class MetadataTest {
         in.close();
 
         assertEquals("Value mismatch.", outMetadata.getData(), inMetadata.getData());
-        assertEquals("Static reference mismatch", outMetadata.getStaticReference(), inMetadata.getStaticReference());
-        assertEquals("Reference count mismatch.", 1, inMetadata.getDynamicReferences().size());
-        assertEquals("Dynamic reference mismatch", outMetadata.getLastDynamicReference(), inMetadata.getLastDynamicReference());
+        assertEquals("Static reference mismatch", outMetadata.getDataId(), inMetadata.getDataId());
+        assertEquals("Reference count mismatch.", 1, inMetadata.getTransmissionIds().size());
+        assertEquals("TransmissionId mismatch", outMetadata.getLastTransmissionId(), inMetadata.getLastTransmissionId());
     }
 
 
@@ -123,29 +123,29 @@ public class MetadataTest {
     public final void testClone(Short[] refs, String value) throws Exception {
         Metadata<Object> original = new Metadata<Object>(refs[0], value);
         for (Short ref : refs)
-            original.addDynamicReference(ref);
+            original.addTransmissionId(ref);
         Metadata<Object> clone = original.clone();
 
         assertEquals("Value mismatch.", original.getData(), clone.getData());
-        assertEquals("Value mismatch", original.getStaticReference(), clone.getStaticReference());
+        assertEquals("Value mismatch", original.getDataId(), clone.getDataId());
         assertArrayEquals("References mismatch",
-                original.getDynamicReferences().toArray(), clone.getDynamicReferences().toArray());
+                original.getTransmissionIds().toArray(), clone.getTransmissionIds().toArray());
 
         assertSame("Value has to be same.",
                 Deencapsulation.getField(original, "value"),
                 Deencapsulation.getField(clone, "value"));
         assertNotSame("Reference has to differ",
-                Deencapsulation.getField(original, "staticReference"),
-                Deencapsulation.getField(clone, "staticReference"));
+                Deencapsulation.getField(original, "dataId"),
+                Deencapsulation.getField(clone, "dataId"));
         assertNotSame("References have to differ.",
-                Deencapsulation.getField(original, "dynamicReferences"),
-                Deencapsulation.getField(clone, "dynamicReferences"));
+                Deencapsulation.getField(original, "transmissionIds"),
+                Deencapsulation.getField(clone, "transmissionIds"));
 
-        Deencapsulation.setField(original, "staticReference", Short.MIN_VALUE);
-        assertFalse("Cloned reference did not change", original.getStaticReference().equals(clone.getStaticReference()));
+        Deencapsulation.setField(original, "dataId", Short.MIN_VALUE);
+        assertFalse("Cloned reference did not change", original.getDataId().equals(clone.getDataId()));
 
-        original.addDynamicReference((short) -1);
-        assertEquals("Cloned reference count did not change", refs.length, clone.getDynamicReferences().size());
+        original.addTransmissionId((short) -1);
+        assertEquals("Cloned reference count did not change", refs.length, clone.getTransmissionIds().size());
 
     }
 }

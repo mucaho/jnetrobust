@@ -51,11 +51,11 @@ public class PacketTest {
         ObjectOutputStream out = new ObjectOutputStream(outStream);
         {
             outPacket = new Packet<Object>();
-            outPacket.setAck(ack);
-            outPacket.setLastAcks(lastAcks);
+            outPacket.setTransmissionAck(ack);
+            outPacket.setPrecedingTransmissionAcks(lastAcks);
             Metadata<Object> metadata = new Metadata<Object>();
-            Deencapsulation.setField(metadata, "staticReference", Short.MIN_VALUE);
-            Deencapsulation.invoke(metadata, "addDynamicReference", Short.MIN_VALUE);
+            Deencapsulation.setField(metadata, "dataId", Short.MIN_VALUE);
+            Deencapsulation.invoke(metadata, "addTransmissionId", Short.MIN_VALUE);
             outPacket.addLastMetadata(metadata);
             outPacket.writeExternal(out);
         }
@@ -69,8 +69,8 @@ public class PacketTest {
         }
         in.close();
 
-        assertEquals("ack mismatch", outPacket.getAck(), inPacket.getAck());
-        assertEquals("lastAck mismatch", outPacket.getLastAcks(), inPacket.getLastAcks());
+        assertEquals("ack mismatch", outPacket.getTransmissionAck(), inPacket.getTransmissionAck());
+        assertEquals("lastAck mismatch", outPacket.getPrecedingTransmissionAcks(), inPacket.getPrecedingTransmissionAcks());
         assertNotSame("datas are different objects", outPacket.getFirstMetadata(), inPacket.getFirstMetadata());
     }
 
@@ -90,24 +90,24 @@ public class PacketTest {
     @Parameters
     public final void testClone(Short ack, Integer lastAcks) throws Exception {
         Packet<Object> original = new Packet<Object>();
-        original.setAck(ack);
-        original.setLastAcks(lastAcks);
+        original.setTransmissionAck(ack);
+        original.setPrecedingTransmissionAcks(lastAcks);
 
         Metadata<Object> metadata = new Metadata<Object>();
-        Deencapsulation.setField(metadata, "staticReference", Short.MIN_VALUE);
-        Deencapsulation.invoke(metadata, "addDynamicReference", Short.MIN_VALUE);
+        Deencapsulation.setField(metadata, "dataId", Short.MIN_VALUE);
+        Deencapsulation.invoke(metadata, "addTransmissionId", Short.MIN_VALUE);
         original.addLastMetadata(metadata);
         Packet<Object> clone = original.clone();
 
-        assertEquals("ack mismatch", original.getAck(), clone.getAck());
-        assertEquals("lastAck mismatch", original.getLastAcks(), clone.getLastAcks());
+        assertEquals("ack mismatch", original.getTransmissionAck(), clone.getTransmissionAck());
+        assertEquals("lastAck mismatch", original.getPrecedingTransmissionAcks(), clone.getPrecedingTransmissionAcks());
         assertNotSame("datas are different objects", original.getFirstMetadata(), clone.getFirstMetadata());
 
-        original.setAck((short) -1);
-        original.setLastAcks(-1);
+        original.setTransmissionAck((short) -1);
+        original.setPrecedingTransmissionAcks(-1);
         original.addLastMetadata(new Metadata<Object>());
-        assertEquals("Cloned ack did not change", ack.shortValue(), clone.getAck());
-        assertEquals("Cloned lastAck did not change", lastAcks.intValue(), clone.getLastAcks());
+        assertEquals("Cloned ack did not change", ack.shortValue(), clone.getTransmissionAck());
+        assertEquals("Cloned lastAck did not change", lastAcks.intValue(), clone.getPrecedingTransmissionAcks());
         assertEquals("Cloned datas size did not changte", 1, clone.getMetadatas().size());
     }
 }

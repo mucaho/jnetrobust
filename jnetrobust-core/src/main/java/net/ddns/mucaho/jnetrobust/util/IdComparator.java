@@ -2,8 +2,8 @@ package net.ddns.mucaho.jnetrobust.util;
 
 import java.util.Comparator;
 
-public class SequenceComparator implements Comparator<Short> {
-    public final static SequenceComparator instance = new SequenceComparator();
+public class IdComparator implements Comparator<Short> {
+    public final static IdComparator instance = new IdComparator();
 
 
     public final static int MAX_SEQUENCE = Short.MAX_VALUE - Short.MIN_VALUE + 1;

@@ -2,7 +2,7 @@ package net.ddns.mucaho.jnetrobust.control;
 
 import net.ddns.mucaho.jnetrobust.util.CollectionUtils;
 import net.ddns.mucaho.jnetrobust.util.Freezable;
-import net.ddns.mucaho.jnetrobust.util.SequenceComparator;
+import net.ddns.mucaho.jnetrobust.util.IdComparator;
 import net.ddns.mucaho.jnetrobust.util.Timestamp;
 
 import java.io.IOException;
@@ -14,16 +14,16 @@ import java.util.TreeSet;
 public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     private transient long lastTouched = System.currentTimeMillis();
 
-    private Short staticReference;
-    private NavigableSet<Short> dynamicReferences =
-            new TreeSet<Short>(SequenceComparator.instance);
-    private transient NavigableSet<Short> dynamicReferencesOut =
-            CollectionUtils.unmodifiableNavigableSet(dynamicReferences);
+    private Short dataId;
+    private NavigableSet<Short> transmissionIds =
+            new TreeSet<Short>(IdComparator.instance);
+    private transient NavigableSet<Short> transmissionIdsOut =
+            CollectionUtils.unmodifiableNavigableSet(transmissionIds);
 
     private T value;
 
-    public Metadata(Short staticReference, T value) {
-        this.staticReference = staticReference;
+    public Metadata(Short dataId, T value) {
+        this.dataId = dataId;
         this.value = value;
     }
 
@@ -32,32 +32,32 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     }
 
 
-    public Short getStaticReference() {
-        return staticReference;
+    public Short getDataId() {
+        return dataId;
     }
 
-    boolean addDynamicReference(Short e) {
-        return dynamicReferences.add(e);
+    boolean addTransmissionId(Short e) {
+        return transmissionIds.add(e);
     }
 
-    boolean removeDynamicReference(Short e) {
-        return dynamicReferences.remove(e);
+    boolean removeTransmissionId(Short e) {
+        return transmissionIds.remove(e);
     }
 
-    void clearDynamicReferences() {
-        dynamicReferences.clear();
+    void clearTransmissionIds() {
+        transmissionIds.clear();
     }
 
-    public NavigableSet<Short> getDynamicReferences() {
-        return dynamicReferencesOut;
+    public NavigableSet<Short> getTransmissionIds() {
+        return transmissionIdsOut;
     }
 
-    public Short getFirstDynamicReference() {
-        return dynamicReferences.isEmpty() ? null : dynamicReferences.first();
+    public Short getFirstTransmissionId() {
+        return transmissionIds.isEmpty() ? null : transmissionIds.first();
     }
 
-    public Short getLastDynamicReference() {
-        return dynamicReferences.isEmpty() ? null : dynamicReferences.last();
+    public Short getLastTransmissionId() {
+        return transmissionIds.isEmpty() ? null : transmissionIds.last();
     }
 
 
@@ -80,9 +80,9 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     public String toString() {
         String out = "";
         out += "[";
-        out += " ( " + staticReference + " ) ";
-        for (Short reference : dynamicReferences)
-            out += reference + " ";
+        out += " ( " + dataId + " ) ";
+        for (Short transmissionId : transmissionIds)
+            out += transmissionId + " ";
         out += "]";
         out += ": " + (value != null ? value.toString() : "null");
 
@@ -118,16 +118,16 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
-        out.writeShort(staticReference);
-        out.writeShort(dynamicReferences.last());
+        out.writeShort(dataId);
+        out.writeShort(transmissionIds.last());
         out.writeObject(value);
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        staticReference = in.readShort();
-        dynamicReferences.add(in.readShort());
+        dataId = in.readShort();
+        transmissionIds.add(in.readShort());
         value = (T) in.readObject();
     }
 
@@ -135,8 +135,8 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     public Metadata<T> clone() {
         Metadata<T> clone = new Metadata<T>();
         clone.value = value;
-        clone.staticReference = new Short(staticReference);
-        clone.dynamicReferences.addAll(dynamicReferences);
+        clone.dataId = new Short(dataId);
+        clone.transmissionIds.addAll(transmissionIds);
         return clone;
     }
 }

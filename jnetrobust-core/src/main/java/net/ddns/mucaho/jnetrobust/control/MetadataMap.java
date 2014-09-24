@@ -14,11 +14,11 @@ public class MetadataMap<T> {
     public MetadataMap(Comparator<Short> comparator) {
         this.metadataMap = new TreeMap<Short, Metadata<T>>(comparator);
         this.metadataMapOut = CollectionUtils.unmodifiableNavigableMap(metadataMap);
-        this.entryIterator = new MultiRefDataMapIterator<T>(this);
+        this.entryIterator = new MetadataMapIterator<T>(this);
     }
 
-    public Metadata<T> get(Short ref) {
-        return metadataMap.get(ref);
+    public Metadata<T> get(Short transmissionId) {
+        return metadataMap.get(transmissionId);
     }
 
     public NavigableMap<Short, Metadata<T>> getMap() {
@@ -26,50 +26,50 @@ public class MetadataMap<T> {
     }
 
     void putAll(Metadata<T> metadata) {
-        putAll(metadata.getDynamicReferences(), metadata);
+        putAll(metadata.getTransmissionIds(), metadata);
     }
 
-    void putAll(NavigableSet<Short> refs, Metadata<T> metadata) {
-        Short nextKey = refs.first();
+    void putAll(NavigableSet<Short> transmissionIds, Metadata<T> metadata) {
+        Short nextKey = transmissionIds.first();
         while (nextKey != null) {
             put(nextKey, metadata);
-            nextKey = refs.higher(nextKey);
+            nextKey = transmissionIds.higher(nextKey);
         }
     }
 
-    void put(Short ref, Metadata<T> metadata) {
+    void put(Short transmissionId, Metadata<T> metadata) {
         if (metadata != null)
-            metadata.addDynamicReference(ref);
-        Metadata<T> replacedMetadata = metadataMap.put(ref, metadata);
+            metadata.addTransmissionId(transmissionId);
+        Metadata<T> replacedMetadata = metadataMap.put(transmissionId, metadata);
 
         if (replacedMetadata != null && replacedMetadata != metadata)
-            replacedMetadata.removeDynamicReference(ref);
+            replacedMetadata.removeTransmissionId(transmissionId);
     }
 
 
-    Metadata<T> removeAll(Short ref) {
-        return removeAll(get(ref));
+    Metadata<T> removeAll(Short transmissionId) {
+        return removeAll(get(transmissionId));
     }
 
     Metadata<T> removeAll(Metadata<T> metadata) {
         if (metadata != null)
-            removeAll(metadata.getDynamicReferences());
+            removeAll(metadata.getTransmissionIds());
 
         return metadata;
     }
 
-    void removeAll(NavigableSet<Short> refs) {
-        Short nextKey = refs.first();
+    void removeAll(NavigableSet<Short> transmissionIds) {
+        Short nextKey = transmissionIds.first();
         while (nextKey != null) {
             remove(nextKey);
-            nextKey = refs.higher(nextKey);
+            nextKey = transmissionIds.higher(nextKey);
         }
     }
 
-    Metadata<T> remove(Short ref) {
-        Metadata<T> metadata = metadataMap.remove(ref);
+    Metadata<T> remove(Short transmissionId) {
+        Metadata<T> metadata = metadataMap.remove(transmissionId);
         if (metadata != null)
-            metadata.removeDynamicReference(ref);
+            metadata.removeTransmissionId(transmissionId);
 
         return metadata;
     }
@@ -77,12 +77,12 @@ public class MetadataMap<T> {
 
 
 
-    Metadata<T> putStatic(Metadata<T> metadata) {
-        return metadataMap.put(metadata.getStaticReference(), metadata);
+    Metadata<T> putDataId(Metadata<T> metadata) {
+        return metadataMap.put(metadata.getDataId(), metadata);
     }
 
-    Metadata<T> removeStatic(Short ref) {
-        return metadataMap.remove(ref);
+    Metadata<T> removeDataId(Short dataId) {
+        return metadataMap.remove(dataId);
     }
 
 
@@ -115,7 +115,7 @@ public class MetadataMap<T> {
         if (thourough) {
             Collection<Metadata<T>> metadatas = metadataMap.values();
             for (Metadata<T> metadata : metadatas) {
-                metadata.clearDynamicReferences();
+                metadata.clearTransmissionIds();
             }
         }
         metadataMap.clear();
@@ -130,9 +130,9 @@ public class MetadataMap<T> {
         return entryIterator;
     }
 
-    private static class MultiRefDataMapIterator<T> implements EntryIterator<Short, Metadata<T>> {
+    private static class MetadataMapIterator<T> implements EntryIterator<Short, Metadata<T>> {
         private final MetadataMap<T> metadataMap;
-        public MultiRefDataMapIterator(MetadataMap<T> metadataMap) {
+        public MetadataMapIterator(MetadataMap<T> metadataMap) {
             this.metadataMap = metadataMap;
         }
 

@@ -53,7 +53,7 @@ public class Protocol<T> implements Comparator<Short> {
             controller.send(packet, controller.produce(data));
 
         sentPacketOut.packet = packet;
-        sentPacketOut.id = data != null ? packet.getLastMetadata().getStaticReference() : null;
+        sentPacketOut.id = data != null ? packet.getLastMetadata().getDataId() : null;
         return sentPacketOut;
     }
 
@@ -65,7 +65,7 @@ public class Protocol<T> implements Comparator<Short> {
 
 
 
-    private final NavigableMap<Short, T> receivedDatas = new TreeMap<Short, T>(SequenceComparator.instance);
+    private final NavigableMap<Short, T> receivedDatas = new TreeMap<Short, T>(IdComparator.instance);
     private final NavigableMap<Short, T> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
 
     public synchronized NavigableMap<Short, T> receive(Packet<T> packet) {
@@ -74,7 +74,7 @@ public class Protocol<T> implements Comparator<Short> {
         controller.consume(packet);
         Metadata<T> metadata = controller.receive(packet);
         while (metadata != null) {
-            receivedDatas.put(metadata.getStaticReference(), controller.consume(metadata));
+            receivedDatas.put(metadata.getDataId(), controller.consume(metadata));
             metadata = controller.receive(packet);
         }
 
@@ -92,7 +92,7 @@ public class Protocol<T> implements Comparator<Short> {
 
     @Override
     public int compare(Short o1, Short o2) {
-        return SequenceComparator.instance.compare(o1, o2);
+        return IdComparator.instance.compare(o1, o2);
     }
 
     public long getSmoothedRTT() {

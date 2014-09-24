@@ -7,7 +7,7 @@ import static net.ddns.mucaho.jnetrobust.util.BitConstants.OFFSET;
 public class PendingMapControl<T> extends MapControl<T> {
     public interface TransmissionSuccessListener<T> {
         public void handleAckedData(short dataId, T ackedData);
-        public void handleNotAckedData(short dataId, T unackedData);
+        public void handleUnackedData(short dataId, T unackedData);
     }
 
     private final TransmissionSuccessListener<T> listener;
@@ -19,31 +19,31 @@ public class PendingMapControl<T> extends MapControl<T> {
     }
 
 
-    public void addToPending(short seqNo, Metadata<T> metadata) {
+    public void addToPending(short transmissionId, Metadata<T> metadata) {
         // discard old entries in pending map
         super.discardEntries();
 
         // add to pending map
-        dataMap.put(seqNo, metadata);
+        dataMap.put(transmissionId, metadata);
     }
 
 
-    public void removeFromPending(short ackNo, int lastAcks) {
+    public void removeFromPending(short transmissionId, int precedingTransmissionIds) {
         // remove multiple (oldest until newest) from pending map
-        removeOnBits(ackNo, lastAcks);
+        removeOnBits(transmissionId, precedingTransmissionIds);
 
         // remove newest from pending map
-        notifyAcked(dataMap.removeAll(ackNo), true);
+        notifyAcked(dataMap.removeAll(transmissionId), true);
     }
 
-    private void removeOnBits(short localSeq, int lastLocalSeqs) {
-        short lastLocalSeq;
+    private void removeOnBits(short transmissionId, int precedingTransmissionIds) {
+        short precedingTransmissionId;
         int msbIndex;
-        while (lastLocalSeqs != 0) {
-            msbIndex = FastLog.log2(lastLocalSeqs);
-            lastLocalSeq = (short) (localSeq - msbIndex - OFFSET);
-            notifyAcked(dataMap.removeAll(lastLocalSeq), false);
-            lastLocalSeqs &= ~(0x1 << msbIndex);
+        while (precedingTransmissionIds != 0) {
+            msbIndex = FastLog.log2(precedingTransmissionIds);
+            precedingTransmissionId = (short) (transmissionId - msbIndex - OFFSET);
+            notifyAcked(dataMap.removeAll(precedingTransmissionId), false);
+            precedingTransmissionIds &= ~(0x1 << msbIndex);
         }
 
     }
@@ -56,11 +56,11 @@ public class PendingMapControl<T> extends MapControl<T> {
 
     protected void notifyNotAcked(Metadata<T> unackedMetadata) {
         if (unackedMetadata != null)
-            listener.handleNotAckedData(unackedMetadata.getStaticReference(), unackedMetadata.getData());
+            listener.handleUnackedData(unackedMetadata.getDataId(), unackedMetadata.getData());
     }
 
     protected void notifyAcked(Metadata<T> ackedMetadata, boolean directlyAcked) {
         if (ackedMetadata != null)
-            listener.handleAckedData(ackedMetadata.getStaticReference(), ackedMetadata.getData());
+            listener.handleAckedData(ackedMetadata.getDataId(), ackedMetadata.getData());
     }
 }
