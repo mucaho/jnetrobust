@@ -2,7 +2,7 @@
 =============
 [![Build Status](https://travis-ci.org/mucaho/jnetrobust.svg?branch=master)](https://travis-ci.org/mucaho/jnetrobust)
 
-Reliable &amp; lightweight virtual network protocol for the JVM.   
+Fast, reliable &amp; non-intrusive virtual message-oriented network protocol for the JVM.   
 **Currently under construction.**
 
 What is it?
