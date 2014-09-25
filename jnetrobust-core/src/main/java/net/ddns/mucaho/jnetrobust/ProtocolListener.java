@@ -3,6 +3,9 @@ package net.ddns.mucaho.jnetrobust;
 import net.ddns.mucaho.jnetrobust.control.PendingMapControl.TransmissionSuccessListener;
 import net.ddns.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderListener;
 
+/**
+ * @jnetrobust.api
+ */
 public class ProtocolListener<T> implements TransmissionSuccessListener<T>, TransmissionOrderListener<T> {
 
     @Override

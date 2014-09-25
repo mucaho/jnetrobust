@@ -1,5 +1,8 @@
 package net.ddns.mucaho.jnetrobust;
 
+/**
+ * @jnetrobust.api
+ */
 public abstract class Logger {
     public static enum LoggingEvent {
         SEND("Data sent"),

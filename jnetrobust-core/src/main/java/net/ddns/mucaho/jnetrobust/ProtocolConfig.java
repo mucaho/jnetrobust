@@ -3,6 +3,9 @@ package net.ddns.mucaho.jnetrobust;
 import net.ddns.mucaho.jnetrobust.controller.Packet;
 import net.ddns.mucaho.jnetrobust.util.IdComparator;
 
+/**
+ * @jnetrobust.api
+ */
 public class ProtocolConfig<T> {
     public final static int MAX_PACKET_QUEUE_LIMIT = Packet.MAX_DATAS_PER_PACKET;
     public final static int MAX_PACKET_OFFSET_LIMIT = IdComparator.MAX_SEQUENCE / 4;
