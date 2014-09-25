@@ -120,5 +120,5 @@ Misc
 -------
 __Open issues__ and/or __open pull requests__. Suggestions, bug reports, code improvements and additional features are very welcome!
 
-Copyright (c) 2014 mucaho. [MPL 2.0](https://www.mozilla.org/MPL/2.0/)   
-Read [faq entry](https://www.mozilla.org/MPL/2.0/FAQ.html#virality). I would suggest contributing to this original repository via pull requests, if you made any modifications.
+Copyright (c) 2014 mucaho.   
+[MPL 2.0](https://www.mozilla.org/MPL/2.0/). Read [short explanation](https://www.mozilla.org/MPL/2.0/FAQ.html#virality). I would suggest contributing to this original repository via pull requests, if you made any modifications.
