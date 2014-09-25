@@ -42,7 +42,7 @@ It is a library and imposes no restrictions on how you use it:
 
 Talk is cheap. Show me the code. [[1]](http://lkml.org/lkml/2000/8/25/132)
 --------------------------------
-Here is a minimal, complete example:
+Here is a minimal, complete example:   
 **Code**
 ```java
 public class ChatMain {
