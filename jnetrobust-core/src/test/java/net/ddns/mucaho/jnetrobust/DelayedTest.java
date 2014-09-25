@@ -67,10 +67,10 @@ public class DelayedTest {
 
 
         ProtocolListener<Long> listenerA = DEBUG ?
-                new DebugProtocolListener<Long>(protocolListenerA, "A", Logger.getConsoleLogger()) :
+                new DebugProtocolListener<Long>(protocolListenerA, Logger.getConsoleLogger("A")) :
                 protocolListenerA;
         final TestHost<Long> hostA = new TestHost<Long>(hostListenerA, new LongDataGenerator(),
-                bToA, aToB, retransmit, new ProtocolConfig<Long>(listenerA), "A", DEBUG);
+                bToA, aToB, retransmit, new ProtocolConfig<Long>(listenerA), "A");
         final List<Long> sentA = new ArrayList<Long>();
         final List<Long> lostSentA = new ArrayList<Long>();
         final List<Long> dupedSentA = new ArrayList<Long>();
@@ -83,10 +83,10 @@ public class DelayedTest {
 
 
         ProtocolListener<Long> listenerB = DEBUG ?
-                new DebugProtocolListener<Long>(protocolListenerB, "B", Logger.getConsoleLogger()) :
+                new DebugProtocolListener<Long>(protocolListenerB, Logger.getConsoleLogger("B")) :
                 protocolListenerB;
         final TestHost<Long> hostB = new TestHost<Long>(hostListenerB, new LongDataGenerator(),
-                aToB, bToA, retransmit, new ProtocolConfig<Long>(listenerB), "B", DEBUG);
+                aToB, bToA, retransmit, new ProtocolConfig<Long>(listenerB), "B");
         final List<Long> sentB = new ArrayList<Long>();
         final List<Long> lostSentB = new ArrayList<Long>();
         final List<Long> dupedSentB = new ArrayList<Long>();

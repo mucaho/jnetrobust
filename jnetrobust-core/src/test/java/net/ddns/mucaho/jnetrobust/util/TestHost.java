@@ -32,12 +32,12 @@ public class TestHost<T> implements Runnable {
 
     public TestHost(TestHostListener<T> hostListener, TestHostDataGenerator<T> dataGenerator,
                     UnreliableQueue<Packet<T>> inQueue, UnreliableQueue<Packet<T>> outQueue, boolean retransmit,
-                    ProtocolConfig<T> config, String name, boolean debug) {
-        this.debug = debug;
+                    ProtocolConfig<T> config, String debugName) {
+        this.debug = debugName != null;
         this.hostListener = hostListener;
         this.dataGenerator = dataGenerator;
-        if (debug)
-            this.protocol = new DebugController<T>(config, name, Logger.getConsoleLogger());
+        if (debugName != null)
+            this.protocol = new DebugController<T>(config, Logger.getConsoleLogger(debugName));
         else
             this.protocol = new RetransmissionController<T>(config);
         this.inQueue = inQueue;

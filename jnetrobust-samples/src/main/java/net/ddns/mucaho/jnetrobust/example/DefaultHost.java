@@ -70,7 +70,7 @@ public class DefaultHost<T> {
             }
         };
         if (hostName != null)
-            this.protocol = new Protocol<T>(protocolListener, hostName, Logger.getConsoleLogger());
+            this.protocol = new Protocol<T>(protocolListener, Logger.getConsoleLogger(hostName));
         else
             this.protocol = new Protocol<T>(protocolListener);
     }

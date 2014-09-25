@@ -20,14 +20,15 @@ public abstract class Logger {
             return description;
         }
     }
-    public abstract void log(String... texts);
+    public abstract void log(String description, Object... params);
 
-    public static Logger getConsoleLogger() {
+    public static Logger getConsoleLogger(final String name) {
         return new Logger() {
             @Override
-            public void log(String... texts) {
-                for (String text : texts)
-                    System.out.print(text + "\t");
+            public void log(String description, Object... params) {
+                System.out.print("[" + name + "]: " + description + "\t");
+                for (Object param: params)
+                    System.out.print(param + "\t");
                 System.out.println();
             }
         };

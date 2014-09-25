@@ -17,31 +17,19 @@ public class Protocol<T> implements Comparator<Short> {
     private final boolean shouldRetransmit;
 
     public Protocol(ProtocolListener<T> protocolListener) {
-        this(protocolListener, true);
+        this(protocolListener, null);
     }
     public Protocol(ProtocolConfig<T> config) {
-        this(config, true);
+        this(config, null);
     }
-    public Protocol(ProtocolListener<T> protocolListener, boolean shouldRetransmit) {
-        this(protocolListener, shouldRetransmit, null, null);
+    public Protocol(ProtocolListener<T> protocolListener, Logger logger) {
+        this(new ProtocolConfig<T>(protocolListener), logger);
     }
-    public Protocol(ProtocolConfig<T> config, boolean shouldRetransmit) {
-        this(config, shouldRetransmit, null, null);
-    }
-    public Protocol(ProtocolListener<T> protocolListener, String name, Logger logger) {
-        this(protocolListener, true, name, logger);
-    }
-    public Protocol(ProtocolConfig<T> config, String name, Logger logger) {
-        this(config, true, name, logger);
-    }
-    public Protocol(ProtocolListener<T> protocolListener, boolean shouldRetransmit, String name, Logger logger) {
-        this(new ProtocolConfig<T>(protocolListener), shouldRetransmit, name, logger);
-    }
-    public Protocol(ProtocolConfig<T> config, boolean shouldRetransmit, String name, Logger logger) {
-        this.shouldRetransmit = shouldRetransmit;
-        if (name != null && logger != null) {
-            ProtocolListener<T> debugListener = new DebugProtocolListener<T>(config.listener, name, logger);
-            this.controller = new DebugController<T>(new ProtocolConfig<T>(debugListener, config), name, logger);
+    public Protocol(ProtocolConfig<T> config, Logger logger) {
+        this.shouldRetransmit = config.shouldRetransmit();
+        if (logger != null) {
+            ProtocolListener<T> debugListener = new DebugProtocolListener<T>(config.listener, logger);
+            this.controller = new DebugController<T>(new ProtocolConfig<T>(debugListener, config), logger);
         } else {
             this.controller = new RetransmissionController<T>(config);
         }
