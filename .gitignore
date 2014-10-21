@@ -1,0 +1,12 @@
+# IntelliJ Idea files
+.idea/
+*.iml
+
+# Eclipse files
+.classpath
+.project
+.settings/
+
+# Binary output
+classes/
+target/
