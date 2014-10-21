@@ -12,12 +12,16 @@ import java.io.ObjectOutput;
 import java.util.*;
 
 /**
- * The central API class that represents the virtual protocol. <p></p>
- * Various constructors are offered to instantiate a new instance. <p></p>
+ * The central API class that represents the virtual protocol.
+ * It maintains the state of a virtual protocol instance and
+ * offers methods to alter that state by wrapping user data with protocol specific metadata. <p></p>
+ * Various constructors are offered to instantiate a new protocol instance. <p></p>
  * Typically you call the protocol's {@link Protocol#send(Object)}
  * and {@link Protocol#receive(Packet)} methods in order to attach/detach protocol-specific information
  * to your user data. This protocol-specific information and the protocol's internal state is then used
  * to enable reliable & ordered communication even over an unreliable medium. <br></br>
+ * Note that both {@link Protocol#send(Object)} and {@link Protocol#receive(Packet)} methods may trigger zero or more
+ * {@link net.ddns.mucaho.jnetrobust.ProtocolListener listener} events before they return. <br></br>
  * How serialization is done and over which medium the {@link Packet packaged user-data} is sent is
  * up to the user (analogue for receiving and deserialization). <br></br>
  * Note that always the <b>same two protocol instances must communicate with each other</b>, as they share a distributed
@@ -30,7 +34,7 @@ import java.util.*;
  * read the packaged user-data from a {@link java.io.ObjectInput} respectively. Other than that, they behave
  * exactly like the {@link Protocol#send(Object)} and {@link Protocol#receive(Packet)} methods.<p></p>
  * This class also offer utility methods to query the {@link Protocol#getSmoothedRTT() round-trip time}, as well
- * as the {@link Protocol#getRTTVariation() round-trip time variance}. <p></p>
+ * as the {@link Protocol#getRTTVariation() round-trip time variation}. <p></p>
  * This class also offers the ability to {@link Protocol#compare(Short, Short) compare <code>dataIds</code>} against each other. The user <b>must not compare these ids</b> with built-in comparison
  * operators. These ids wrap around to their {@link Short#MIN_VALUE min value} once they are incremented beyond
  * their {@link Short#MAX_VALUE max value}, hence this compare method must be used.
@@ -42,15 +46,38 @@ public class Protocol<T> implements Comparator<Short> {
     private final RetransmissionController<T> controller;
     private final boolean shouldRetransmit;
 
+    /**
+     * Construct a new protocol instance using the default {@link ProtocolConfig protocol configuration}.
+     * @param protocolListener  the <code>ProtocolListener</code> which will be notified about protocol events
+     */
     public Protocol(ProtocolListener<T> protocolListener) {
         this(protocolListener, null);
     }
+
+    /**
+     * Construct a new protocol instance using the supplied {@link ProtocolConfig protocol configuration}.
+     * @param config    the <code>protocol configuration</code> which will be used to configure this protocol instance
+     */
     public Protocol(ProtocolConfig<T> config) {
         this(config, null);
     }
+
+    /**
+     * Construct a new protocol instance using the default {@link ProtocolConfig protocol configuration}.
+     * Internal state changes will be logged using the supplied {@link Logger logger}.
+     * @param protocolListener  the <code>ProtocolListener</code> which will be notified about protocol events
+     * @param logger    the <code>Logger</code> which will be used to track internal state changes
+     */
     public Protocol(ProtocolListener<T> protocolListener, Logger logger) {
         this(new ProtocolConfig<T>(protocolListener), logger);
     }
+
+    /**
+     * Construct a new protocol instance using the supplied {@link ProtocolConfig protocol configuration}.
+     * Internal state changes will be logged using the supplied {@link Logger logger}.
+     * @param config    the <code>protocol configuration</code> which will be used to configure this protocol instance
+     * @param logger    the <code>Logger</code> which will be used to track internal state changes
+     */
     public Protocol(ProtocolConfig<T> config, Logger logger) {
         this.shouldRetransmit = config.shouldRetransmit();
         if (logger != null) {
@@ -68,14 +95,8 @@ public class Protocol<T> implements Comparator<Short> {
     private final PacketEntry<T> sentPacketOut = new PacketEntry<T>();
 
     /**
-     * Create an empty package, in order to acknowledge
-     * received data & retransmit data (if {@link ProtocolConfig#setShouldRetransmit(boolean) retransmission is enabled}).
-     * This method does the same as {@link Protocol#send(Object) send}<code>(null)</code>.
-     *
-     * @return a mapEntry containing the {@link Packet packaged user-data} and
-     *          <code>null</code> as the <code>dataId</code> (as no data is sent);
-     *          the returned mapEntry should not be saved by the user,
-     *          as its contents are invalidated next time one of the <code>send</code> methods is called
+     * Convenience method does the same as {@link Protocol#send(Object) <code>send(null)</code>}.
+     * @see net.ddns.mucaho.jnetrobust.Protocol#send(Object) send(null)
      */
     public synchronized Map.Entry<Short, Packet<T>> send() {
         return send(null);
@@ -83,10 +104,13 @@ public class Protocol<T> implements Comparator<Short> {
 
     /**
      * Package the user-data, in order to transmit the user-data, acknowledge
-     * received data & retransmit data (if {@link ProtocolConfig#setShouldRetransmit(boolean) retransmission is enabled}).
+     * received data and retransmit data (if {@link ProtocolConfig#setShouldRetransmit(boolean) retransmission is enabled}).
+     * <br>
+     * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events may be fired before
+     * this method returns.
      *
-     * @param data the user-data to package
-     * @return a mapEntry containing the {@link Packet packaged user-data} and
+     * @param data the user-data to package, if it's <code>null</code> no user-data will be contained in the package
+     * @return a <code>Map.Entry</code> containing the {@link Packet packaged user-data} and
      *          the <code>dataId</code> that was assigned to the user-data;
      *          the returned mapEntry should not be saved by the user,
      *          as its contents are invalidated next time one of the <code>send</code> methods is called
@@ -108,19 +132,12 @@ public class Protocol<T> implements Comparator<Short> {
     }
 
     /**
-     * First, package the user-data, in order to transmit the user-data, acknowledge
-     * received data & retransmit data (if {@link ProtocolConfig#setShouldRetransmit(boolean) retransmission is enabled}).
-     * <br></br>
-     * After that, write the packaged user-data to a {@link java.io.ObjectOutput}. <br></br>
-     * Uses {@link Protocol#send(Object)} internally.
+     * Convenience method which writes the output of internally called {@link Protocol#send(Object) <code>send(data)</code>}
+     * to a {@link java.io.ObjectOutput}.
      *
-     * @param data the user-data to package
      * @param objectOutput the object output to write the packaged user-data to
-     * @return a <code>Map.Entry</code> containing the {@link Packet packaged user-data} and
-     *          the <code>dataId</code> that was assigned to the user-data;
-     *          the returned object should not be saved by the user,
-     *          as its contents are invalidated next time one of the <code>send</code> methods is called
      * @throws IOException  if there was an error writing to the <code>ObjectOutput</code>
+     * @see Protocol#send(Object) <code>send(data)</code>
      */
     public synchronized Map.Entry<Short, Packet<T>> send(T data, ObjectOutput objectOutput) throws IOException {
         Map.Entry<Short, Packet<T>> packetEntry = send(data);
@@ -136,6 +153,10 @@ public class Protocol<T> implements Comparator<Short> {
     /**
      * Unpackage the packaged user-data, in order to retrieve the user-data that was received, acknowledge sent data and
      * receive retransmitted data (if {@link ProtocolConfig#setShouldRetransmit(boolean) retransmission is enabled}).
+     * <br>
+     * Zero or more {@link ProtocolListener#handleOrderedData(short, Object) orderedData},
+     * {@link ProtocolListener#handleUnorderedData(short, Object) unorderedData} or
+     * {@link ProtocolListener#handleAckedData(short, Object) ackedData} events may be fired before this method returns.
      *
      * @param packet the packaged-user data to unpackage
      * @return a <code>NavigableMap</code> containing all received (directly received or received by retransmission)
@@ -158,19 +179,13 @@ public class Protocol<T> implements Comparator<Short> {
 
 
     /**
-     * First, read the packaged user-data from a {@link java.io.ObjectInput}. <br></br>
-     * After that, unpackage the packaged user-data, in order to retrieve the user-data that was received, acknowledge sent data and
-     * receive retransmitted data (if {@link ProtocolConfig#setShouldRetransmit(boolean) retransmission is enabled}).
-     * <br></br>
-     * Uses {@link Protocol#receive(Packet)} internally.
+     * Convenience method which reads the input of an {@link java.io.ObjectInput} with the help of
+     * internally called {@link Protocol#receive(Packet) <code>receive(package)</code>}.
      *
      * @param objectInput the object input to read the packaged user-data from
-     * @return a <code>NavigableMap</code> containing all received (directly received or received by retransmission)
-     *         user-datas and their assigned <code>dataId</code>s;
-     *         the returned object should not be saved by the user,
-     *         as its contents are invalidated next time one of the <code>receive</code> methods is called
      * @throws IOException if there was an error reading from the <code>ObjectInput</code>
      * @throws ClassNotFoundException if the object being read from the <code>ObjectInput</code> is not of the correct type
+     * @see Protocol#send(Object) <code>receive(package)</code>
      */
     public synchronized NavigableMap<Short, T> receive(ObjectInput objectInput) throws IOException, ClassNotFoundException {
         Packet<T> packet = Packet.<T>readExternalStatic(objectInput);
