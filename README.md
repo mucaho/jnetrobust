@@ -118,10 +118,14 @@ public class ChatMain {
  <A>: Howdy! Fine, thanks.  
 ```
 
-Where can I download it?
-------------------------
+Where can I download the binaries, sources and javadoc?
+-------------------------------------------------------
 JNetRobust is in the process of being published to the [Central Repository](http://search.maven.org/).   
 For now, you can download the `jar`s from the [release section](https://github.com/mucaho/jnetrobust/releases) and import them to your classpath.
+
+Where can I browse the javadoc?
+------------------------------
+You can read the docs on [JNetRobusts's IO page](http://mucaho.github.io/jnetrobust/).
 
 Misc
 -------
