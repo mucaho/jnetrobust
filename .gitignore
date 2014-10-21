@@ -8,4 +8,5 @@
 .settings/
 
 # Binary output
+classes/
 target/

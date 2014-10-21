@@ -201,7 +201,7 @@ public class Protocol<T> implements Comparator<Short> {
 
 
     /**
-     * Compare <code>dataIds</code>} against each other. The user <b>must not compare these ids</b> with built-in comparison
+     * Compare <code>dataIds</code> against each other. The user <b>must not compare these ids</b> with built-in comparison
      * operators. These ids wrap around to their {@link Short#MIN_VALUE min value} once they are incremented beyond
      * their {@link Short#MAX_VALUE max value}, hence this compare method must be used.
      * @param dataId1 the first id to compare
