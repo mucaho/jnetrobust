@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.org/mucaho/jnetrobust.svg?branch=master)](https://travis-ci.org/mucaho/jnetrobust)
 
 Fast, reliable &amp; non-intrusive message-oriented virtual network protocol for the JVM.   
-**Currently under construction.**
+**Currently in alpha.**
 
 What is it?
 -----------
@@ -25,13 +25,13 @@ It provides some benefits from both transport layer protocols that are accessibl
 * currently no congestion control - unlike TCP   
    [future releases](https://github.com/mucaho/jnetrobust/issues/11) may include this feature
 
-Why should you use it?
+Why should I use it?
 ----------------------
 If you don't need reliability, use UDP.   
 If you need reliability and you can wait for it to be validated, use TCP.   
 If you need reliability, but you benefit from receiving unvalidated data with no latency, try JNetRobust.
 
-How do you use it?
+How do I use it?
 ------------------
 It is a library and imposes no restrictions on how you use it:   
 * the protocol maintains an internal state, that is updated every time you use it
@@ -39,6 +39,8 @@ It is a library and imposes no restrictions on how you use it:
 * you decide what to do with the metadata-packaged data (e.g. add some of your own metadata, etc... )
 * you decide how you want to serialize the metadata-packaged data (e.g. with [default serialization](http://docs.oracle.com/javase/7/docs/api/java/io/Externalizable.html), [Kryo](https://github.com/EsotericSoftware/kryo), etc... )
 * you decide how you want to send the metadata-packaged data (e.g. plain [DatagramSocket](http://docs.oracle.com/javase/7/docs/api/java/net/DatagramSocket.html), newer NIO [DatagramChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/DatagramChannel.html) or even network frameworks like [Apache MINA](https://mina.apache.org/))
+
+**Refer to the [Wiki pages](https://github.com/mucaho/jnetrobust/wiki) for additional information!**
 
 Talk is cheap. Show me the code. [[1]](http://lkml.org/lkml/2000/8/25/132)
 --------------------------------
@@ -116,9 +118,14 @@ public class ChatMain {
  <A>: Howdy! Fine, thanks.  
 ```
 
+Where can I download it?
+------------------------
+JNetRobust is in the process of being published to the [Central Repository](http://search.maven.org/).   
+For now, you can download the `jar`s from the [release section](https://github.com/mucaho/jnetrobust/releases) and import them to your classpath.
+
 Misc
 -------
 __Open issues__ and/or __open pull requests__. Suggestions, bug reports, code improvements and additional features are very welcome!
 
 Copyright (c) 2014 mucaho.   
-[MPL 2.0](https://www.mozilla.org/MPL/2.0/). Read [short explanation](https://www.mozilla.org/MPL/2.0/FAQ.html#virality). I would suggest contributing to this original repository via pull requests, if you made any modifications.
+[MPL 2.0](https://www.mozilla.org/MPL/2.0/). Read [short explanation](https://www.mozilla.org/MPL/2.0/FAQ.html#virality). I would like to encourage contributing to this original repository via pull requests, if you made any modifications.
