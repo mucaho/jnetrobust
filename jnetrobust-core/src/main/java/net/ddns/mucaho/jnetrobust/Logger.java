@@ -10,7 +10,6 @@ package net.ddns.mucaho.jnetrobust;
 /**
  * Abstract class which is able to handle protocol specific logging.
  * Implementations of this class have to implement the {@link Logger#log(String, Object...) log} method.
- * @jnetrobust.api
  */
 public abstract class Logger {
     /**

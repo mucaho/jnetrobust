@@ -47,7 +47,6 @@ import java.util.*;
  * their {@link Short#MAX_VALUE max value}, hence this compare method must be used.
  *
  * @param <T> the user data type
- * @jnetrobust.api
  */
 public class Protocol<T> implements Comparator<Short> {
     private final RetransmissionController<T> controller;

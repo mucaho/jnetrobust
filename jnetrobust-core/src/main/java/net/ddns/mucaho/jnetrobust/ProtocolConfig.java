@@ -15,7 +15,6 @@ import net.ddns.mucaho.jnetrobust.util.IdComparator;
  * Default configuration values are provided, but can/should be changed if needed.
  *
  * @param <T>  the user data type
- * @jnetrobust.api
  */
 public class ProtocolConfig<T> {
     /**

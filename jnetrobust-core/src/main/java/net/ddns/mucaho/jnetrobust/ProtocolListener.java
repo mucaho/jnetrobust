@@ -13,7 +13,6 @@ import net.ddns.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderLi
 /**
  * The listener which will be notified about specific {@link Protocol protocol} events.
  * @param <T> the user data type
- * @jnetrobust.api
  */
 public class ProtocolListener<T> implements TransmissionSuccessListener<T>, TransmissionOrderListener<T> {
 
