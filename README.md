@@ -19,6 +19,8 @@ It provides some benefits from both transport layer protocols that are accessibl
 * received, unvalidated data is available immediately   
    this is different from TCP, as TCP provides you the data only after it can guarantee in-order delivery
 * the package is bigger than UDP's package, but smaller than TCP's package
+* avoids some pitfalls of using UDP & TCP together   
+   simultaneous UDP & TCP traffic [may lead to increased packet loss](http://www.isoc.org/INET97/proceedings/F3/F3_1.HTM)
 
 **Caveats**
 * no flow control
