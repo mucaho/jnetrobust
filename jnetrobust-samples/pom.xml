@@ -4,11 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>jnetrobust-samples</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
 
-    <url>http://mucaho.ddns.net/jnetrobust</url>
+    <url>https://github.com/mucaho/jnetrobust</url>
     <name>${project.groupId}:${project.artifactId}</name>
-    <description>Reliable &amp; lightweight virtual network protocol for the JVM. Contains the samples only.
+    <description>
+        Fast, reliable &amp; non-intrusive message-oriented virtual network protocol for the JVM 1.6+.
+        Contains the samples only.
     </description>
 
     <licenses>
@@ -20,9 +22,10 @@
 
     <developers>
         <developer>
-            <name>mucaho</name>
-            <!-- <email></email> -->
-            <url>http://mucaho.ddns.net</url>
+            <id>mucaho</id>
+            <name>Matija Kucko</name>
+            <email>mkucko@gmail.com</email>
+            <url>https://github.com/mucaho</url>
         </developer>
     </developers>
 
@@ -34,18 +37,18 @@
 
     <packaging>jar</packaging>
     <parent>
-        <groupId>net.ddns.mucaho</groupId>
+        <groupId>com.github.mucaho</groupId>
         <artifactId>jnetrobust</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.2</version>
         <relativePath>..</relativePath>
     </parent>
 
     <dependencies>
         <!-- Samples depend on library -->
         <dependency>
-            <groupId>net.ddns.mucaho</groupId>
+            <groupId>com.github.mucaho</groupId>
             <artifactId>jnetrobust-core</artifactId>
-            <version>0.0.1</version>
+            <version>0.0.2</version>
         </dependency>
         <dependency>
             <groupId>com.esotericsoftware.kryo</groupId>
