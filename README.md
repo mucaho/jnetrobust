@@ -2,7 +2,7 @@
 =============
 [![Build Status](https://travis-ci.org/mucaho/jnetrobust.svg?branch=master)](https://travis-ci.org/mucaho/jnetrobust)
 
-Fast, reliable &amp; non-intrusive message-oriented virtual network protocol for the JVM.   
+Fast, reliable & non-intrusive message-oriented virtual network protocol for the JVM 1.6+.   
 **Currently in alpha.**
 
 What is it?
