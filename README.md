@@ -130,8 +130,9 @@ Where can I download the binaries, sources and javadoc?
     <artifactId>jnetrobust-core</artifactId>
     <version>0.0.2</version>
 </dependency>
-
-<!-- JNetRobust library; optional -->
+```
+```xml
+<!-- JNetRobust examples; optional -->
 <dependency>
     <groupId>com.github.mucaho</groupId>
     <artifactId>jnetrobust-samples</artifactId>
