@@ -45,14 +45,19 @@ public class SynchronizationMain {
         // clientA
         ClientSynchronizationController clientA = new ClientSynchronizationController(HOST.CLIENTA,
                 MODE.UPDATE_ON_RECEIVED_DATA, CLIENTA_ADDRESS, EMULATORA_ADDRESS);
+        clientA.getGui().addDescription(MODE.UPDATE_ON_RECEIVED_DATA.toString());
         // clientB
         ClientSynchronizationController clientB = new ClientSynchronizationController(HOST.CLIENTB,
                 MODE.UPDATE_ON_ORDERED_DATA, CLIENTB_ADDRESS, EMULATORB_ADDRESS);
+        clientB.getGui().addDescription(MODE.UPDATE_ON_ORDERED_DATA.toString());
         // server
         ServerSynchronizationController server = new ServerSynchronizationController(
                 MODE.UPDATE_ON_RECEIVED_DATA, MODE.UPDATE_ON_NEWEST_DATA,
                 SERVERA_ADDRESS, SERVERB_ADDRESS,
                 EMULATORA_ADDRESS, EMULATORB_ADDRESS);
+        server.getGui().addDescription("From " + HOST.CLIENTA.toString() + ": " + MODE.UPDATE_ON_RECEIVED_DATA.toString());
+        server.getGui().addDescription("From " + HOST.CLIENTB.toString() + ": " + MODE.UPDATE_ON_NEWEST_DATA.toString());
+
 
         // emulators emulate bad networking conditions as in WANs
         DatagramWanEmulator wanEmulatorA = new DatagramWanEmulator(EMULATORA_ADDRESS, CLIENTA_ADDRESS, SERVERA_ADDRESS);

@@ -100,4 +100,8 @@ public class ServerSynchronizationController implements Runnable {
             e.printStackTrace();
         }
     }
+
+    public SynchronizationGUI getGui() {
+        return gui;
+    }
 }

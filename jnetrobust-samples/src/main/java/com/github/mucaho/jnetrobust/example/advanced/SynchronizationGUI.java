@@ -49,6 +49,8 @@ import java.util.Map;
  */
 public class SynchronizationGUI extends JFrame implements KeyListener {
     private JPanel windowPanel;
+    private String description = "";
+    private JLabel descriptionLabel;
     private SynchronizationMain.HOST localHost;
     private Map<SynchronizationMain.HOST, JPanel> objects =
             new EnumMap<SynchronizationMain.HOST, JPanel>(SynchronizationMain.HOST.class);
@@ -68,9 +70,17 @@ public class SynchronizationGUI extends JFrame implements KeyListener {
         windowPanel.setLayout(null);
         windowPanel.addKeyListener(this);
 
-        objects.put(SynchronizationMain.HOST.CLIENTA, createPanel(0, 0, Color.RED));
-        objects.put(SynchronizationMain.HOST.CLIENTB, createPanel(300, 0, Color.BLUE));
-        objects.put(SynchronizationMain.HOST.SERVER, createPanel(150, 300, Color.GREEN));
+        descriptionLabel = new JLabel("");
+        addDescription(type.toString()+"<br>");
+        descriptionLabel.setBounds(100, 0, 200, 100);
+        windowPanel.add(descriptionLabel);
+
+        objects.put(SynchronizationMain.HOST.CLIENTA,
+                createPanel(0, 0, Color.RED, SynchronizationMain.HOST.CLIENTA.toString()));
+        objects.put(SynchronizationMain.HOST.CLIENTB,
+                createPanel(300, 0, Color.BLUE, SynchronizationMain.HOST.CLIENTB.toString()));
+        objects.put(SynchronizationMain.HOST.SERVER,
+                createPanel(150, 300, Color.GREEN, SynchronizationMain.HOST.SERVER.toString()));
 
         if (type == SynchronizationMain.HOST.SERVER) {
             setLocation(200, 410);
@@ -82,12 +92,15 @@ public class SynchronizationGUI extends JFrame implements KeyListener {
         windowPanel.repaint();
     }
 
-    private JPanel createPanel(int x, int y, Color color) {
+    private JPanel createPanel(int x, int y, Color color, String description) {
         JPanel panel = new JPanel();
         panel.addKeyListener(this);
         panel.setBounds(x, y, 50, 50);
         panel.setBackground(color);
         panel.setVisible(true);
+        JLabel label = new JLabel(description);
+        label.setBounds(x, y, 50, 50);
+        panel.add(label);
         windowPanel.add(panel);
         return panel;
     }
@@ -98,6 +111,11 @@ public class SynchronizationGUI extends JFrame implements KeyListener {
 
     protected JPanel getRemoteObject(SynchronizationMain.HOST host) {
         return objects.get(host);
+    }
+
+    public void addDescription(String description) {
+        this.description += description + "<br>";
+        descriptionLabel.setText("<html>" + this.description + "</html>");
     }
 
     public void keyTyped(KeyEvent e) {

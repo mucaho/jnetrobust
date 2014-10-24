@@ -67,4 +67,7 @@ public class ClientSynchronizationController implements Runnable {
     }
 
 
+    public SynchronizationGUI getGui() {
+        return gui;
+    }
 }
