@@ -78,8 +78,8 @@
                             <exclude>com/github/mucaho/jnetrobust/example/**/*.class</exclude>
                             <exclude>com/github/mucaho/jnetrobust/util/CollectionUtils*.class</exclude>
                             <exclude>com/github/mucaho/jnetrobust/util/UnreliableQueue*.class</exclude>
-                            <exclude>com/github/mucaho/**/*Test.class</exclude>
-                            <exclude>com/github/mucaho/**/*Debug.class</exclude>
+                            <exclude>com/github/mucaho/**/*Test*.class</exclude>
+                            <exclude>com/github/mucaho/**/*Debug*.class</exclude>
                         </excludes>
                     </instrumentation>
                 </configuration>
