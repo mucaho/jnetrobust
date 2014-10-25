@@ -1,6 +1,7 @@
 ![jnetrobust](https://raw.githubusercontent.com/mucaho/jnetrobust/gh-pages/images/robust.png)
 =============
 [![Build Status](https://travis-ci.org/mucaho/jnetrobust.svg?branch=master)](https://travis-ci.org/mucaho/jnetrobust)
+[![Coverage Status](https://img.shields.io/coveralls/mucaho/jnetrobust.svg)](https://coveralls.io/r/mucaho/jnetrobust)
 [![Static Analysis Status](https://scan.coverity.com/projects/3328/badge.svg)](https://scan.coverity.com/projects/3328)
 [![Dependency Status](https://www.versioneye.com/user/projects/544c117151259293d3000002/badge.svg?style=flat)](https://www.versioneye.com/user/projects/544c117151259293d3000002)
 [![Dependency Status](https://www.versioneye.com/user/projects/544c117251259293d3000006/badge.svg?style=flat)](https://www.versioneye.com/user/projects/544c117251259293d3000006)
