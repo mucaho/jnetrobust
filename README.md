@@ -1,6 +1,7 @@
 ![jnetrobust](https://raw.githubusercontent.com/mucaho/jnetrobust/gh-pages/images/robust.png)
 =============
 [![Build Status](https://travis-ci.org/mucaho/jnetrobust.svg?branch=master)](https://travis-ci.org/mucaho/jnetrobust)
+[![Static Analysis Status](https://scan.coverity.com/projects/3328/badge.svg)](https://scan.coverity.com/projects/3328)
 
 Fast, reliable & non-intrusive message-oriented virtual network protocol for Java 6+.   
 **Currently in alpha.**
