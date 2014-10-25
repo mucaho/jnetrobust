@@ -2,9 +2,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
     
     <groupId>com.github.mucaho</groupId>
     <artifactId>jnetrobust</artifactId>
@@ -52,6 +49,9 @@
                 <groupId>org.eluder.coveralls</groupId>
                 <artifactId>coveralls-maven-plugin</artifactId>
                 <version>3.0.1</version>
+                <configuration>
+                    <sourceEncoding>UTF-8</sourceEncoding>
+                </configuration>
             </plugin>
             <!-- This plugin provides the features of Cobertura
             (Java tool that calculates the percentage of code accessed by tests) in Maven. -->
@@ -64,6 +64,24 @@
                     <maxmem>256m</maxmem>
                     <!-- aggregated reports for multi-module projects -->
                     <aggregate>true</aggregate>
+                    <instrumentation>
+                        <ignores>
+                            <ignore>com.github.mucaho.jarrayliterals.*</ignore>
+                            <ignore>com.github.mucaho.jnetemu.*</ignore>
+                            <ignore>com.github.mucaho.jnetrobust.example.**</ignore>
+                            <ignore>com.github.mucaho.jnetrobust.util.CollectionUtils</ignore>
+                            <ignore>com.github.mucaho.jnetrobust.util.UnreliableQueue</ignore>
+                        </ignores>
+                        <excludes>
+                            <exclude>com/github/mucaho/jarrayliterals/**/*.class</exclude>
+                            <exclude>com/github/mucaho/jnetemu/**/*.class</exclude>
+                            <exclude>com/github/mucaho/jnetrobust/example/**/*.class</exclude>
+                            <exclude>com/github/mucaho/jnetrobust/util/CollectionUtils*.class</exclude>
+                            <exclude>com/github/mucaho/jnetrobust/util/UnreliableQueue*.class</exclude>
+                            <exclude>com/github/mucaho/**/*Test.class</exclude>
+                            <exclude>com/github/mucaho/**/*Debug.class</exclude>
+                        </excludes>
+                    </instrumentation>
                 </configuration>
             </plugin>
         </plugins>
