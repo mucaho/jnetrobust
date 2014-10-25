@@ -2,6 +2,8 @@
 =============
 [![Build Status](https://travis-ci.org/mucaho/jnetrobust.svg?branch=master)](https://travis-ci.org/mucaho/jnetrobust)
 [![Static Analysis Status](https://scan.coverity.com/projects/3328/badge.svg)](https://scan.coverity.com/projects/3328)
+[![Dependency Status](https://www.versioneye.com/user/projects/544c117151259293d3000002/badge.svg?style=flat)](https://www.versioneye.com/user/projects/544c117151259293d3000002)
+[![Dependency Status](https://www.versioneye.com/user/projects/544c117251259293d3000006/badge.svg?style=flat)](https://www.versioneye.com/user/projects/544c117251259293d3000006)
 
 Fast, reliable & non-intrusive message-oriented virtual network protocol for Java 6+.   
 **Currently in alpha.**
