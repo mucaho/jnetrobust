@@ -3,3 +3,19 @@ jdk:
   - openjdk6
   - oraclejdk7
   - oraclejdk8
+
+env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+   - secure: "mZBGcxRDLwWbHv7tIMok3rfZCvN6fFxi41FQtGC6iNjHVSCgqIhb1a8lwZ3H4JbCrzenDkjQMuIGNJdF5SRCwL+75iraRz6VnPFHRcqPUKYFquHcibJDMu0v9h5E8OXrR0+ucqJedpvlDtadj/bOZ98oNrLdwuMGVmY/vbgFO4c="
+
+addons:
+  coverity_scan:
+    project:
+      name: "mucaho/jnetrobust"
+      description: "Build submitted via Travis CI"
+    notification_email: mkucko@gmail.com
+    build_command_prepend: "mvn clean"
+    build_command:   "mvn -DskipTests=true compile"
+    branch_pattern: coverity_scan
