@@ -71,7 +71,6 @@ public class SynchronizationGUI extends JFrame implements KeyListener {
         windowPanel.addKeyListener(this);
 
         descriptionLabel = new JLabel("");
-        addDescription(type.toString()+"<br>");
         descriptionLabel.setBounds(100, 0, 200, 100);
         windowPanel.add(descriptionLabel);
 
