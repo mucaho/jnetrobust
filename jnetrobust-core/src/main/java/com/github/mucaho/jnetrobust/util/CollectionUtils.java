@@ -207,6 +207,116 @@ public class CollectionUtils {
 
     }
 
+    static class UnmodifiableEntryIterator<K, V> implements Iterator<Entry<K,V>> {
+        private final Iterator<Entry<K, V>> delegate;
+
+        UnmodifiableEntryIterator(Iterator<Entry<K, V>> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return delegate.hasNext();
+        }
+
+        @Override
+        public Entry<K, V> next() {
+            return new UnmodifiableEntry<K, V>(delegate.next());
+        }
+
+        @Override
+        public void remove() {
+            delegate.remove();
+        }
+    }
+
+    static class UnmodifiableEntrySet<K, V> implements Set<Entry<K, V>> {
+        private final Set<Entry<K, V>> delegate;
+
+        UnmodifiableEntrySet(Set<Entry<K, V>> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public int size() {
+            return delegate.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return delegate.isEmpty();
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return delegate.contains(o);
+        }
+
+        @Override
+        public Iterator<Entry<K, V>> iterator() {
+            return new UnmodifiableEntryIterator<K, V>(delegate.iterator());
+        }
+
+        @Override
+        public Object[] toArray() {
+            Object[] out = delegate.toArray();
+            for (int i=0; i<out.length; ++i)
+                out[i] = new UnmodifiableEntry<K, V>((Entry<K, V>) out[i]);
+            return out;
+        }
+
+        @Override
+        public <T> T[] toArray(T[] a) {
+            T[] out = delegate.toArray(a);
+            for (int i=0; i<out.length; ++i)
+                out[i] = (T) new UnmodifiableEntry<K, V>((Entry<K, V>) out[i]);
+            return out;
+        }
+
+        public boolean add(Entry<K, V> kvEntry) {
+            return delegate.add(kvEntry);
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            return delegate.remove(o);
+        }
+
+        @Override
+        public boolean containsAll(Collection<?> c) {
+            return delegate.containsAll(c);
+        }
+
+        public boolean addAll(Collection<? extends Entry<K, V>> c) {
+            return delegate.addAll(c);
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            return delegate.retainAll(c);
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            return delegate.removeAll(c);
+        }
+
+        @Override
+        public void clear() {
+            delegate.clear();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return delegate.equals(o);
+        }
+
+        @Override
+        public int hashCode() {
+            return delegate.hashCode();
+        }
+    }
+
     static class UnmodifiableEntry<K, V> implements Entry<K, V> {
         private final Entry<K, V> decoratedEntry;
 
@@ -271,15 +381,9 @@ public class CollectionUtils {
             return Collections.unmodifiableCollection(decoratedMap.values());
         }
 
-        /**
-         * Do not modify the returned {@link java.util.Map.Entry entries} by using
-         * {@link java.util.Map.Entry#setValue(Object) entry.setValue()}!!!
-         */
         @Override
-        @Deprecated
         public Set<Entry<K, V>> entrySet() {
-            throw new UnsupportedOperationException();
-            //return Collections.unmodifiableSet(decoratedMap.entrySet());
+            return new UnmodifiableEntrySet<K, V>(Collections.unmodifiableSet(decoratedMap.entrySet()));
         }
 
         @Override

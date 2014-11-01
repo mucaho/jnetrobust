@@ -6,68 +6,39 @@
 package com.github.mucaho.jnetrobust.example.advanced;
 
 
-import com.github.mucaho.jnetrobust.example.DefaultHost;
+import com.github.mucaho.jnetrobust.example.advanced.SynchronizationMain.Vector2D;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.Queue;
 
 
-public class ClientSynchronizationController implements Runnable {
+public class ClientSynchronizationController extends AbstractSynchronizationController implements Runnable {
+    private final SynchronizationHandle relayHandle;
+    private final SynchronizationHandle directHandle;
 
-    private SynchronizationGUI gui;
-    private DefaultHost<SynchronizationMain.Vector2D> host;
-    private final SynchronizationMain.MODE updateMode;
-    private final SynchronizationMain.Vector2D data;
-
-    public ClientSynchronizationController(final SynchronizationMain.HOST hostMode, final SynchronizationMain.MODE updateMode,
-                                           InetSocketAddress hostAddress,
-                                           InetSocketAddress receiverAddress) throws IOException {
-
-        this.updateMode = updateMode;
-        data = new SynchronizationMain.Vector2D(Integer.MIN_VALUE, Integer.MIN_VALUE, hostMode);
-
-        gui = new SynchronizationGUI(hostMode);
-        gui.setVisible(true);
-
-
-        host = new DefaultHost<SynchronizationMain.Vector2D>(hostMode.toString(), hostAddress, receiverAddress,
-                SynchronizationMain.Vector2D.class, new DefaultHost.DataListener<SynchronizationMain.Vector2D>() {
-            @Override
-            public void handleOrderedData(final SynchronizationMain.Vector2D orderedData) {
-                if (updateMode == SynchronizationMain.MODE.UPDATE_ON_ORDERED_DATA)
-                    gui.updateGUI(orderedData);
-            }
-
-            @Override
-            public void handleNewestData(final SynchronizationMain.Vector2D newestData) {
-                if (updateMode == SynchronizationMain.MODE.UPDATE_ON_NEWEST_DATA)
-                    gui.updateGUI(newestData);
-            }
-        });
+    public ClientSynchronizationController(HostInformation hostInfo, HandleInformation handleDirectInfo,
+                                           HandleInformation handleRelayInfo) throws IOException {
+        super(hostInfo);
+        relayHandle = register(handleRelayInfo);
+        directHandle = register(handleDirectInfo);
     }
-
-
 
     @Override
     public void run() {
+        Vector2D receivedData;
         try {
-            // receive
-            Queue<SynchronizationMain.Vector2D> receivedQueue = host.receive();
-            for (final SynchronizationMain.Vector2D receivedData : receivedQueue)
-                if (updateMode == SynchronizationMain.MODE.UPDATE_ON_RECEIVED_DATA)
-                    gui.updateGUI(receivedData);
+            // receive relayed data from server
+            while (relayHandle.receive() != null) ;
 
-            // send
-            gui.sendGUI(data);
-            host.send(data);
+            // receive server data
+            while (directHandle.receive() != null) ;
+
+            // send relay acknowledgements to server
+            relayHandle.send(null);
+
+            // send client to server
+            directHandle.send();
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-
-    public SynchronizationGUI getGui() {
-        return gui;
     }
 }

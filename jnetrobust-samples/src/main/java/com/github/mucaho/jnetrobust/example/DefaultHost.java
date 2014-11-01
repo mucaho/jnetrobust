@@ -20,13 +20,10 @@ import com.github.mucaho.jnetrobust.control.Metadata;
 import com.github.mucaho.jnetrobust.controller.Packet;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
-import java.util.LinkedList;
-import java.util.NavigableMap;
-import java.util.Queue;
+import java.util.*;
 
 public class DefaultHost<T> {
     public static interface DataListener<T> {
@@ -35,9 +32,31 @@ public class DefaultHost<T> {
         //TODO add exceptional callback
     }
 
+
+    public static class HostHandle<T> {
+        private final Byte topic;
+        private final SocketAddress targetAddress;
+        private final DefaultHost<T> host;
+        private HostHandle(Byte topic, SocketAddress targetAddress, DefaultHost<T> host) {
+            this.host = host;
+            this.targetAddress = targetAddress;
+            this.topic = topic;
+        }
+
+        public void send(T data) throws IOException {
+            host.send(topic, targetAddress, data);
+        }
+        public T receive() throws IOException, ClassNotFoundException {
+            host.receive();
+            return host.receive(topic);
+        }
+    }
+
+    private final String hostName;
+
     // protocol fields
-    private final Protocol<T> protocol;
-    private final DataListener<T> listener;
+    private final Map<Byte, Protocol<T>> protocols = new HashMap<Byte, Protocol<T>>();
+    private final Map<Byte, DataListener<T>> listeners = new HashMap<Byte, DataListener<T>>();
 
     // serialization fields
     private final Kryo kryo;
@@ -49,17 +68,12 @@ public class DefaultHost<T> {
 
     // network communication fields
     private final DatagramChannel channel;
-    private final InetSocketAddress targetAddress;
 
-    public DefaultHost(String hostName, InetSocketAddress hostAddress, final InetSocketAddress targetAddress,
-                       Class<T> dataClass, final DataListener<T> dataListener) throws IOException {
-        this.listener = dataListener;
-
+    public DefaultHost(String hostName, SocketAddress hostAddress, Class<T> dataClass) throws IOException {
         // setup network communication
         channel = DatagramChannel.open();
         channel.configureBlocking(false);
         channel.socket().bind(hostAddress);
-        this.targetAddress = targetAddress;
 
         // setup serialization
         kryo = new Kryo();
@@ -69,63 +83,102 @@ public class DefaultHost<T> {
         objectInput = new KryoObjectInput(kryo, bufferInput);
         objectOutput = new KryoObjectOutput(kryo, bufferOutput);
 
-        // setup virtual protocol
+        this.hostName = hostName;
+    }
+
+
+
+    public HostHandle<T> register(byte topic, SocketAddress targetAddress) {
+        return register(topic, targetAddress, null);
+    }
+    public HostHandle<T> register(byte topic, SocketAddress targetAddress, final DataListener<T> listener) {
         ProtocolListener<T> protocolListener = new ProtocolListener<T>() {
             @Override
             public void handleOrderedData(short dataId, T orderedData) {
-                dataListener.handleOrderedData(orderedData);
+                if (listener != null)
+                    listener.handleOrderedData(orderedData);
             }
         };
+        listeners.put(topic, listener);
+
+        Protocol<T> protocol;
         if (hostName != null)
-            this.protocol = new Protocol<T>(protocolListener, Logger.getConsoleLogger(hostName));
+            protocol = new Protocol<T>(protocolListener, Logger.getConsoleLogger(hostName));
         else
-            this.protocol = new Protocol<T>(protocolListener);
+            protocol = new Protocol<T>(protocolListener);
+        protocols.put(topic, protocol);
+
+        return new HostHandle<T>(topic, targetAddress, this);
     }
 
-    public void send() throws IOException {
-        send(null);
-    }
 
-    public void send(T data) throws IOException {
+
+
+    private void send(byte topic, SocketAddress targetAddress, T data) throws IOException {
         buffer.clear();
+        buffer.put(topic);
         bufferOutput.setBuffer(buffer);
-        protocol.send(data, objectOutput);
+        protocols.get(topic).send(data, objectOutput);
 
         buffer.flip();
         channel.send(buffer, targetAddress);
     }
 
-    private Queue<T> outQueue = new LinkedList<T>();
-    private Short newestId = null;
-    private T newestData = null;
+    private Map<Byte, Short> newestIds = new HashMap<Byte, Short>();
+    private Map<Byte, T> newestDatas = new HashMap<Byte, T>();
+    private Map<Byte, Queue<T>> receivedQueues = new HashMap<Byte, Queue<T>>();
 
-    public Queue<T> receive() throws IOException, ClassNotFoundException {
-        outQueue.clear();
-
+    private void receive() throws IOException, ClassNotFoundException {
         buffer.clear();
         SocketAddress senderAddress = channel.receive(buffer);
         while (senderAddress != null) {
             buffer.flip();
+            byte topic = buffer.get();
             bufferInput.setBuffer(buffer);
 
-            NavigableMap<Short, T> receivedDatas = protocol.receive(objectInput);
-            for (T receivedData: receivedDatas.values())
-                outQueue.add(receivedData);
-            if (!receivedDatas.isEmpty() &&
-                    (newestId == null || protocol.compare(receivedDatas.lastKey(), newestId) > 0)) {
-                newestId = receivedDatas.lastKey();
-                newestData = receivedDatas.get(newestId);
+            Protocol<T> protocol = protocols.get(topic);
+            NavigableMap<Short, T> receivedEntries = protocol.receive(objectInput);
+            for (Map.Entry<Short, T> receivedEntry: receivedEntries.entrySet()) {
+                Short receivedId = receivedEntry.getKey();
+                T receivedData = receivedEntry.getValue();
+
+                {
+                    Queue<T> receivedQueue = receivedQueues.get(topic);
+                    if (receivedQueue == null) {
+                        receivedQueue = new LinkedList<T>();
+                        receivedQueues.put(topic, receivedQueue);
+                    }
+                    receivedQueue.offer(receivedData);
+                }
+                {
+                    Short newestId = newestIds.get(topic);
+                    if (newestId == null || protocol.compare(receivedId, newestId) > 0) {
+                        newestIds.put(topic, receivedId);
+                        newestDatas.put(topic, receivedData);
+                    }
+                }
             }
+
 
             buffer.clear();
             senderAddress = channel.receive(buffer);
         }
+    }
 
-        if (newestData != null) {
-            listener.handleNewestData(newestData);
-            newestData = null;
+    private T receive(Byte topic) {
+        Queue<T> receivedQueue = receivedQueues.get(topic);
+        T receivedData = receivedQueue != null ? receivedQueue.poll() : null;
+
+        if (receivedData == null) {
+            T newestData = newestDatas.remove(topic);
+            if (newestData != null) {
+                DataListener<T> listener = listeners.get(topic);
+                if (listener != null)
+                    listener.handleNewestData(newestData);
+            }
         }
 
-        return outQueue;
+        return receivedData;
     }
+
 }

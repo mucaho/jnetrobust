@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.Queue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -35,28 +34,20 @@ public class UnidirectionalMain {
 
     private static class Sender implements Runnable {
         private long counter = 0L;
-        private DefaultHost<Long> senderHost;
+        private DefaultHost.HostHandle<Long> senderHandle;
 
         private Sender() throws IOException {
-            senderHost = new DefaultHost<Long>(null, senderAddress, emulatorAddress,
-                    Long.class, new DefaultHost.DataListener<Long>() {
-                @Override
-                public void handleOrderedData(Long orderedData) {
-                }
-                @Override
-                public void handleNewestData(Long newestData) {
-                }
-            });
+            DefaultHost<Long> senderHost = new DefaultHost<Long>(null, senderAddress, Long.class);
+            senderHandle = senderHost.register(Byte.MIN_VALUE, emulatorAddress);
         }
         @Override
         public void run() {
             try {
                 // receive incoming acknowledgements
-                senderHost.receive();
+                while (senderHandle.receive() != null) ;
 
                 // send acknowledgements & data
-                senderHost.send(counter++);
-
+                senderHandle.send(counter++);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -64,30 +55,24 @@ public class UnidirectionalMain {
     }
 
     private static class Receiver implements Runnable {
-        private DefaultHost<Long> receiverHost;
+        private DefaultHost.HostHandle<Long> receiverHandle;
 
         private Receiver() throws IOException {
-            receiverHost = new DefaultHost<Long>(null, receiverAddress, emulatorAddress,
-                    Long.class, new DefaultHost.DataListener<Long>() {
-                @Override
-                public void handleOrderedData(Long orderedData) {
-                }
-                @Override
-                public void handleNewestData(Long newestData) {
-                }
-            });
+            DefaultHost<Long> receiverHost = new DefaultHost<Long>(null, receiverAddress, Long.class);
+            receiverHandle = receiverHost.register(Byte.MIN_VALUE, emulatorAddress);
         }
+
         @Override
         public void run() {
             try {
                 // receive incoming acknowledgements & data
-                Queue<Long> receivedDatas = receiverHost.receive();
-                for (Long receivedData: receivedDatas)
+                Long receivedData;
+                while ((receivedData = receiverHandle.receive()) != null) {
                     System.out.println(receivedData);
+                }
 
-                // send acknowledgements of received messages only
-                receiverHost.send();
-
+                // send acknowledgements of received messages
+                receiverHandle.send(null);
             } catch (Exception e) {
                 e.printStackTrace();
             }
