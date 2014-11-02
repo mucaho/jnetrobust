@@ -34,29 +34,27 @@ public class DefaultHost<T> {
 
 
     public static class HostHandle<T> {
-        private final Byte topic;
-        private final SocketAddress targetAddress;
+        private final ProtocolId protocolId;
         private final DefaultHost<T> host;
-        private HostHandle(Byte topic, SocketAddress targetAddress, DefaultHost<T> host) {
+        private HostHandle(ProtocolId protocolId, DefaultHost<T> host) {
             this.host = host;
-            this.targetAddress = targetAddress;
-            this.topic = topic;
+            this.protocolId = protocolId;
         }
 
         public void send(T data) throws IOException {
-            host.send(topic, targetAddress, data);
+            host.send(protocolId, data);
         }
         public T receive() throws IOException, ClassNotFoundException {
             host.receive();
-            return host.receive(topic);
+            return host.receive(protocolId);
         }
     }
 
     private final String hostName;
 
     // protocol fields
-    private final Map<Byte, Protocol<T>> protocols = new HashMap<Byte, Protocol<T>>();
-    private final Map<Byte, DataListener<T>> listeners = new HashMap<Byte, DataListener<T>>();
+    private final Map<ProtocolId, Protocol<T>> protocols = new HashMap<ProtocolId, Protocol<T>>();
+    private final Map<ProtocolId, DataListener<T>> listeners = new HashMap<ProtocolId, DataListener<T>>();
 
     // serialization fields
     private final Kryo kryo;
@@ -69,11 +67,11 @@ public class DefaultHost<T> {
     // network communication fields
     private final DatagramChannel channel;
 
-    public DefaultHost(String hostName, SocketAddress hostAddress, Class<T> dataClass) throws IOException {
+    public DefaultHost(String hostName, Class<T> dataClass, SocketAddress localAddress) throws IOException {
         // setup network communication
         channel = DatagramChannel.open();
         channel.configureBlocking(false);
-        channel.socket().bind(hostAddress);
+        channel.socket().bind(localAddress);
 
         // setup serialization
         kryo = new Kryo();
@@ -88,10 +86,12 @@ public class DefaultHost<T> {
 
 
 
-    public HostHandle<T> register(byte topic, SocketAddress targetAddress) {
-        return register(topic, targetAddress, null);
+    public HostHandle<T> register(byte topic, SocketAddress remoteAddress) {
+        return register(topic, remoteAddress, null);
     }
-    public HostHandle<T> register(byte topic, SocketAddress targetAddress, final DataListener<T> listener) {
+    public HostHandle<T> register(byte topic, SocketAddress remoteAddress, final DataListener<T> listener) {
+        ProtocolId protocolId = new ProtocolId(topic, remoteAddress);
+
         ProtocolListener<T> protocolListener = new ProtocolListener<T>() {
             @Override
             public void handleOrderedData(short dataId, T orderedData) {
@@ -99,80 +99,80 @@ public class DefaultHost<T> {
                     listener.handleOrderedData(orderedData);
             }
         };
-        listeners.put(topic, listener);
+        listeners.put(protocolId, listener);
 
         Protocol<T> protocol;
         if (hostName != null)
             protocol = new Protocol<T>(protocolListener, Logger.getConsoleLogger(hostName));
         else
             protocol = new Protocol<T>(protocolListener);
-        protocols.put(topic, protocol);
+        protocols.put(protocolId, protocol);
 
-        return new HostHandle<T>(topic, targetAddress, this);
+        return new HostHandle<T>(protocolId, this);
     }
 
 
 
 
-    private void send(byte topic, SocketAddress targetAddress, T data) throws IOException {
+    private void send(ProtocolId protocolId, T data) throws IOException {
         buffer.clear();
-        buffer.put(topic);
+        buffer.put(protocolId.topic);
         bufferOutput.setBuffer(buffer);
-        protocols.get(topic).send(data, objectOutput);
+        protocols.get(protocolId).send(data, objectOutput);
 
         buffer.flip();
-        channel.send(buffer, targetAddress);
+        channel.send(buffer, protocolId.remoteAddress);
     }
 
-    private Map<Byte, Short> newestIds = new HashMap<Byte, Short>();
-    private Map<Byte, T> newestDatas = new HashMap<Byte, T>();
-    private Map<Byte, Queue<T>> receivedQueues = new HashMap<Byte, Queue<T>>();
+    private Map<ProtocolId, Short> newestIds = new HashMap<ProtocolId, Short>();
+    private Map<ProtocolId, T> newestDatas = new HashMap<ProtocolId, T>();
+    private Map<ProtocolId, Queue<T>> receivedQueues = new HashMap<ProtocolId, Queue<T>>();
 
     private void receive() throws IOException, ClassNotFoundException {
         buffer.clear();
-        SocketAddress senderAddress = channel.receive(buffer);
-        while (senderAddress != null) {
+        SocketAddress remoteAddress = channel.receive(buffer);
+        while (remoteAddress != null) {
             buffer.flip();
-            byte topic = buffer.get();
+            ProtocolId protocolId = new ProtocolId(buffer.get(), remoteAddress);
             bufferInput.setBuffer(buffer);
 
-            Protocol<T> protocol = protocols.get(topic);
+            Protocol<T> protocol = protocols.get(protocolId);
             NavigableMap<Short, T> receivedEntries = protocol.receive(objectInput);
             for (Map.Entry<Short, T> receivedEntry: receivedEntries.entrySet()) {
                 Short receivedId = receivedEntry.getKey();
                 T receivedData = receivedEntry.getValue();
 
                 {
-                    Queue<T> receivedQueue = receivedQueues.get(topic);
+                    Queue<T> receivedQueue = receivedQueues.get(protocolId);
                     if (receivedQueue == null) {
                         receivedQueue = new LinkedList<T>();
-                        receivedQueues.put(topic, receivedQueue);
+                        receivedQueues.put(protocolId, receivedQueue);
                     }
                     receivedQueue.offer(receivedData);
                 }
                 {
-                    Short newestId = newestIds.get(topic);
+                    Short newestId = newestIds.get(protocolId);
                     if (newestId == null || protocol.compare(receivedId, newestId) > 0) {
-                        newestIds.put(topic, receivedId);
-                        newestDatas.put(topic, receivedData);
+                        newestIds.put(protocolId, receivedId);
+                        newestDatas.put(protocolId, receivedData);
                     }
                 }
             }
 
 
             buffer.clear();
-            senderAddress = channel.receive(buffer);
+            remoteAddress = channel.receive(buffer);
         }
     }
 
-    private T receive(Byte topic) {
-        Queue<T> receivedQueue = receivedQueues.get(topic);
+    private T receive(ProtocolId protocolId) {
+        Queue<T> receivedQueue = receivedQueues.get(protocolId);
         T receivedData = receivedQueue != null ? receivedQueue.poll() : null;
 
         if (receivedData == null) {
-            T newestData = newestDatas.remove(topic);
+            T newestData = newestDatas.remove(protocolId);
             if (newestData != null) {
-                DataListener<T> listener = listeners.get(topic);
+                DataListener<T> listener = listeners.get(protocolId);
                 if (listener != null)
                     listener.handleNewestData(newestData);
             }
@@ -181,4 +181,34 @@ public class DefaultHost<T> {
         return receivedData;
     }
 
+
+    private static class ProtocolId {
+        private final byte topic;
+        private final SocketAddress remoteAddress;
+
+        private ProtocolId(byte topic, SocketAddress remoteAddress) {
+            this.topic = topic;
+            this.remoteAddress = remoteAddress;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ProtocolId that = (ProtocolId) o;
+
+            if (topic != that.topic) return false;
+            if (!remoteAddress.equals(that.remoteAddress)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = (int) topic;
+            result = 31 * result + remoteAddress.hashCode();
+            return result;
+        }
+    }
 }

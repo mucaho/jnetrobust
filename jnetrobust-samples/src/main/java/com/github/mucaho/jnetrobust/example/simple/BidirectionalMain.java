@@ -20,11 +20,11 @@ public class BidirectionalMain {
         InetSocketAddress ADDRESS_B = new InetSocketAddress(InetAddress.getLocalHost(), 12346);
 
         // setup DefaultHost A
-        DefaultHost<String> hostA = new DefaultHost<String>("A", ADDRESS_A, String.class);
+        DefaultHost<String> hostA = new DefaultHost<String>("A", String.class, ADDRESS_A);
         DefaultHost.HostHandle<String> hostHandleA = hostA.register(Byte.MIN_VALUE, ADDRESS_B);
 
         // setup DefaultHost B
-        DefaultHost<String> hostB = new DefaultHost<String>("B", ADDRESS_B, String.class);
+        DefaultHost<String> hostB = new DefaultHost<String>("B", String.class, ADDRESS_B);
         DefaultHost.HostHandle<String> hostHandleB = hostB.register(Byte.MIN_VALUE, ADDRESS_A);
 
 

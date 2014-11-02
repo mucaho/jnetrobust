@@ -24,7 +24,7 @@ public class AbstractSynchronizationController {
         gui = new SynchronizationGUI(info.hostMode);
         gui.setVisible(true);
 
-        host = new DefaultHost<Vector2D>(info.hostMode.toString(), info.localAddress, Vector2D.class);
+        host = new DefaultHost<Vector2D>(info.hostMode.toString(), Vector2D.class, info.localAddress);
     }
 
     SynchronizationHandle register(HandleInformation info) {

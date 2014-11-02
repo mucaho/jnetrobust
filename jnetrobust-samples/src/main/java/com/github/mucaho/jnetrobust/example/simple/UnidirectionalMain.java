@@ -37,7 +37,7 @@ public class UnidirectionalMain {
         private DefaultHost.HostHandle<Long> senderHandle;
 
         private Sender() throws IOException {
-            DefaultHost<Long> senderHost = new DefaultHost<Long>(null, senderAddress, Long.class);
+            DefaultHost<Long> senderHost = new DefaultHost<Long>(null, Long.class, senderAddress);
             senderHandle = senderHost.register(Byte.MIN_VALUE, emulatorAddress);
         }
         @Override
@@ -58,7 +58,7 @@ public class UnidirectionalMain {
         private DefaultHost.HostHandle<Long> receiverHandle;
 
         private Receiver() throws IOException {
-            DefaultHost<Long> receiverHost = new DefaultHost<Long>(null, receiverAddress, Long.class);
+            DefaultHost<Long> receiverHost = new DefaultHost<Long>(null, Long.class, receiverAddress);
             receiverHandle = receiverHost.register(Byte.MIN_VALUE, emulatorAddress);
         }
 
