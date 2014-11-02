@@ -258,6 +258,7 @@ public class CollectionUtils {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public Object[] toArray() {
             Object[] out = delegate.toArray();
             for (int i=0; i<out.length; ++i)
@@ -266,6 +267,7 @@ public class CollectionUtils {
         }
 
         @Override
+        @SuppressWarnings("unchecked")
         public <T> T[] toArray(T[] a) {
             T[] out = delegate.toArray(a);
             for (int i=0; i<out.length; ++i)
