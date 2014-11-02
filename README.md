@@ -56,54 +56,45 @@ Talk is cheap. Show me the code. [[1]](http://lkml.org/lkml/2000/8/25/132)
 Here is a minimal, complete example:   
 **Code**
 ```java
-public class ChatMain {
+public class BidirectionalMain {
     public static void main (String[] args) throws Exception {
+        String receivedMessage;
+
         // host addresses
         InetSocketAddress ADDRESS_A = new InetSocketAddress(InetAddress.getLocalHost(), 12345);
         InetSocketAddress ADDRESS_B = new InetSocketAddress(InetAddress.getLocalHost(), 12346);
 
         // setup DefaultHost A
-        DefaultHost<String> hostA = new DefaultHost<String>("A", ADDRESS_A, ADDRESS_B,
-                String.class, new DefaultHost.DataListener<String>() {
-            @Override
-            public void handleOrderedData(String orderedData) {}
-            @Override
-            public void handleNewestData(String newestData) {}
-        });
+        DefaultHost<String> hostA = new DefaultHost<String>("A", ADDRESS_A, String.class);
+        DefaultHost.HostHandle<String> hostHandleA = hostA.register(Byte.MIN_VALUE, ADDRESS_B);
 
         // setup DefaultHost B
-        DefaultHost<String> hostB = new DefaultHost<String>("B", ADDRESS_B, ADDRESS_A,
-                String.class, new DefaultHost.DataListener<String>() {
-            @Override
-            public void handleOrderedData(String orderedData) {}
-            @Override
-            public void handleNewestData(String newestData) {}
-        });
+        DefaultHost<String> hostB = new DefaultHost<String>("B", ADDRESS_B, String.class);
+        DefaultHost.HostHandle<String> hostHandleB = hostB.register(Byte.MIN_VALUE, ADDRESS_A);
 
-        Queue<String> receivedMessages;
 
         // send from A
-        hostA.send("Hi!");
-        hostA.send("How you doing?");
+        hostHandleA.send("Hi!");
+        hostHandleA.send("How you doing?");
 
         System.out.println();
         Thread.sleep(100);
 
         // receive at B
-        receivedMessages = hostB.receive();
-        for (String receivedMessage: receivedMessages)
+        while ((receivedMessage = hostHandleB.receive()) != null) {
             System.out.println("<B>\t"+receivedMessage);
+        }
 
         // send from B
-        hostB.send("Howdy! Fine, thanks.");
+        hostHandleB.send("Howdy! Fine, thanks.");
 
         System.out.println();
         Thread.sleep(100);
 
         // receive at A
-        receivedMessages = hostA.receive();
-        for (String receivedMessage: receivedMessages)
+        while ((receivedMessage = hostHandleA.receive()) != null) {
             System.out.println("<A>\t"+receivedMessage);
+        }
     }
 }
 ```
