@@ -66,11 +66,11 @@ public class BidirectionalMain {
 
         // setup ProtocolHost A
         ProtocolHost<String> protocolHostA = new ProtocolHost<String>("A", String.class, ADDRESS_A);
-        ProtocolHost.ProtocolHandle<String> protocolHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
+        ProtocolHandle<String> protocolHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
 
         // setup ProtocolHost B
         ProtocolHost<String> protocolHostB = new ProtocolHost<String>("B", String.class, ADDRESS_B);
-        ProtocolHost.ProtocolHandle<String> protocolHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
+        ProtocolHandle<String> protocolHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
 
 
         // send from A
