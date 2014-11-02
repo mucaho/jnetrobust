@@ -6,7 +6,7 @@
 package com.github.mucaho.jnetrobust.example.advanced;
 
 
-import com.github.mucaho.jnetrobust.example.advanced.SynchronizationMain.Vector2D;
+import com.github.mucaho.jnetrobust.example.advanced.SynchronizationMain.*;
 
 import java.io.IOException;
 
@@ -20,6 +20,10 @@ public class ClientSynchronizationController extends AbstractSynchronizationCont
         super(hostInfo);
         relayHandle = register(handleRelayInfo);
         directHandle = register(handleDirectInfo);
+
+        HOST otherClient = hostInfo.hostMode.equals(HOST.CLIENTA) ? HOST.CLIENTB : HOST.CLIENTA;
+        getGui().addDescription("From " + otherClient.toString() + ": " + handleRelayInfo.updateMode);
+        getGui().addDescription("From " + HOST.SERVER.toString() + ": " + handleDirectInfo.updateMode);
     }
 
     @Override

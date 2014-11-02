@@ -5,8 +5,8 @@
 
 package com.github.mucaho.jnetrobust.example.advanced;
 
-import com.github.mucaho.jnetrobust.example.DefaultHost;
-import com.github.mucaho.jnetrobust.example.DefaultHost.*;
+import com.github.mucaho.jnetrobust.example.ProtocolHost;
+import com.github.mucaho.jnetrobust.example.ProtocolHost.*;
 import com.github.mucaho.jnetrobust.example.advanced.SynchronizationMain.*;
 
 import java.io.IOException;
@@ -16,7 +16,7 @@ import java.net.SocketAddress;
 public class AbstractSynchronizationController {
     private final SynchronizationGUI gui;
     private final Vector2D data;
-    private final DefaultHost<Vector2D> host;
+    private final ProtocolHost<Vector2D> host;
 
     AbstractSynchronizationController(HostInformation info) throws IOException {
         data = new Vector2D(Integer.MIN_VALUE, Integer.MIN_VALUE, info.hostMode);
@@ -24,16 +24,16 @@ public class AbstractSynchronizationController {
         gui = new SynchronizationGUI(info.hostMode);
         gui.setVisible(true);
 
-        host = new DefaultHost<Vector2D>(info.hostMode.toString(), Vector2D.class, info.localAddress);
+        host = new ProtocolHost<Vector2D>(info.hostMode.toString(), Vector2D.class, info.localAddress);
     }
 
     SynchronizationHandle register(HandleInformation info) {
-        HostHandle<Vector2D> handle =
+        ProtocolHandle<Vector2D> handle =
                 host.register(info.topic, info.remoteAddress, new ModeDataListener(info.updateMode, gui));
         return new SynchronizationHandle(handle, info.updateMode, gui, data);
     }
 
-    public SynchronizationGUI getGui() {
+    SynchronizationGUI getGui() {
         return gui;
     }
 
@@ -67,14 +67,14 @@ public class AbstractSynchronizationController {
 
 
     static class SynchronizationHandle {
-        private final HostHandle<Vector2D> hostHandle;
+        private final ProtocolHandle<Vector2D> protocolHandle;
         private final MODE udpdateMode;
         private final SynchronizationGUI gui;
         private final Vector2D data;
 
-        private SynchronizationHandle(HostHandle<Vector2D> hostHandle, MODE updateMode,
+        private SynchronizationHandle(ProtocolHandle<Vector2D> protocolHandle, MODE updateMode,
                                       SynchronizationGUI gui, Vector2D data) {
-            this.hostHandle = hostHandle;
+            this.protocolHandle = protocolHandle;
             this.udpdateMode = updateMode;
             this.gui = gui;
             this.data = data;
@@ -82,22 +82,22 @@ public class AbstractSynchronizationController {
 
         public void send() throws IOException {
             gui.sendGUI(data);
-            hostHandle.send(data);
+            protocolHandle.send(data);
         }
 
         public void send(Vector2D data) throws IOException {
-            hostHandle.send(data);
+            protocolHandle.send(data);
         }
 
         public Vector2D receive() throws IOException, ClassNotFoundException {
-            Vector2D receivedData = hostHandle.receive();
+            Vector2D receivedData = protocolHandle.receive();
             if (receivedData != null && udpdateMode == MODE.UPDATE_ON_RECEIVED_DATA)
                 gui.updateGUI(receivedData);
             return receivedData;
         }
     }
 
-    static class ModeDataListener implements DefaultHost.DataListener<Vector2D> {
+    static class ModeDataListener implements ProtocolHost.DataListener<Vector2D> {
         private final MODE updateMode;
         private final SynchronizationGUI gui;
 

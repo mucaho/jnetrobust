@@ -27,6 +27,9 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
         relayBHandle = register(handleRelayBInfo);
         clientBHandle = register(handleDirectBInfo);
         relayAHandle = register(handleRelayAInfo);
+
+        getGui().addDescription("From " + HOST.CLIENTA.toString() + ": " + handleDirectAInfo.updateMode);
+        getGui().addDescription("From " + HOST.CLIENTB.toString() + ": " + handleDirectBInfo.updateMode);
     }
 
     @Override

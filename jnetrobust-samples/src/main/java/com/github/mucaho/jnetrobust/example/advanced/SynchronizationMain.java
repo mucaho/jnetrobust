@@ -48,16 +48,14 @@ public class SynchronizationMain {
         // clientA
         ClientSynchronizationController clientA = new ClientSynchronizationController(
                 new HostInformation(HOST.CLIENTA, CLIENTA_ADDRESS),
-                new HandleInformation(MODE.UPDATE_ON_RECEIVED_DATA, EMULATORA_ADDRESS, topicA),
+                new HandleInformation(MODE.UPDATE_ON_ORDERED_DATA, EMULATORA_ADDRESS, topicA),
                 new HandleInformation(MODE.UPDATE_ON_RECEIVED_DATA, EMULATORA_ADDRESS, topicB));
-        clientA.getGui().addDescription(MODE.UPDATE_ON_RECEIVED_DATA.toString());
 
         // clientB
         ClientSynchronizationController clientB = new ClientSynchronizationController(
                 new HostInformation(HOST.CLIENTB, CLIENTB_ADDRESS),
-                new HandleInformation(MODE.UPDATE_ON_ORDERED_DATA, EMULATORB_ADDRESS, topicB),
+                new HandleInformation(MODE.UPDATE_ON_NEWEST_DATA, EMULATORB_ADDRESS, topicB),
                 new HandleInformation(MODE.UPDATE_ON_ORDERED_DATA, EMULATORB_ADDRESS, topicA));
-        clientB.getGui().addDescription(MODE.UPDATE_ON_ORDERED_DATA.toString());
 
         // server
         ServerSynchronizationController server = new ServerSynchronizationController(
@@ -66,8 +64,6 @@ public class SynchronizationMain {
                 new HandleInformation(MODE.UPDATE_ON_ORDERED_DATA, EMULATORB_ADDRESS, topicA),
                 new HandleInformation(MODE.UPDATE_ON_NEWEST_DATA, EMULATORB_ADDRESS, topicB),
                 new HandleInformation(MODE.UPDATE_ON_ORDERED_DATA, EMULATORA_ADDRESS, topicB));
-        server.getGui().addDescription("From " + HOST.CLIENTA.toString() + ": " + MODE.UPDATE_ON_RECEIVED_DATA.toString());
-        server.getGui().addDescription("From " + HOST.CLIENTB.toString() + ": " + MODE.UPDATE_ON_NEWEST_DATA.toString());
 
 
         // emulators emulate bad networking conditions as in WANs

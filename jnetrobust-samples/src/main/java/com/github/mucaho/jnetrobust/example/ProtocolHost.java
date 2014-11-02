@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.*;
 
-public class DefaultHost<T> {
+public class ProtocolHost<T> {
     public static interface DataListener<T> {
         public void handleOrderedData(T orderedData);
         public void handleNewestData(T newestData);
@@ -33,10 +33,10 @@ public class DefaultHost<T> {
     }
 
 
-    public static class HostHandle<T> {
+    public static class ProtocolHandle<T> {
         private final ProtocolId protocolId;
-        private final DefaultHost<T> host;
-        private HostHandle(ProtocolId protocolId, DefaultHost<T> host) {
+        private final ProtocolHost<T> host;
+        private ProtocolHandle(ProtocolId protocolId, ProtocolHost<T> host) {
             this.host = host;
             this.protocolId = protocolId;
         }
@@ -67,7 +67,7 @@ public class DefaultHost<T> {
     // network communication fields
     private final DatagramChannel channel;
 
-    public DefaultHost(String hostName, Class<T> dataClass, SocketAddress localAddress) throws IOException {
+    public ProtocolHost(String hostName, Class<T> dataClass, SocketAddress localAddress) throws IOException {
         // setup network communication
         channel = DatagramChannel.open();
         channel.configureBlocking(false);
@@ -86,10 +86,10 @@ public class DefaultHost<T> {
 
 
 
-    public HostHandle<T> register(byte topic, SocketAddress remoteAddress) {
+    public ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress) {
         return register(topic, remoteAddress, null);
     }
-    public HostHandle<T> register(byte topic, SocketAddress remoteAddress, final DataListener<T> listener) {
+    public ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress, final DataListener<T> listener) {
         ProtocolId protocolId = new ProtocolId(topic, remoteAddress);
 
         ProtocolListener<T> protocolListener = new ProtocolListener<T>() {
@@ -108,7 +108,7 @@ public class DefaultHost<T> {
             protocol = new Protocol<T>(protocolListener);
         protocols.put(protocolId, protocol);
 
-        return new HostHandle<T>(protocolId, this);
+        return new ProtocolHandle<T>(protocolId, this);
     }
 
 

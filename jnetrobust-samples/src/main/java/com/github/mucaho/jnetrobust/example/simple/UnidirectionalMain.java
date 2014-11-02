@@ -6,7 +6,7 @@
 package com.github.mucaho.jnetrobust.example.simple;
 
 import com.github.mucaho.jnetemu.DatagramWanEmulator;
-import com.github.mucaho.jnetrobust.example.DefaultHost;
+import com.github.mucaho.jnetrobust.example.ProtocolHost;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -34,10 +34,10 @@ public class UnidirectionalMain {
 
     private static class Sender implements Runnable {
         private long counter = 0L;
-        private DefaultHost.HostHandle<Long> senderHandle;
+        private ProtocolHost.ProtocolHandle<Long> senderHandle;
 
         private Sender() throws IOException {
-            DefaultHost<Long> senderHost = new DefaultHost<Long>(null, Long.class, senderAddress);
+            ProtocolHost<Long> senderHost = new ProtocolHost<Long>(null, Long.class, senderAddress);
             senderHandle = senderHost.register(Byte.MIN_VALUE, emulatorAddress);
         }
         @Override
@@ -55,10 +55,10 @@ public class UnidirectionalMain {
     }
 
     private static class Receiver implements Runnable {
-        private DefaultHost.HostHandle<Long> receiverHandle;
+        private ProtocolHost.ProtocolHandle<Long> receiverHandle;
 
         private Receiver() throws IOException {
-            DefaultHost<Long> receiverHost = new DefaultHost<Long>(null, Long.class, receiverAddress);
+            ProtocolHost<Long> receiverHost = new ProtocolHost<Long>(null, Long.class, receiverAddress);
             receiverHandle = receiverHost.register(Byte.MIN_VALUE, emulatorAddress);
         }
 
