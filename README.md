@@ -16,10 +16,6 @@ What is it?
 -----------
 JNetRobust is a virtual network protocol that resides between the [transport](http://en.wikipedia.org/wiki/Transport_layer) and the [application](http://en.wikipedia.org/wiki/Application_layer) layer.
 
-It provides some benefits from both transport layer protocols that are accessible on the JVM:
-* performance of [UPD](http://en.wikipedia.org/wiki/User_Datagram_Protocol)
-* reliability of [TCP](http://en.wikipedia.org/wiki/Transmission_Control_Protocol)
-
 **Benefits**
 * reliability of transmitted data   
    counters network characteristics like out-of-order delivery, package loss, package duplication
