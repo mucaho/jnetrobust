@@ -166,7 +166,6 @@ public class MetadataTest {
             assertNotSame("Reference has to differ", originalRefArray[i], clonedRefArray[i]);
         */
 
-
         Deencapsulation.setField(original, "value", "__NEW_DATA__");
         assertEquals("Original value did change", "__NEW_DATA__", original.getData());
         assertNotEquals("Cloned value did not change", original.getData().equals(clone.getData()));
@@ -181,5 +180,23 @@ public class MetadataTest {
         assertEquals("Cloned reference count did not change", refs.length, clone.getTransmissionIds().size());
         NavigableSet<Short> sortedRefs = new TreeSet<Short>(Arrays.asList(refs));
         assertArrayEquals("Cloned references did not change", sortedRefs.toArray(), clone.getTransmissionIds().toArray());
+    }
+
+    @Test
+    public void testImmutableCollectionsReturned() {
+        Metadata<Object> metadata2 = new Metadata<Object>();
+        metadata2.addTransmissionId((short)2);
+
+        try {
+            metadata2.getTransmissionIds().remove((short)2);
+            fail("Returned collection should be immutable");
+        } catch (UnsupportedOperationException e) {
+        }
+
+        try {
+            metadata2.getDataIds().remove((short)2);
+            fail("Returned collection should be immutable");
+        } catch (UnsupportedOperationException e) {
+        }
     }
 }

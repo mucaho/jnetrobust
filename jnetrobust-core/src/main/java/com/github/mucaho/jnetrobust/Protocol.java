@@ -8,9 +8,9 @@
 package com.github.mucaho.jnetrobust;
 
 import com.github.mucaho.jnetrobust.control.Metadata;
+import com.github.mucaho.jnetrobust.controller.Controller;
 import com.github.mucaho.jnetrobust.controller.DebugController;
 import com.github.mucaho.jnetrobust.controller.Packet;
-import com.github.mucaho.jnetrobust.controller.RetransmissionController;
 import com.github.mucaho.jnetrobust.util.CollectionUtils;
 import com.github.mucaho.jnetrobust.util.DebugProtocolListener;
 import com.github.mucaho.jnetrobust.util.IdComparator;
@@ -51,8 +51,9 @@ import java.util.*;
  * @param <T> the user data type
  */
 public class Protocol<T> implements Comparator<Short> {
-    private final RetransmissionController<T> controller;
-    private final boolean shouldRetransmit;
+    private final Controller<T> controller;
+    // TODO: possibly add currentlyInUse boolean to prevent reentering send / receive procedure while listeners fire
+    // TODO: add T.. datas send
 
     /**
      * Construct a new protocol instance using the default {@link ProtocolConfig protocol configuration}.
@@ -87,17 +88,14 @@ public class Protocol<T> implements Comparator<Short> {
      * @param logger    the <code>Logger</code> which will be used to track internal state changes
      */
     public Protocol(ProtocolConfig<T> config, Logger logger) {
-        this.shouldRetransmit = config.shouldRetransmit();
         if (logger != null) {
             ProtocolListener<T> debugListener = new DebugProtocolListener<T>(config.listener, logger);
             this.controller = new DebugController<T>(new ProtocolConfig<T>(debugListener, config), logger);
         } else {
-            this.controller = new RetransmissionController<T>(config);
+            this.controller = new Controller<T>(config);
         }
 
     }
-
-
 
 
     private final PacketEntry<T> sentPacketOut = new PacketEntry<T>();
@@ -112,7 +110,7 @@ public class Protocol<T> implements Comparator<Short> {
 
     /**
      * Package the user-data, in order to transmit the user-data, acknowledge
-     * received data and retransmit data (if {@link ProtocolConfig#setShouldRetransmit(boolean) retransmission is enabled}).
+     * received data and retransmit data (if {@link ProtocolConfig#setAutoRetransmit(boolean) retransmission is enabled}).
      * <br>
      * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events may be fired before
      * this method returns.
@@ -127,12 +125,11 @@ public class Protocol<T> implements Comparator<Short> {
      */
     public synchronized Map.Entry<Short, Packet<T>> send(T data) {
         Packet<T> packet = controller.produce();
-        if (shouldRetransmit) {
-            Collection<Metadata<T>> retransmits = controller.retransmit();
-            for (Metadata<T> retransmit : retransmits) {
-                controller.send(packet, retransmit);
-            }
-        }
+
+        List<Metadata<T>> retransmits = controller.retransmit();
+        for (int i = 0, l = retransmits.size(); i < l; ++i)
+            controller.send(packet, retransmits.get(i));
+
         if (data != null)
             controller.send(packet, controller.produce(data));
 
@@ -162,7 +159,7 @@ public class Protocol<T> implements Comparator<Short> {
 
     /**
      * Unpackage the packaged user-data, in order to retrieve the user-data that was received, acknowledge sent data and
-     * receive retransmitted data (if {@link ProtocolConfig#setShouldRetransmit(boolean) retransmission is enabled}).
+     * receive retransmitted data (if {@link ProtocolConfig#setAutoRetransmit(boolean) retransmission is enabled}).
      * <br>
      * Zero or more {@link ProtocolListener#handleOrderedData(short, Object) orderedData},
      * {@link ProtocolListener#handleUnorderedData(short, Object) unorderedData} or

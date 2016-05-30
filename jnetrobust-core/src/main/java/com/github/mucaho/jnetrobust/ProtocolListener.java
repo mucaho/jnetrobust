@@ -7,14 +7,16 @@
 
 package com.github.mucaho.jnetrobust;
 
-import com.github.mucaho.jnetrobust.control.PendingMapControl.TransmissionSuccessListener;
+import com.github.mucaho.jnetrobust.control.SentMapControl.TransmissionSuccessListener;
 import com.github.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderListener;
+import com.github.mucaho.jnetrobust.control.ResponseControl.RetransmissionListener;
 
 /**
  * The listener which will be notified about specific {@link Protocol protocol} events.
  * @param <T> the user data type
  */
-public class ProtocolListener<T> implements TransmissionSuccessListener<T>, TransmissionOrderListener<T> {
+public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
+        TransmissionOrderListener<T>, RetransmissionListener<T> {
 
     /**
      * This protocol instance received data in the same order it was sent from another protocol instance.
@@ -52,5 +54,41 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>, Tran
      */
     @Override
     public void handleUnackedData(short dataId, T unackedData) {
+    }
+
+    /**
+     * This protocol instance has data that needs to be retransmitted.
+     * The user can decide whether the protocol should retransmit the data or not on a case-by-case basis,
+     * or let the protocol decide in general based on the {@link ProtocolConfig#autoRetransmit() autoRetransmit} setting.
+     * <br />
+     * Note that by disabling automatic retransmission or purposefully denying retransmission in some cases, the total
+     * ordering of data on the receiver end can no longer be guaranteed.
+     * <br />
+     * The user is still free to to retransmit the data, or some cloned and updated version of the data, later on using
+     * the {@link Protocol#send(Object) protocol's send} method.
+     * <br /><br />
+     * The following table summarizes whether the retransmission will occur based on the
+     * {@link ProtocolConfig#autoRetransmit() autoRetransmit setting} and the user supplied {@code return Boolean value}.
+     * <pre>
+     * +-----------------------------+------+-------+
+     * |            \ autoRetransmit | true | false |
+     * |             \               |      |       |
+     * | return value \              |      |       |
+     * +-----------------------------+------+-------+
+     * |     null                    |   Y  |   N   |
+     * +-----------------------------+------+-------+
+     * |     true                    |   Y  |   Y   |
+     * +-----------------------------+------+-------+
+     * |     false                   |   N  |   N   |
+     * +-----------------------------+------+-------+
+     * </pre>
+
+     * @param dataId    the <code>id</code> of the data
+     * @param data      the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
+     * @return          a <code>null, false or true Boolean</code>, indicating the whether the data should be retransmitted
+     */
+    @Override
+    public Boolean shouldRetransmit(short dataId, T data) {
+        return null;
     }
 }

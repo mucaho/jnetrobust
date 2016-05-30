@@ -12,8 +12,9 @@ import com.github.mucaho.jnetrobust.control.Metadata;
 import com.github.mucaho.jnetrobust.Logger;
 
 import java.util.Collection;
+import java.util.List;
 
-public class DebugController<T> extends RetransmissionController<T> {
+public class DebugController<T> extends Controller<T> {
     private final Logger logger;
 
     public DebugController(ProtocolConfig<T> config, Logger logger) {
@@ -42,11 +43,13 @@ public class DebugController<T> extends RetransmissionController<T> {
     }
 
     @Override
-    public Collection<Metadata<T>> retransmit() {
-        Collection<Metadata<T>> retransmits = super.retransmit();
-        for (Metadata<T> retransmit: retransmits)
-            logger.log(Logger.LoggingEvent.RETRANSMIT.toString(), String.valueOf(retransmit.getDataId()),
+    public List<Metadata<T>> retransmit() {
+        List<Metadata<T>> retransmits = super.retransmit();
+        for (int i = 0, l = retransmits.size(); i < l; ++i) {
+            Metadata<T> retransmit = retransmits.get(i);
+            logger.log(Logger.LoggingEvent.SEND_RETRANSMISSION.toString(), String.valueOf(retransmit.getDataId()),
                     retransmit.getData() != null ? retransmit.getData().toString() : "null");
+        }
 
         return retransmits;
     }

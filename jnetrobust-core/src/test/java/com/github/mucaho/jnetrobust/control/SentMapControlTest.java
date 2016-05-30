@@ -25,12 +25,12 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(JUnitParamsRunner.class)
-public class PendingMapControlTest extends MapControlTest {
+public class SentMapControlTest extends AbstractMapControlTest {
 
-    protected PendingMapControl<Object> handler = new PendingMapControl<Object>(config.listener, config.getPacketQueueLimit(),
+    protected SentMapControl<Object> handler = new SentMapControl<Object>(config.listener, config.getPacketQueueLimit(),
             config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
-    public PendingMapControlTest() {
+    public SentMapControlTest() {
         initDataMap(handler);
     }
 
@@ -80,7 +80,7 @@ public class PendingMapControlTest extends MapControlTest {
             public int invocations = 0;
         }
         final Wrapper wrapper = new Wrapper();
-        new MockUp<PendingMapControl<Object>>() {
+        new MockUp<SentMapControl<Object>>() {
             @Mock
             @SuppressWarnings("unused")
             protected void notifyAcked(Invocation invocation, Metadata<Object> ackedMetadata, boolean directlyAcked) {
@@ -95,7 +95,7 @@ public class PendingMapControlTest extends MapControlTest {
         for (int i = 0; i < referenceGroups.length; ++i) {
             addData(i, referenceGroups[i]);
         }
-        handler.removeFromPending(localSeq, lastLocalSeqs);
+        handler.removeFromSent(localSeq, lastLocalSeqs);
 
         assertEquals("Invocation count should match data count.", wrapper.invocations, referenceGroups.length);
         assertTrue("DataMap should be empty.", dataMap.isEmpty());
@@ -120,7 +120,7 @@ public class PendingMapControlTest extends MapControlTest {
         for (Short[] referenceGroup : referenceGroups) {
             Metadata<Object> metadata = new Metadata<Object>(++dataId, referenceGroup);
             for (Short reference : referenceGroup) {
-                handler.addToPending(reference, metadata);
+                handler.addToSent(reference, metadata);
             }
         }
 
@@ -131,11 +131,11 @@ public class PendingMapControlTest extends MapControlTest {
             referenceCount += referenceGroup.length;
         }
         assertEquals("Total data count match", dataCount,
-                new HashSet<Metadata<Object>>(handler.dataMap.getMap().values()).size());
-        assertEquals("Total reference count match", referenceCount, handler.dataMap.getMap().keySet().size());
+                new HashSet<Metadata<Object>>(handler.dataMap.getKeyMap().values()).size());
+        assertEquals("Total reference count match", referenceCount, handler.dataMap.getKeyMap().keySet().size());
 
 
-        for (Metadata<Object> metadata : handler.dataMap.getMap().values()) {
+        for (Metadata<Object> metadata : handler.dataMap.getKeyMap().values()) {
             Short[] dataValues = (Short[]) metadata.getData();
             assertEquals("Reference count match", dataValues.length, metadata.getTransmissionIds().size());
             for (Short dataValue : dataValues) {

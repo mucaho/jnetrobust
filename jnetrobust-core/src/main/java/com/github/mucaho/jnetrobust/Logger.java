@@ -18,7 +18,8 @@ public abstract class Logger {
     public static enum LoggingEvent {
         SEND("Data sent"),
         RECEIVE("Data received"),
-        RETRANSMIT("Data retransmitted"),
+        SEND_RETRANSMISSION("Data retransmitted"),
+        RETRANSMISSION("Data needs to be retransmitted"),
         ORDERED("Data received ordered"),
         UNORDERED("Data received not ordered"),
         ACKED("Data was received at other end"),
@@ -52,8 +53,8 @@ public abstract class Logger {
             @Override
             public void log(String description, Object... params) {
                 System.out.print("[" + name + "]: " + description + "\t");
-                for (Object param: params)
-                    System.out.print(param + "\t");
+                for (int i = 0, l = params.length; i < l; ++i)
+                    System.out.print(params[i] + "\t");
                 System.out.println();
             }
         };

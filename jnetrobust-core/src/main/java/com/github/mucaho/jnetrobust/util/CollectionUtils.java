@@ -549,10 +549,10 @@ public class CollectionUtils {
     }
 
     static class UnmodifiableDeque<E> implements Deque<E>, Serializable {
-        private final Deque<E> decratedDeque;
+        private final Deque<E> decoratedDeque;
 
         UnmodifiableDeque(Deque<E> d) {
-            decratedDeque = d;
+            decoratedDeque = d;
         }
 
 
@@ -598,22 +598,22 @@ public class CollectionUtils {
 
         @Override
         public E getFirst() {
-            return decratedDeque.getFirst();
+            return decoratedDeque.getFirst();
         }
 
         @Override
         public E getLast() {
-            return decratedDeque.getLast();
+            return decoratedDeque.getLast();
         }
 
         @Override
         public E peekFirst() {
-            return decratedDeque.peekFirst();
+            return decoratedDeque.peekFirst();
         }
 
         @Override
         public E peekLast() {
-            return decratedDeque.peekLast();
+            return decoratedDeque.peekLast();
         }
 
         @Override
@@ -648,12 +648,12 @@ public class CollectionUtils {
 
         @Override
         public E element() {
-            return decratedDeque.element();
+            return decoratedDeque.element();
         }
 
         @Override
         public E peek() {
-            return decratedDeque.peek();
+            return decoratedDeque.peek();
         }
 
         @Override
@@ -673,42 +673,42 @@ public class CollectionUtils {
 
         @Override
         public boolean contains(Object o) {
-            return decratedDeque.contains(o);
+            return decoratedDeque.contains(o);
         }
 
         @Override
         public int size() {
-            return decratedDeque.size();
+            return decoratedDeque.size();
         }
 
         @Override
         public Iterator<E> iterator() {
-            return new UnmodifiableIterator<E>(decratedDeque.iterator());
+            return new UnmodifiableIterator<E>(decoratedDeque.iterator());
         }
 
         @Override
         public Iterator<E> descendingIterator() {
-            return new UnmodifiableIterator<E>(decratedDeque.descendingIterator());
+            return new UnmodifiableIterator<E>(decoratedDeque.descendingIterator());
         }
 
         @Override
         public boolean isEmpty() {
-            return decratedDeque.isEmpty();
+            return decoratedDeque.isEmpty();
         }
 
         @Override
         public Object[] toArray() {
-            return decratedDeque.toArray();
+            return decoratedDeque.toArray();
         }
 
         @Override
         public <T> T[] toArray(T[] a) {
-            return decratedDeque.toArray(a);
+            return decoratedDeque.toArray(a);
         }
 
         @Override
         public boolean containsAll(Collection<?> c) {
-            return decratedDeque.containsAll(c);
+            return decoratedDeque.containsAll(c);
         }
 
         @Override

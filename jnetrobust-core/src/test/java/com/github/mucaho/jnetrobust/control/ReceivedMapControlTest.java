@@ -23,7 +23,7 @@ import static com.github.mucaho.jarrayliterals.ArrayShortcuts.$S;
 import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
-public class ReceivedMapControlTest extends MapControlTest {
+public class ReceivedMapControlTest extends AbstractMapControlTest {
     protected static ReceivedMapControl<Object> handler = new ReceivedMapControl<Object>((short) 0, config.listener,
             config.getPacketQueueLimit(), config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1,
             config.getPacketQueueTimeout());
@@ -79,7 +79,7 @@ public class ReceivedMapControlTest extends MapControlTest {
         };
 
         Metadata<Object> metadata = new Metadata<Object>(input, input);
-        dataMap.putDataId(metadata);
+        dataMap.put(metadata);
         Deencapsulation.invoke(handler, "removeTail");
 
 
@@ -117,11 +117,11 @@ public class ReceivedMapControlTest extends MapControlTest {
         dataMap.clear();
 
         Metadata<Object> metadata = new Metadata<Object>(ref, ref);
-        dataMap.putDataId(metadata);
+        dataMap.put(metadata);
         if (addedRef)
-            assertEquals("Ref was added as expected", metadata, dataMap.get(ref));
+            assertEquals("Ref was added as expected", metadata, dataMap.getValue(ref));
         else
-            assertNull("Ref was not added as expected", dataMap.get(ref));
+            assertNull("Ref was not added as expected", dataMap.getValue(ref));
 
         dataMap.clear();
     }

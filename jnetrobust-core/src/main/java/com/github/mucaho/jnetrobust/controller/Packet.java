@@ -14,9 +14,7 @@ import com.github.mucaho.jnetrobust.util.Freezable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.Arrays;
-import java.util.Deque;
-import java.util.LinkedList;
+import java.util.*;
 
 
 public class Packet<T> implements Freezable<Packet<T>> {
@@ -26,13 +24,13 @@ public class Packet<T> implements Freezable<Packet<T>> {
         super();
     }
 
-    private Deque<Metadata<T>> metadatas = new LinkedList<Metadata<T>>();
-    private transient Deque<Metadata<T>> metadatasOut = CollectionUtils.unmodifiableDeque(metadatas);
+    private LinkedList<Metadata<T>> metadatas = new LinkedList<Metadata<T>>();
+    private transient List<Metadata<T>> metadatasOut = Collections.unmodifiableList(metadatas);
     private short transmissionAck;
     private int precedingTransmissionAcks;
 
 
-    public Deque<Metadata<T>> getMetadatas() {
+    public List<Metadata<T>> getMetadatas() {
         return metadatasOut;
     }
 
@@ -53,6 +51,14 @@ public class Packet<T> implements Freezable<Packet<T>> {
 
     Metadata<T> removeFirstMetadata() {
         return metadatas.pollFirst();
+    }
+
+    Metadata<T> removeLastMetadata() {
+        return metadatas.pollLast();
+    }
+
+    Metadata<T> remove(int i) {
+        return metadatas.remove(i);
     }
 
     public short getTransmissionAck() {
@@ -116,8 +122,8 @@ public class Packet<T> implements Freezable<Packet<T>> {
         out.writeShort(transmissionAck);
         out.writeInt(precedingTransmissionAcks);
         out.writeByte(metadatas.size());
-        for (Metadata<T> metadata: metadatas)
-            Metadata.<T>writeExternalStatic(metadata, out);
+        for (int i = 0, l = metadatas.size(); i < l; ++i)
+            Metadata.<T>writeExternalStatic(metadatas.get(i), out);
     }
 
     @Override
@@ -134,8 +140,8 @@ public class Packet<T> implements Freezable<Packet<T>> {
         Packet<T> clone = new Packet<T>();
         clone.transmissionAck = transmissionAck;
         clone.precedingTransmissionAcks = precedingTransmissionAcks;
-        for (Metadata<T> metadata: metadatas)
-            clone.addLastMetadata(metadata.clone());
+        for (int i = 0, l = metadatas.size(); i < l; ++i)
+            clone.addLastMetadata(metadatas.get(i).clone());
         return clone;
     }
 }

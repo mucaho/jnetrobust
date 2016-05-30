@@ -107,25 +107,53 @@ public class DelayedTest {
 
 
         new NonStrictExpectations() {{
-            hostListenerA.notifyReceived(withCapture(receivedA));
-            hostListenerA.notifySent(withCapture(sentA));
-            hostListenerA.notifyRetransmitted(withCapture(retransmitsA));
+            hostListenerA.notifyReceived(with(new Delegate<Long>() {
+                @SuppressWarnings("unused")
+                void delegate(Long data) {
+                    receivedA.add(data);
+                    if (DEBUG)
+                        System.out.println("[A-received]: " + data);
+                }
+            }));
+            hostListenerA.notifySent(with(new Delegate<Long>() {
+                @SuppressWarnings("unused")
+                void delegate(Long data) {
+                    sentA.add(data);
+                    if (DEBUG)
+                        System.out.println("[A-sent]: " + data);
+                }
+            }));
 
             protocolListenerA.handleAckedData(anyShort, withCapture(ackedA));
             protocolListenerA.handleUnackedData(anyShort, withCapture(notAckedA));
             protocolListenerA.handleOrderedData(anyShort, withCapture(orderedA));
             protocolListenerA.handleUnorderedData(anyShort, withCapture(unorderedA));
+            protocolListenerA.shouldRetransmit(anyShort, withCapture(retransmitsA)); result = null;
         }};
 
         new NonStrictExpectations() {{
-            hostListenerB.notifyReceived(withCapture(receivedB));
-            hostListenerB.notifySent(withCapture(sentB));
-            hostListenerB.notifyRetransmitted(withCapture(retransmitsB));
+            hostListenerB.notifyReceived(with(new Delegate<Long>() {
+                @SuppressWarnings("unused")
+                void delegate(Long data) {
+                    receivedB.add(data);
+                    if (DEBUG)
+                        System.out.println("[B-received]: " + data);
+                }
+            }));
+            hostListenerB.notifySent(with(new Delegate<Long>() {
+                @SuppressWarnings("unused")
+                void delegate(Long data) {
+                    sentB.add(data);
+                    if (DEBUG)
+                        System.out.println("[B-sent]: " + data);
+                }
+            }));
 
             protocolListenerB.handleAckedData(anyShort, withCapture(ackedB));
             protocolListenerB.handleUnackedData(anyShort, withCapture(notAckedB));
             protocolListenerB.handleOrderedData(anyShort, withCapture(orderedB));
             protocolListenerB.handleUnorderedData(anyShort, withCapture(unorderedB));
+            protocolListenerB.shouldRetransmit(anyShort, withCapture(retransmitsB)); result = null;
         }};
 
         new NonStrictExpectations() {{
@@ -213,6 +241,104 @@ public class DelayedTest {
 		 * Verify phase
 		 */
 
+        // determine occurence counts
+
+        final Map<Long, Integer> ackedAOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> notAckedAOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> orderedAOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> unorderedAOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> retransmitsAOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> ackedADupes = new HashMap<Long, Integer>();
+        final Map<Long, Integer> notAckedADupes = new HashMap<Long, Integer>();
+        final Map<Long, Integer> orderedADupes = new HashMap<Long, Integer>();
+        final Map<Long, Integer> unorderedADupes = new HashMap<Long, Integer>();
+        final Map<Long, Integer> retransmitsADupes = new HashMap<Long, Integer>();
+
+        final Map<Long, Integer> ackedBOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> notAckedBOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> orderedBOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> unorderedBOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> retransmitsBOccurrences = new HashMap<Long, Integer>();
+        final Map<Long, Integer> ackedBDupes = new HashMap<Long, Integer>();
+        final Map<Long, Integer> notAckedBDupes = new HashMap<Long, Integer>();
+        final Map<Long, Integer> orderedBDupes = new HashMap<Long, Integer>();
+        final Map<Long, Integer> unorderedBDupes = new HashMap<Long, Integer>();
+        final Map<Long, Integer> retransmitsBDupes = new HashMap<Long, Integer>();
+
+        for (Long item : ackedA) {
+            Integer count = ackedAOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            ackedAOccurrences.put(item, count);
+            if (count > 1)
+                ackedADupes.put(item, count - 1);
+        }
+        for (Long item : notAckedA) {
+            Integer count = notAckedAOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            notAckedAOccurrences.put(item, count);
+            if (count > 1)
+                notAckedADupes.put(item, count - 1);
+        }
+        for (Long item : orderedA) {
+            Integer count = orderedAOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            orderedAOccurrences.put(item, count);
+            if (count > 1)
+                orderedADupes.put(item, count - 1);
+        }
+        for (Long item : unorderedA) {
+            Integer count = unorderedAOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            unorderedAOccurrences.put(item, count);
+            if (count > 1)
+                unorderedADupes.put(item, count - 1);
+        }
+        for (Long item : retransmitsA) {
+            Integer count = retransmitsAOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            retransmitsAOccurrences.put(item, count);
+            if (count > 1)
+                retransmitsADupes.put(item, count - 1);
+        }
+
+        for (Long item : ackedB) {
+            Integer count = ackedBOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            ackedBOccurrences.put(item, count);
+            if (count > 1)
+                ackedBDupes.put(item, count - 1);
+        }
+        for (Long item : notAckedB) {
+            Integer count = notAckedBOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            notAckedBOccurrences.put(item, count);
+            if (count > 1)
+                notAckedBDupes.put(item, count - 1);
+        }
+        for (Long item : orderedB) {
+            Integer count = orderedBOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            orderedBOccurrences.put(item, count);
+            if (count > 1)
+                orderedBDupes.put(item, count - 1);
+        }
+        for (Long item : unorderedB) {
+            Integer count = unorderedBOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            unorderedBOccurrences.put(item, count);
+            if (count > 1)
+                unorderedBDupes.put(item, count - 1);
+        }
+        for (Long item : retransmitsB) {
+            Integer count = retransmitsBOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            retransmitsBOccurrences.put(item, count);
+            if (count > 1)
+                retransmitsBDupes.put(item, count - 1);
+        }
+
+        // do verifications
+
         for (Long item : notAckedA)
             assertTrue("notAcked data should not have been acked", !ackedA.contains(item));
         for (Long item : notAckedB)
@@ -299,20 +425,30 @@ public class DelayedTest {
         }
 
         // the following addition of "magic constants" is due to the scheduling procedure of the very last messages
-        assertEquals("all messages from A must be received at B", receivedB.size(),
-                sentA.size() - lostSentA.size() + dupedSentA.size());
-        assertEquals("all messages from A must be acked", ackedA.size(),
-                sentA.size() - retransmitsA.size() - notAckedA.size() - 1);
-        assertEquals("all messages from A must be ordered at B", orderedB.size(),
-                sentA.size() - retransmitsA.size() - unorderedB.size());
+        assertEquals("all messages from A must be received at B",
+                sentA.size() - lostSentA.size() + dupedSentA.size(),
+                receivedB.size());
+        assertEquals("all messages from A must be acked",
+                sentA.size() - retransmitsA.size() - 1,
+                ackedA.size()  + notAckedA.size());
+        if (lossChance == 0f || (retransmit && lossChance <= 0.15f)) {
+            assertEquals("all messages from A must be ordered at B, given a 'reasonable' package loss chance",
+                    sentA.size() - retransmitsA.size(),
+                    orderedB.size() + unorderedB.size());
+        }
 
         // the following addition of "magic constants" is due to the scheduling procedure of the very last messages
-        assertEquals("all messages from B must be received at A", receivedA.size(),
-                sentB.size() - lostSentB.size() + dupedSentB.size());
-        assertEquals("all messages from B must be acked", ackedB.size(),
-                sentB.size() - retransmitsB.size() - notAckedB.size() - 1);
-        assertEquals("all messages from B must be ordered at A", orderedA.size(),
-                sentB.size() - retransmitsB.size() - unorderedA.size());
+        assertEquals("all messages from B must be received at A",
+                sentB.size() - lostSentB.size() + dupedSentB.size(),
+                receivedA.size());
+        assertEquals("all messages from B must be acked",
+                sentB.size() - retransmitsB.size() - 1,
+                ackedB.size() + notAckedB.size());
+        if (lossChance == 0f || (retransmit && lossChance <= 0.15f)) {
+            assertEquals("all messages from B must be ordered at A, given a 'reasonable' package loss chance",
+                    sentB.size() - retransmitsB.size(),
+                    orderedA.size() + unorderedA.size());
+        }
 
         if (lossChance == 0f) {
             assertEquals("no lost packets", 0, lostSentB.size());
@@ -324,7 +460,8 @@ public class DelayedTest {
             assertEquals("no duped packets", 0, dupedSentA.size());
         }
 
-        if (retransmit || lossChance == 0f) {
+        // given a "reasonable" package loss chance
+        if (lossChance == 0f || (retransmit && lossChance <= 0.15f)) {
             new Verifications() {{
                 protocolListenerA.handleUnackedData(anyShort, anyLong); times = 0;
                 protocolListenerA.handleUnorderedData(anyShort, anyLong); times = 0;

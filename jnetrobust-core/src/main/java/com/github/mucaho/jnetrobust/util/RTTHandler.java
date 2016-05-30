@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package com.github.mucaho.jnetrobust.control;
+package com.github.mucaho.jnetrobust.util;
 
 /**
  * SRTT = (1 - alpha) * SRTT + alpha * R'
@@ -25,15 +25,15 @@ package com.github.mucaho.jnetrobust.control;
  * Everytime timer expires, RTO += RTO as linear backoff (or more conservatively RTO *= 2 as exponential backoff),
  * until the RTT of the newly retransmitted message arrives
  */
-public class RTTControl {
-    private final static float alpha = 1f / 8f;
-    private final static float beta = 1f / 4f;
+public class RTTHandler {
+    private static final float ALPHA = 1f / 8f;
+    private static final float BETA = 1f / 4f;
 
     private final int K;
-    private final int G; //ms
+    private final int G; // in ms
 
 
-    public RTTControl(int k, int g) {
+    public RTTHandler(int k, int g) {
         super();
         K = k;
         G = g;
@@ -70,11 +70,11 @@ public class RTTControl {
             srtt = rttDelta;
             rttvar = rttDelta / 2;
         } else {
-            srtt += rttDelta * alpha;
-            rttvar += (Math.abs(rttDelta) - rttvar) * beta;
+            srtt += rttDelta * ALPHA;
+            rttvar += (Math.abs(rttDelta) - rttvar) * BETA;
         }
 
-        rto = Math.min(srtt + Math.max(G, K * rttvar), 60 * 1000);
+        rto = Math.min(srtt + Math.max(G, K * rttvar), 60L * 1000);
 
         if (lastBackoffTime != null && packetTimestamp >= lastBackoffTime) {
             lastBackoffTime = null;

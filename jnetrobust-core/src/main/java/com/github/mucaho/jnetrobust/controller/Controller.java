@@ -10,22 +10,26 @@ package com.github.mucaho.jnetrobust.controller;
 import com.github.mucaho.jnetrobust.ProtocolConfig;
 import com.github.mucaho.jnetrobust.control.*;
 import com.github.mucaho.jnetrobust.util.IdComparator;
+import com.github.mucaho.jnetrobust.util.RTTHandler;
+
+import java.util.List;
 
 public class Controller<T> {
     protected short dataId = Short.MIN_VALUE;
-    protected ReceivedMapControl<T> receivedMapHandler;
+    protected ReceivedMapControl<T> receivedMapControl;
 
     protected short localTransmissionId = Short.MIN_VALUE;
-    protected PendingMapControl<T> pendingMapHandler;
+    protected SentMapControl<T> sentMapControl;
 
     protected short remoteTransmissionId = Short.MIN_VALUE;
-    protected ReceivedBitsControl receivedBitsHandler;
+    protected ReceivedBitsControl receivedBitsControl;
 
-    protected RTTControl rttHandler;
+    protected RTTHandler rttHandler;
 
+    protected ResponseControl<T> responseControl;
 
     public Controller(ProtocolConfig<T> config) {
-        pendingMapHandler = new PendingMapControl<T>(config.listener, config.getPacketQueueLimit(),
+        sentMapControl = new SentMapControl<T>(config.listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
             @Override
             protected void notifyAcked(Metadata<T> ackedMetadata, boolean directlyAcked) {
@@ -36,14 +40,14 @@ public class Controller<T> {
             }
         };
 
-        receivedBitsHandler = new ReceivedBitsControl(IdComparator.instance);
-        receivedMapHandler = new ReceivedMapControl<T>(dataId, config.listener, config.getPacketQueueLimit(),
+        receivedBitsControl = new ReceivedBitsControl(IdComparator.instance);
+        receivedMapControl = new ReceivedMapControl<T>(dataId, config.listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
-        rttHandler = new RTTControl(config.getK(), config.getG());
+        rttHandler = new RTTHandler(config.getK(), config.getG());
+
+        responseControl = new ResponseControl<T>(sentMapControl.getValues(), config.listener, config.autoRetransmit());
     }
-
-
 
     public Packet<T> produce() {
         Packet<T> packet = new Packet<T>();
@@ -52,35 +56,44 @@ public class Controller<T> {
         packet.setTransmissionAck(remoteTransmissionId);
 
         // apply remote precedingTransmissionIds
-        packet.setPrecedingTransmissionAcks((int) receivedBitsHandler.getReceivedRemoteBits());
+        packet.setPrecedingTransmissionAcks((int) receivedBitsControl.getReceivedRemoteBits());
 
         return packet;
     }
 
     public Metadata<T> produce(T data) {
-        // apply unique data id; increment unique data id
+        // increment unique data id; apply unique data id
         return new Metadata<T>(++dataId, data);
     }
 
-    public void send(Packet<T> packet, Metadata<T> metadata) {
-        // increment local transmissionId
-        localTransmissionId++;
+    public List<Metadata<T>> retransmit() {
+        // update outdated not acked packets
+        List<Metadata<T>> retransmits = responseControl.updatePendingTime(rttHandler.getRTO());
+        if (!retransmits.isEmpty()) {
+            rttHandler.backoff();
+        }
+        return retransmits;
+    }
 
-        // add pending, local transmissionIds
-        pendingMapHandler.addToPending(localTransmissionId, metadata);
+    public void send(Packet<T> packet, Metadata<T> metadata) {
+        // update last modified time
+        responseControl.resetPendingTime(metadata);
+
+        // increment local transmissionId; add pending, local transmissionId
+        sentMapControl.addToSent(++localTransmissionId, metadata);
 
         packet.addLastMetadata(metadata);
 
         // remove metadatas that were discarded retroactively by pending map
-        while (packet.getFirstMetadata().getTransmissionIds().size() == 0)
-            packet.removeFirstMetadata();
+        for (int i = packet.getMetadatas().size() - 1; i >= 0; --i) {
+            if (packet.getMetadatas().get(i).getTransmissionIds().isEmpty())
+                packet.remove(i);
+        }
     }
-
-
 
     public void consume(Packet<T> packet) {
         // remove pending, local transmissionIds
-        pendingMapHandler.removeFromPending(packet.getTransmissionAck(), packet.getPrecedingTransmissionAcks());
+        sentMapControl.removeFromSent(packet.getTransmissionAck(), packet.getPrecedingTransmissionAcks());
     }
 
     public Metadata<T> receive(Packet<T> packet) {
@@ -95,10 +108,10 @@ public class Controller<T> {
         short newRemoteTransmissionId = metadata.getLastTransmissionId();
 
         // add received, remote transmissionIds
-        receivedBitsHandler.addToReceived(metadata.getTransmissionIds(), remoteTransmissionId);
+        receivedBitsControl.addToReceived(metadata.getTransmissionIds(), remoteTransmissionId);
 
         // add received, remote dataIds
-        receivedMapHandler.addToReceived(metadata);
+        receivedMapControl.addToReceived(metadata);
 
         // change remote transmissionId
         if (IdComparator.instance.compare(remoteTransmissionId, newRemoteTransmissionId) < 0)
@@ -108,11 +121,6 @@ public class Controller<T> {
     public T consume(Metadata<T> metadata) {
         return metadata.getData();
     }
-
-
-
-
-
 
     @Override
     public String toString() {
@@ -129,5 +137,4 @@ public class Controller<T> {
     public long getRTTVariation() {
         return rttHandler.getRTTVariation();
     }
-
 }

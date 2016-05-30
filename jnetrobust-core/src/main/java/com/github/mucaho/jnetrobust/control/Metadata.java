@@ -15,22 +15,23 @@ import com.github.mucaho.jnetrobust.util.Timestamp;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
-import java.util.NavigableSet;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     private transient long lastTouched = System.currentTimeMillis();
 
     private Short dataId;
-    private NavigableSet<Short> transmissionIds =
-            new TreeSet<Short>(IdComparator.instance);
-    private transient NavigableSet<Short> transmissionIdsOut =
-            CollectionUtils.unmodifiableNavigableSet(transmissionIds);
+    private final transient NavigableSet<Short> dataIds = new TreeSet<Short>();
+    private final transient NavigableSet<Short> dataIdsOut = CollectionUtils.unmodifiableNavigableSet(dataIds);
+
+    private final NavigableSet<Short> transmissionIds = new TreeSet<Short>(IdComparator.instance);
+    private final transient NavigableSet<Short> transmissionIdsOut = CollectionUtils.unmodifiableNavigableSet(transmissionIds);
 
     private T value;
 
     public Metadata(Short dataId, T value) {
         this.dataId = dataId;
+        this.dataIds.add(dataId);
         this.value = value;
     }
 
@@ -41,6 +42,10 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
 
     public Short getDataId() {
         return dataId;
+    }
+
+    public NavigableSet<Short> getDataIds() {
+        return dataIdsOut;
     }
 
     boolean addTransmissionId(Short e) {
@@ -73,7 +78,6 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     }
 
 
-
     void updateTime() {
         lastTouched = System.currentTimeMillis();
     }
@@ -85,15 +89,18 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
 
     @Override
     public String toString() {
-        String out = "";
-        out += "[";
-        out += " ( " + dataId + " ) ";
-        for (Short transmissionId : transmissionIds)
-            out += transmissionId + " ";
-        out += "]";
-        out += ": " + (value != null ? value.toString() : "null");
+        StringBuilder out = new StringBuilder();
+        out.append("[");
+        out.append(" ( ").append(dataId).append(" ) ");
+        Short transmissionId = transmissionIds.isEmpty() ? null : transmissionIds.first();
+        while (transmissionId != null) {
+            out.append(transmissionId).append(" ");
+            transmissionId = transmissionIds.higher(transmissionId);
+        }
+        out.append("]");
+        out.append(": ").append(value != null ? value.toString() : "null");
 
-        return out;
+        return out.toString();
     }
 
     /**
@@ -134,6 +141,7 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     @SuppressWarnings("unchecked")
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         dataId = in.readShort();
+        dataIds.add(dataId);
         transmissionIds.add(in.readShort());
         value = (T) in.readObject();
     }
@@ -143,7 +151,23 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
         Metadata<T> clone = new Metadata<T>();
         clone.value = value;
         clone.dataId = new Short(dataId);
+        clone.dataIds.add(dataId);
         clone.transmissionIds.addAll(transmissionIds);
         return clone;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Metadata<?> metadata = (Metadata<?>) o;
+
+        return dataId != null ? dataId.equals(metadata.dataId) : metadata.dataId == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return dataId != null ? dataId.hashCode() : 0;
     }
 }

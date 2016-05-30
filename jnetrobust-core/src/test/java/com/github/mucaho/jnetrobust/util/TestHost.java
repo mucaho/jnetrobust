@@ -14,13 +14,16 @@ import com.github.mucaho.jnetrobust.controller.Packet;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.NavigableMap;
 
 
 public class TestHost<T> implements Runnable {
     public interface TestHostListener<T> {
         public void notifySent(T value);
-        public void notifyRetransmitted(T value);
         public void notifyReceived(T value);
     }
 
@@ -47,12 +50,38 @@ public class TestHost<T> implements Runnable {
         this.outQueue = outQueue;
     }
 
+    private Packet<T> networkClone(Packet<T> outPacket) {
+        if (outPacket == null) return null;
+
+        Packet<T> inPacket = null;
+
+        try {
+            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+            ObjectOutputStream out = new ObjectOutputStream(outStream);
+            {
+                outPacket.writeExternal(out);
+            }
+            out.close();
+
+            ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
+            ObjectInputStream in = new ObjectInputStream(inStream);
+            {
+                inPacket = new Packet<T>();
+                inPacket.readExternal(in);
+            }
+            in.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return inPacket;
+    }
 
     public void receive() {
         Packet<T> packet;
-        while ((packet = inQueue.poll()) != null) {
-            NavigableMap<Short, T> datas = protocol.receive(packet);
-            for (T data : datas.values()) {
+        while ((packet = networkClone(inQueue.poll())) != null) {
+            NavigableMap<Short, T> datas = protocol.receive(networkClone(packet));
+            for (T data: datas.values()) {
                 hostListener.notifyReceived(data);
             }
         }
@@ -60,21 +89,20 @@ public class TestHost<T> implements Runnable {
 
     public void send() {
         T data = dataGenerator.generateData();
-        Packet<T> packet = protocol.send(data).getValue();
+        Packet<T> packet = networkClone(protocol.send(data).getValue());
 
         List<Metadata<T>> metadatas = new ArrayList<Metadata<T>>(packet.getMetadatas());
-        for (int i = 0; i < metadatas.size(); ++i) {
-            if (i < metadatas.size() - 1)
-                hostListener.notifyRetransmitted(metadatas.get(i).getData());
-            hostListener.notifySent(metadatas.get(i).getData());
+        for (Metadata<T> metadata : metadatas) {
+            hostListener.notifySent(metadata.getData());
         }
 
-        outQueue.offer(packet);
+        outQueue.offer(networkClone(packet));
     }
 
 
     @Override
     public void run() {
+        Thread.currentThread().setName(debugName != null ? debugName : "");
         receive();
         send();
         if (debugName != null) {
@@ -83,8 +111,5 @@ public class TestHost<T> implements Runnable {
                     "\tVar(X):\t" + protocol.getRTTVariation());
         }
     }
-
-
-
 
 }

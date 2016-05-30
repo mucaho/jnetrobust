@@ -7,24 +7,37 @@
 
 package com.github.mucaho.jnetrobust.util;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.*;
 
 public class TimeoutHandler<T extends Timestamp> {
-    private final Set<T> timeouts = new LinkedHashSet<T>();
-    private final Set<T> timeoutsOut = Collections.unmodifiableSet(timeouts);
+    // TODO: add everywhere meaningful initial capacities, e.g. in this case MAX_PACKET_QUEUE_LIMIT
+    private final List<T> timeouts = new ArrayList<T>();
+    private final List<T> timeoutsOut = Collections.unmodifiableList(timeouts);
 
-    public Collection<T> filterTimedOut(Collection<T> pendingDatas, long maxWaitTime) {
+    public List<T> filterTimedOut(NavigableSet<T> datas, long maxWaitTime) {
         timeouts.clear();
 
-        for (T data : pendingDatas) {
+        T data = datas.isEmpty() ? null : datas.first();
+        while (data != null) {
             if (System.currentTimeMillis() - data.getTime() > maxWaitTime) {
                 timeouts.add(data);
             }
+
+            data = datas.higher(data);
         }
 
         return timeoutsOut;
+    }
+
+    private final List<T> sorted = new ArrayList<T>();
+    private final List<T> sortedOut = Collections.unmodifiableList(sorted);
+
+    public List<T> computeSortedByAge(Collection<T> datas) {
+        sorted.clear();
+        sorted.addAll(datas);
+
+        Collections.sort(sorted, TimeComparator.instance);
+
+        return sortedOut;
     }
 }

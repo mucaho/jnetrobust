@@ -7,18 +7,15 @@
 
 package com.github.mucaho.jnetrobust.control;
 
-import com.github.mucaho.jnetrobust.control.MapControl;
-import com.github.mucaho.jnetrobust.control.Metadata;
-import com.github.mucaho.jnetrobust.control.MetadataMap;
 import mockit.Deencapsulation;
 import com.github.mucaho.jnetrobust.ProtocolConfig;
 
-public abstract class MapControlTest {
+public abstract class AbstractMapControlTest {
     protected final static ProtocolConfig<Object> config = new ProtocolConfig<Object>(null);
     protected static short dataId = Short.MIN_VALUE;
-    protected static MetadataMap<Object> dataMap;
+    protected static AbstractMetadataMap<Object> dataMap;
 
-    protected static void initDataMap(MapControl<Object> handler) {
+    protected static void initDataMap(AbstractMapControl<Object> handler) {
         dataMap = Deencapsulation.getField(handler, "dataMap");
     }
 

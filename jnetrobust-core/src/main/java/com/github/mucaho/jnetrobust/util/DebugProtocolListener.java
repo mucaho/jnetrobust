@@ -46,5 +46,13 @@ public class DebugProtocolListener<T> extends ProtocolListener<T> {
     public void handleUnackedData(short dataId, T unackedData) {
         logger.log(Logger.LoggingEvent.NOTACKED.toString(), String.valueOf(dataId),
                 unackedData != null ? unackedData.toString() : "null");
-        delegate.handleUnackedData(dataId, unackedData);    }
+        delegate.handleUnackedData(dataId, unackedData);
+    }
+
+    @Override
+    public Boolean shouldRetransmit(short dataId, T data) {
+        logger.log(Logger.LoggingEvent.RETRANSMISSION.toString(), String.valueOf(dataId),
+                data != null ? data.toString() : "null");
+        return delegate.shouldRetransmit(dataId, data);
+    }
 }

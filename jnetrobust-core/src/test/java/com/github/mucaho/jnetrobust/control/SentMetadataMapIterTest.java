@@ -7,8 +7,6 @@
 
 package com.github.mucaho.jnetrobust.control;
 
-import com.github.mucaho.jnetrobust.control.Metadata;
-import com.github.mucaho.jnetrobust.control.MetadataMap;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import com.github.mucaho.jnetrobust.util.EntryIterator;
@@ -23,7 +21,7 @@ import static com.github.mucaho.jarrayliterals.ArrayShortcuts.$S;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
-public class MetadataMapIterTest {
+public class SentMetadataMapIterTest {
     private static short dataId = Short.MIN_VALUE;
 
     public Object[][] parametersForTestIterator() {
@@ -37,7 +35,7 @@ public class MetadataMapIterTest {
     @Test
     @Parameters
     public final void testIterator(Short[][] refGroups) {
-        MetadataMap<Object> dataMap = new MetadataMap<Object>(IdComparator.instance);
+        AbstractMetadataMap<Object> dataMap = new SentMetadataMap<Object>();
         EntryIterator<Short, Metadata<Object>> iter = dataMap.getIterator();
         List<Short> refs = new ArrayList<Short>();
         HashSet<Metadata<Object>> metadatas = new HashSet<Metadata<Object>>();
@@ -76,6 +74,6 @@ public class MetadataMapIterTest {
             key = iter.getHigherKey(key);
         }
         assertEquals("Iterator didn't remove all datas.", refGroups.length, actualCount);
-        assertEquals("DataMap should be empty.", 0, dataMap.size());
+        assertEquals("DataMap should be empty.", 0, dataMap.keySize());
     }
 }

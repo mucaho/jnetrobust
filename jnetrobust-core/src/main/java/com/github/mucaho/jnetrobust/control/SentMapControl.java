@@ -11,7 +11,7 @@ import com.github.mucaho.jnetrobust.util.FastLog;
 
 import static com.github.mucaho.jnetrobust.util.BitConstants.OFFSET;
 
-public class PendingMapControl<T> extends MapControl<T> {
+public class SentMapControl<T> extends AbstractMapControl<T> {
     public interface TransmissionSuccessListener<T> {
         void handleAckedData(short dataId, T ackedData);
         void handleUnackedData(short dataId, T unackedData);
@@ -19,31 +19,34 @@ public class PendingMapControl<T> extends MapControl<T> {
 
     private final TransmissionSuccessListener<T> listener;
 
-    public PendingMapControl(TransmissionSuccessListener<T> listener, int maxEntries, int maxEntryOffset,
-                             int maxEntryOccurrences, long maxEntryTimeout) {
+    public SentMapControl(TransmissionSuccessListener<T> listener, int maxEntries, int maxEntryOffset,
+                          int maxEntryOccurrences, long maxEntryTimeout) {
         super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
         this.listener = listener;
     }
 
-
-    public void addToPending(short transmissionId, Metadata<T> metadata) {
-        // discard old entries in pending map
-        super.discardEntries();
-
-        // add to pending map
-        dataMap.put(transmissionId, metadata);
+    @Override
+    protected AbstractMetadataMap<T> createMap() {
+        return new SentMetadataMap<T>();
     }
 
+    public void addToSent(short transmissionId, Metadata<T> metadata) {
+        // add to pending map
+        dataMap.put(transmissionId, metadata);
 
-    public void removeFromPending(short transmissionId, int precedingTransmissionIds) {
+        // discard old entries in pending map
+        discardEntries();
+    }
+
+    public void removeFromSent(short transmissionId, int precedingTransmissionIds) {
         // remove multiple (oldest until newest) from pending map
-        removeOnBits(transmissionId, precedingTransmissionIds);
+        removeFromSentOnBits(transmissionId, precedingTransmissionIds);
 
         // remove newest from pending map
         notifyAcked(dataMap.removeAll(transmissionId), true);
     }
 
-    private void removeOnBits(short transmissionId, int precedingTransmissionIds) {
+    private void removeFromSentOnBits(short transmissionId, int precedingTransmissionIds) {
         short precedingTransmissionId;
         int msbIndex;
         while (precedingTransmissionIds != 0) {
@@ -55,10 +58,21 @@ public class PendingMapControl<T> extends MapControl<T> {
 
     }
 
-
     @Override
     protected void discardEntry(short key) {
         notifyNotAcked(dataMap.removeAll(key));
+    }
+
+    @Override
+    protected void discardEntry(Metadata<T> metadata) {
+        notifyNotAcked(dataMap.removeAll(metadata));
+    }
+
+    @Override
+    protected void discardEntryKey(short key) {
+        Metadata<T> shrankMetadata = dataMap.remove(key);
+        if (shrankMetadata != null && shrankMetadata.getTransmissionIds().isEmpty())
+            notifyNotAcked(shrankMetadata);
     }
 
     protected void notifyNotAcked(Metadata<T> unackedMetadata) {
