@@ -52,6 +52,7 @@ public class DelayedTest {
     public Object[][] parametersForTestDelayed() {
         Object[][] out = {{
                 150, 200, 0.10f, 0.05f, 16, 10, true
+                //40, 60000, 0.75f, 0.25f, 16, 1000, true
         }};
 
         return out;
@@ -77,7 +78,7 @@ public class DelayedTest {
                 new DebugProtocolListener<Long>(protocolListenerA, Logger.getConsoleLogger("A")) :
                 protocolListenerA;
         final TestHost<Long> hostA = new TestHost<Long>(hostListenerA, new LongDataGenerator(),
-                bToA, aToB, retransmit, new ProtocolConfig<Long>(listenerA), DEBUG ? "A" : null);
+                bToA, aToB, new ProtocolConfig<Long>(listenerA), DEBUG ? "A" : null);
         final List<Long> sentA = new ArrayList<Long>();
         final List<Long> lostSentA = new ArrayList<Long>();
         final List<Long> dupedSentA = new ArrayList<Long>();
@@ -93,7 +94,7 @@ public class DelayedTest {
                 new DebugProtocolListener<Long>(protocolListenerB, Logger.getConsoleLogger("B")) :
                 protocolListenerB;
         final TestHost<Long> hostB = new TestHost<Long>(hostListenerB, new LongDataGenerator(),
-                aToB, bToA, retransmit, new ProtocolConfig<Long>(listenerB), DEBUG ? "B" : null);
+                aToB, bToA, new ProtocolConfig<Long>(listenerB), DEBUG ? "B" : null);
         final List<Long> sentB = new ArrayList<Long>();
         final List<Long> lostSentB = new ArrayList<Long>();
         final List<Long> dupedSentB = new ArrayList<Long>();
@@ -200,10 +201,6 @@ public class DelayedTest {
         Thread.sleep(maxDelay * 2);
         hostA.receive();
         hostB.receive();
-        if (retransmit) {
-            hostA.retransmit();
-            hostB.retransmit();
-        }
         hostA.send();
         hostB.send();
         Thread.sleep(maxDelay * 2); // wait for queue to make all elements available
@@ -216,19 +213,28 @@ public class DelayedTest {
 		 * Verify phase
 		 */
 
-        if (retransmit) {
-            new Verifications() {{
-                protocolListenerA.handleUnackedData(anyShort, anyLong); times = 0;
-                protocolListenerA.handleUnorderedData(anyShort, anyLong); times = 0;
-            }};
-            new Verifications() {{
-                protocolListenerB.handleUnackedData(anyShort, anyLong); times = 0;
-                protocolListenerB.handleUnorderedData(anyShort, anyLong); times = 0;
-            }};
-        }
+        for (Long item : notAckedA)
+            assertTrue("notAcked data should not have been acked", !ackedA.contains(item));
+        for (Long item : notAckedB)
+            assertTrue("notAcked data should not have been acked", !ackedB.contains(item));
+
+        for (Long item : retransmitsA)
+            assertTrue("retransmitted data should have been sent from sender", sentA.contains(item));
+        for (Long item : retransmitsB)
+            assertTrue("retransmitted data should have been sent from sender", sentB.contains(item));
+        for (Long item : lostSentA)
+            assertTrue("over medium lost data should have been sent from sender", sentA.contains(item));
+        for (Long item : lostSentB)
+            assertTrue("over medium lost data should have been sent from sender", sentB.contains(item));
+        for (Long item : dupedSentA)
+            assertTrue("over medium duplicated data should have been sent from sender", sentA.contains(item));
+        for (Long item : dupedSentB)
+            assertTrue("over medium duplicated data should have been sent from sender", sentB.contains(item));
 
         Long lastItem = null;
         for (Long item : orderedA) {
+            assertTrue("orderly received data should have been sent from sender", sentB.contains(item));
+
             if (lastItem != null) {
                 assertTrue("ordered data should be ordered", item > lastItem);
             }
@@ -236,6 +242,8 @@ public class DelayedTest {
         }
         lastItem = null;
         for (Long item : orderedB) {
+            assertTrue("orderly received data should have been sent from sender", sentA.contains(item));
+
             if (lastItem != null) {
                 assertTrue("ordered data should be ordered", item > lastItem);
             }
@@ -244,12 +252,16 @@ public class DelayedTest {
 
         lastItem = null;
         for (Long item : unorderedA) {
+            assertTrue("unorderly received data should have been sent from sender", sentB.contains(item));
+
             if (lastItem != null) {
                 assertTrue("unordered data should be ordered", item > lastItem);
             }
             lastItem = item;
 
             assertTrue("unordered data should not have been orderly received", !orderedA.contains(item));
+
+// The following assertions can not be guaranteed, since there may be multiple unordered events and multiple holes until an ordered event occurs
 //			Long pred = item;
 //			do {
 //				pred--;
@@ -264,12 +276,16 @@ public class DelayedTest {
 
         lastItem = null;
         for (Long item : unorderedB) {
+            assertTrue("orderly received data should have been sent from sender", sentA.contains(item));
+
             if (lastItem != null) {
                 assertTrue("unordered data should be ordered", item > lastItem);
             }
             lastItem = item;
 
             assertTrue("unordered data should not have been orderly received", !orderedB.contains(item));
+
+// The following assertions can not be guaranteed, since there may be multiple unordered events and multiple holes until an ordered event occurs
 //			Long pred = item;
 //			do {
 //				pred--;
@@ -281,22 +297,6 @@ public class DelayedTest {
 //			assertTrue("ordered data contains predecessor of unorderedData", orderedB.contains(pred));
 //			assertTrue("ordered data contains successor of unorderedData", orderedB.contains(succ));
         }
-
-        assertEquals("all packets acked", 0, notAckedA.size());
-        assertEquals("all packets ordered", 0, unorderedA.size());
-        assertEquals("all packets acked", 0, notAckedB.size());
-        assertEquals("all packets ordered", 0, unorderedB.size());
-
-        if (lossChance == 0f) {
-            assertEquals("no lost packets", 0, lostSentB.size());
-            assertEquals("no lost packets", 0, lostSentA.size());
-        }
-
-        if (dupChance == 0f) {
-            assertEquals("no duped packets", 0, dupedSentB.size());
-            assertEquals("no duped packets", 0, dupedSentA.size());
-        }
-
 
         // the following addition of "magic constants" is due to the scheduling procedure of the very last messages
         assertEquals("all messages from A must be received at B", receivedB.size(),
@@ -313,6 +313,32 @@ public class DelayedTest {
                 sentB.size() - retransmitsB.size() - notAckedB.size() - 1);
         assertEquals("all messages from B must be ordered at A", orderedA.size(),
                 sentB.size() - retransmitsB.size() - unorderedA.size());
+
+        if (lossChance == 0f) {
+            assertEquals("no lost packets", 0, lostSentB.size());
+            assertEquals("no lost packets", 0, lostSentA.size());
+        }
+
+        if (dupChance == 0f) {
+            assertEquals("no duped packets", 0, dupedSentB.size());
+            assertEquals("no duped packets", 0, dupedSentA.size());
+        }
+
+        if (retransmit || lossChance == 0f) {
+            new Verifications() {{
+                protocolListenerA.handleUnackedData(anyShort, anyLong); times = 0;
+                protocolListenerA.handleUnorderedData(anyShort, anyLong); times = 0;
+            }};
+            new Verifications() {{
+                protocolListenerB.handleUnackedData(anyShort, anyLong); times = 0;
+                protocolListenerB.handleUnorderedData(anyShort, anyLong); times = 0;
+            }};
+
+            assertEquals("all packets acked", 0, notAckedA.size());
+            assertEquals("all packets ordered", 0, unorderedA.size());
+            assertEquals("all packets acked", 0, notAckedB.size());
+            assertEquals("all packets ordered", 0, unorderedB.size());
+        }
 
     }
 

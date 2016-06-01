@@ -7,19 +7,17 @@
 
 package com.github.mucaho.jnetrobust.util;
 
-import com.github.mucaho.jnetrobust.Logger;
+import com.github.mucaho.jnetrobust.Protocol;
 import com.github.mucaho.jnetrobust.ProtocolConfig;
 import com.github.mucaho.jnetrobust.control.Metadata;
-import com.github.mucaho.jnetrobust.controller.DebugController;
 import com.github.mucaho.jnetrobust.controller.Packet;
-import com.github.mucaho.jnetrobust.controller.RetransmissionController;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NavigableMap;
+import java.util.function.Consumer;
 
 public class TestHost<T> implements Runnable {
-    private final boolean debug;
     public interface TestHostListener<T> {
         public void notifySent(T value);
         public void notifyRetransmitted(T value);
@@ -34,92 +32,59 @@ public class TestHost<T> implements Runnable {
     private final TestHostDataGenerator<T> dataGenerator;
     private final UnreliableQueue<Packet<T>> inQueue;
     private final UnreliableQueue<Packet<T>> outQueue;
-    private final RetransmissionController<T> protocol;
-    private final boolean shouldRetransmit;
+    private final Protocol<T> protocol;
+    private final String debugName;
+
 
     public TestHost(TestHostListener<T> hostListener, TestHostDataGenerator<T> dataGenerator,
-                    UnreliableQueue<Packet<T>> inQueue, UnreliableQueue<Packet<T>> outQueue, boolean retransmit,
+                    UnreliableQueue<Packet<T>> inQueue, UnreliableQueue<Packet<T>> outQueue,
                     ProtocolConfig<T> config, String debugName) {
-        this.debug = debugName != null;
+        this.debugName = debugName;
         this.hostListener = hostListener;
         this.dataGenerator = dataGenerator;
-        if (debugName != null)
-            this.protocol = new DebugController<T>(config, Logger.getConsoleLogger(debugName));
-        else
-            this.protocol = new RetransmissionController<T>(config);
+        this.protocol = new Protocol<T>(config);
         this.inQueue = inQueue;
         this.outQueue = outQueue;
-        this.shouldRetransmit = retransmit;
     }
 
 
     public void receive() {
         Packet<T> packet;
         while ((packet = inQueue.poll()) != null) {
-            receive(packet);
+            NavigableMap<Short, T> datas = protocol.receive(packet);
+            for (T data : datas.values()) {
+                hostListener.notifyReceived(data);
+            }
         }
     }
-
-    protected void receive(Packet<T> packet) {
-        Queue<T> values = consume(packet);
-        for (T value: values)
-            hostListener.notifyReceived(value);
-    }
-
-    protected Queue<T> consume(Packet<T> packet) {
-        Queue<T> outQueue = new LinkedList<T>();
-
-        protocol.consume(packet);
-        Metadata<T> metadata = protocol.receive(packet);
-        while (metadata != null) {
-            outQueue.add(protocol.consume(metadata));
-            metadata = protocol.receive(packet);
-        }
-
-        return outQueue;
-    }
-
 
     public void send() {
-        send(produce());
-    }
-
-    protected Packet<T> produce() {
-        Packet<T> packet = protocol.produce();
         T data = dataGenerator.generateData();
-        protocol.send(packet, protocol.produce(data));
-        return packet;
-    }
+        Packet<T> packet = protocol.send(data).getValue();
 
-    protected void send(Packet<T> packet) {
-        outQueue.offer(packet);
-        for (Metadata<T> metadata: packet.getMetadatas())
-            hostListener.notifySent(metadata.getData());
-    }
-
-    public void retransmit() {
-        if (!shouldRetransmit)
-            return;
-
-        Packet<T> packet = protocol.produce();
-        Collection<Metadata<T>> retransmits = protocol.retransmit();
-        for (Metadata<T> retransmit : retransmits) {
-            hostListener.notifyRetransmitted(retransmit.getData());
-            protocol.send(packet, retransmit);
+        List<Metadata<T>> metadatas = new ArrayList<Metadata<T>>(packet.getMetadatas());
+        for (int i = 0; i < metadatas.size(); ++i) {
+            if (i < metadatas.size() - 1)
+                hostListener.notifyRetransmitted(metadatas.get(i).getData());
+            hostListener.notifySent(metadatas.get(i).getData());
         }
-        send(packet);
+
+        outQueue.offer(packet);
     }
+
 
     @Override
     public void run() {
         receive();
-        if (shouldRetransmit)
-            retransmit();
         send();
-        if (debug) {
-            System.out.println("E(X):\t" + protocol.getSmoothedRTT() +
+        if (debugName != null) {
+            System.out.println("(" + debugName + ")" +
+                    "\tE(X):\t" + protocol.getSmoothedRTT() +
                     "\tVar(X):\t" + protocol.getRTTVariation());
         }
     }
+
+
+
 
 }

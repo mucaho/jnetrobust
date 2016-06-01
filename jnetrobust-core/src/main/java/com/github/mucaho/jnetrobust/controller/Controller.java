@@ -69,8 +69,11 @@ public class Controller<T> {
         // add pending, local transmissionIds
         pendingMapHandler.addToPending(localTransmissionId, metadata);
 
-
         packet.addLastMetadata(metadata);
+
+        // remove metadatas that were discarded retroactively by pending map
+        while (packet.getFirstMetadata().getTransmissionIds().size() == 0)
+            packet.removeFirstMetadata();
     }
 
 
