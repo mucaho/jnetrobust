@@ -10,6 +10,12 @@ env:
    #   via the "travis encrypt" command using the project repo's public key
    - secure: "mZBGcxRDLwWbHv7tIMok3rfZCvN6fFxi41FQtGC6iNjHVSCgqIhb1a8lwZ3H4JbCrzenDkjQMuIGNJdF5SRCwL+75iraRz6VnPFHRcqPUKYFquHcibJDMu0v9h5E8OXrR0+ucqJedpvlDtadj/bOZ98oNrLdwuMGVmY/vbgFO4c="
 
+before_install:
+  - cat /etc/hosts # optionally check the content *before*
+  - sudo hostname "$(hostname | cut -c1-63)"
+  - sed -e "s/^\\(127\\.0\\.0\\.1.*\\)/\\1 $(hostname | cut -c1-63)/" /etc/hosts | sudo tee /etc/hosts
+  - cat /etc/hosts # optionally check the content *after*
+
 addons:
   coverity_scan:
     project:
