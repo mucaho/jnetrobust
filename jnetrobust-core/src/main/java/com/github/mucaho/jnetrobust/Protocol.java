@@ -117,7 +117,9 @@ public class Protocol<T> implements Comparator<Short> {
      * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events may be fired before
      * this method returns.
      *
-     * @param data the user-data to package, if it's <code>null</code> no user-data will be contained in the package
+     * @param data the user-data to package, if it's <code>null</code> no user-data will be contained in the package;
+     *             the supplied user-data should not be modified afterwards by the user / application, as the data
+     *             is referenced internally by protocol and used for retransmission later on
      * @return a <code>Map.Entry</code> containing the {@link Packet packaged user-data} and
      *          the <code>dataId</code> that was assigned to the user-data;
      *          the returned mapEntry should not be saved by the user,
@@ -170,7 +172,9 @@ public class Protocol<T> implements Comparator<Short> {
      * @return a <code>NavigableMap</code> containing all received (directly received or received by retransmission)
      *         user-datas and their assigned <code>dataId</code>s;
      *         the returned object should not be saved by the user,
-     *         as its contents are invalidated next time one of the <code>receive</code> methods is called
+     *         as its contents are invalidated next time one of the <code>receive</code> methods is called;
+     *         the returned user-data should also not be modified afterwards by the user / application, as data is
+     *         referenced internally by the protocol and used for informing proper receipt of ordered data later on
      */
     public synchronized NavigableMap<Short, T> receive(Packet<T> packet) {
         receivedDatas.clear();

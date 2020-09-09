@@ -19,7 +19,7 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>, Tran
     /**
      * This protocol instance received data in the same order it was sent from another protocol instance.
      * @param dataId        the <code>id</code> of the data
-     * @param orderedData   the actual user-data
+     * @param orderedData   the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      */
     @Override
     public void handleOrderedData(short dataId, T orderedData) {
@@ -27,9 +27,9 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>, Tran
 
     /**
      * This protocol instance was unable to receive data in the same order it was sent from another protocol instance.
-     * It skipped over one or more received datas and reestablished order after the <code>unorderedData</code>.
-     * @param dataId        the <code>id</code> of the last data that was skipped over
-     * @param unorderedData the last user data that was skipped over
+     * It skipped over a gap of one or more unreceived datas and reestablished order with the first <code>unorderedData</code> after the gap.
+     * @param dataId        the <code>id</code> of the data
+     * @param unorderedData the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      */
     @Override
     public void handleUnorderedData(short dataId, T unorderedData) {
@@ -38,7 +38,7 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>, Tran
     /**
      * This protocol instance was informed about the receipt of data at another protocol instance.
      * @param dataId    the <code>id</code> of the data
-     * @param ackedData the actual user-data
+     * @param ackedData the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      */
     @Override
     public void handleAckedData(short dataId, T ackedData) {
@@ -48,7 +48,7 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>, Tran
      * This protocol instance was not informed about the receipt of data at another protocol instance.
      * The data may or may not be received at the other protocol instance.
      * @param dataId        the <code>id</code> of the data
-     * @param unackedData   the actual user-data
+     * @param unackedData   the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      */
     @Override
     public void handleUnackedData(short dataId, T unackedData) {

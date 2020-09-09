@@ -9,8 +9,8 @@ package com.github.mucaho.jnetrobust.control;
 
 public class ReceivedMapControl<T> extends MapControl<T> {
     public interface TransmissionOrderListener<T> {
-        public void handleOrderedData(short dataId, T orderedData);
-        public void handleUnorderedData(short dataId, T unorderedData);
+        void handleOrderedData(short dataId, T orderedData);
+        void handleUnorderedData(short dataId, T unorderedData);
     }
 
     private final TransmissionOrderListener<T> listener;

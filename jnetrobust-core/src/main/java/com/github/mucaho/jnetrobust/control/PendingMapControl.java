@@ -13,8 +13,8 @@ import static com.github.mucaho.jnetrobust.util.BitConstants.OFFSET;
 
 public class PendingMapControl<T> extends MapControl<T> {
     public interface TransmissionSuccessListener<T> {
-        public void handleAckedData(short dataId, T ackedData);
-        public void handleUnackedData(short dataId, T unackedData);
+        void handleAckedData(short dataId, T ackedData);
+        void handleUnackedData(short dataId, T unackedData);
     }
 
     private final TransmissionSuccessListener<T> listener;
