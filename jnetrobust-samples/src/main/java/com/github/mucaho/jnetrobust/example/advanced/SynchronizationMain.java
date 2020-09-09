@@ -16,6 +16,19 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 
+/**
+ * This is an advanced example showcasing two clients and a server communicating the position of their controlled object to each other.
+ * The communication is once again affected by emulated, bad network conditions.
+ * <br /><br />
+ * The server is relaying communication between the clients.
+ * Remotely controlled objects are displayed using different synchronization strategies:
+ * <ul>
+ *     <li><code>UPDATE_TO_NEWEST_POSITION</code></li>
+ *     <li><code>UPDATE_TO_ORDERED_POSITION</code></li>
+ *     <li><code>UPDATE_TO_RECEIVED_POSITION</code></li>
+ * </ul>
+ * Focus a window and use the arrow keys to control that host's object.
+ */
 public class SynchronizationMain {
 
     public static enum HOST {CLIENTA, SERVER, CLIENTB}

@@ -15,6 +15,11 @@ import java.net.UnknownHostException;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This examples demonstrates unidirectional communication between a sender that sends data and
+ * a receiver that just acknowledges the receipt of data.
+ * The impact of the emulated, bad network conditions is shown in the output.
+ */
 public class UnidirectionalMain {
     private final static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
 

@@ -25,6 +25,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.*;
 
+/**
+ * Abstracts away much of the protocol's functionality with a default configuration,
+ * and sets-up a <code>DatagramChannel</code> for sending/receiving data,
+ * as well as a <code>Kryo</code> instance for serialization.
+ * <br />
+ * This is the preferred way to get your feet wet and be introduced to the protocol.
+ * <br />
+ * See the various examples for usage scenarios.
+ */
 public class ProtocolHost<T> {
     public static interface DataListener<T> {
         public void handleOrderedData(T orderedData);

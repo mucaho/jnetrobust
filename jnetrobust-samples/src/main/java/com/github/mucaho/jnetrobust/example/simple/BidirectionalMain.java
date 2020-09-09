@@ -11,6 +11,11 @@ import com.github.mucaho.jnetrobust.example.ProtocolHost;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 
+/**
+ * This is the most basic example.
+ * Two hosts communicate with each other in an environment with ideal network conditions.
+ * They send each other <code>String</code> messages.
+ */
 public class BidirectionalMain {
     public static void main (String[] args) throws Exception {
         String receivedMessage;
