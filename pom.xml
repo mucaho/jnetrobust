@@ -42,6 +42,11 @@
         <module>jnetrobust-samples</module>
     </modules>
 
+    <properties>
+        <maven.compiler.source>1.6</maven.compiler.source>
+        <maven.compiler.target>1.6</maven.compiler.target>
+    </properties>
+
     <build>
         <plugins>
             <!-- Maven plugin for submitting Java code coverage reports to Coveralls web service. -->
