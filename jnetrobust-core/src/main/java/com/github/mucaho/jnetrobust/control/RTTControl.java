@@ -20,8 +20,9 @@ package com.github.mucaho.jnetrobust.control;
  * G <= 100ms
  * <p/>
  * RTO = SRTT + max (G, K*RTTVAR)
- * <p/>
- * If timer expires, RTO += RTO as linear backoff (or more conservatively RTO *= 2 as exponential backoff),
+ * RTO = min (RTO, 60s)
+ * <br/>
+ * Everytime timer expires, RTO += RTO as linear backoff (or more conservatively RTO *= 2 as exponential backoff),
  * until the RTT of the newly retransmitted message arrives
  */
 public class RTTControl {
@@ -46,11 +47,11 @@ public class RTTControl {
 
 
     public long getSmoothedRTT() {
-        return this.srtt;
+        return srtt;
     }
 
     public long getRTTVariation() {
-        return this.rttvar;
+        return rttvar;
     }
 
     public long getRTO() { // retransmissionTimeOut
@@ -73,7 +74,7 @@ public class RTTControl {
             rttvar += (Math.abs(rttDelta) - rttvar) * beta;
         }
 
-        rto = srtt + Math.max(G, K * rttvar);
+        rto = Math.min(srtt + Math.max(G, K * rttvar), 60 * 1000);
 
         if (lastBackoffTime != null && packetTimestamp >= lastBackoffTime) {
             lastBackoffTime = null;
