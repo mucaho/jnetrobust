@@ -11,15 +11,18 @@ import com.github.mucaho.jnetrobust.example.advanced.SynchronizationMain.*;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class AbstractSynchronizationController {
+    private final HOST hostMode;
     private final SynchronizationGUI gui;
-    private final Vector2D data;
     private final ProtocolHost<Vector2D> host;
 
     AbstractSynchronizationController(HostInformation info) throws IOException {
-        data = new Vector2D(Integer.MIN_VALUE, Integer.MIN_VALUE, info.hostMode);
+        hostMode = info.hostMode;
 
         gui = new SynchronizationGUI(info.hostMode);
         gui.setVisible(true);
@@ -27,19 +30,19 @@ public class AbstractSynchronizationController {
         host = new ProtocolHost<Vector2D>(info.hostMode.toString(), Vector2D.class, info.localAddress);
     }
 
-    SynchronizationHandle register(HandleInformation info) {
+    SynchronizationHandle register(HandleInformation info, ProtocolHost.DataListener<Vector2D>... additionalDataListeners) {
+        List<ProtocolHost.DataListener<Vector2D>> listeners = new ArrayList<DataListener<Vector2D>>();
+        listeners.add(new ModeGUIDataListener(info.updateMode, gui));
+        listeners.addAll(Arrays.asList(additionalDataListeners));
+
         ProtocolHandle<Vector2D> handle =
-                host.register(info.topic, info.remoteAddress, new ModeDataListener(info.updateMode, gui));
-        return new SynchronizationHandle(handle, info.updateMode, gui, data);
+                host.register(info.topic, info.remoteAddress, new CombinedDataListener(listeners));
+        return new SynchronizationHandle(handle, info.updateMode, hostMode, gui);
     }
 
     SynchronizationGUI getGui() {
         return gui;
     }
-
-
-
-
 
     static class HostInformation {
         HOST hostMode;
@@ -63,24 +66,25 @@ public class AbstractSynchronizationController {
         }
     }
 
-
-
-
     static class SynchronizationHandle {
         private final ProtocolHandle<Vector2D> protocolHandle;
-        private final MODE udpdateMode;
+        private final MODE updateMode;
+        private final HOST hostMode;
         private final SynchronizationGUI gui;
-        private final Vector2D data;
 
-        private SynchronizationHandle(ProtocolHandle<Vector2D> protocolHandle, MODE updateMode,
-                                      SynchronizationGUI gui, Vector2D data) {
+        private SynchronizationHandle(ProtocolHandle<Vector2D> protocolHandle,
+                                      MODE updateMode,
+                                      HOST hostMode,
+                                      SynchronizationGUI gui) {
             this.protocolHandle = protocolHandle;
-            this.udpdateMode = updateMode;
+            this.updateMode = updateMode;
+            this.hostMode = hostMode;
             this.gui = gui;
-            this.data = data;
         }
 
         public void send() throws IOException {
+            Vector2D data = new Vector2D();
+            data.setHost(hostMode);
             gui.sendGUI(data);
             protocolHandle.send(data);
         }
@@ -91,17 +95,41 @@ public class AbstractSynchronizationController {
 
         public Vector2D receive() throws IOException, ClassNotFoundException {
             Vector2D receivedData = protocolHandle.receive();
-            if (receivedData != null && udpdateMode == MODE.UPDATE_ON_RECEIVED_DATA)
+            if (receivedData != null && updateMode == MODE.UPDATE_ON_RECEIVED_DATA)
                 gui.updateGUI(receivedData);
             return receivedData;
         }
+
+        public MODE getUpdateMode() {
+            return updateMode;
+        }
     }
 
-    static class ModeDataListener implements ProtocolHost.DataListener<Vector2D> {
+    static class CombinedDataListener implements ProtocolHost.DataListener<Vector2D> {
+        private final List<DataListener<Vector2D>> listeners;
+
+        CombinedDataListener(List<DataListener<Vector2D>> listeners) {
+            this.listeners = listeners;
+        }
+
+        @Override
+        public void handleOrderedData(Vector2D orderedData) {
+            for (ProtocolHost.DataListener<Vector2D> listener : listeners)
+                listener.handleOrderedData(orderedData);
+        }
+
+        @Override
+        public void handleNewestData(Vector2D newestData) {
+            for (ProtocolHost.DataListener<Vector2D> listener : listeners)
+                listener.handleNewestData(newestData);
+        }
+    }
+
+    static class ModeGUIDataListener implements ProtocolHost.DataListener<Vector2D> {
         private final MODE updateMode;
         private final SynchronizationGUI gui;
 
-        ModeDataListener(MODE updateMode, SynchronizationGUI gui) {
+        ModeGUIDataListener(MODE updateMode, SynchronizationGUI gui) {
             this.updateMode = updateMode;
             this.gui = gui;
         }

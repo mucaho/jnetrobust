@@ -35,12 +35,11 @@ import java.util.*;
  * See the various examples for usage scenarios.
  */
 public class ProtocolHost<T> {
-    public static interface DataListener<T> {
-        public void handleOrderedData(T orderedData);
-        public void handleNewestData(T newestData);
+    public interface DataListener<T> {
+        void handleOrderedData(T orderedData);
+        void handleNewestData(T newestData);
         //TODO add exceptional callback
     }
-
 
     public static class ProtocolHandle<T> {
         private final ProtocolId protocolId;
@@ -67,7 +66,7 @@ public class ProtocolHost<T> {
 
     // serialization fields
     private final Kryo kryo;
-    private final ByteBuffer buffer = ByteBuffer.allocate(2048);
+    private final ByteBuffer buffer = ByteBuffer.allocate(4096);
     private final ByteBufferInput bufferInput = new ByteBufferInput();
     private final ByteBufferOutput bufferOutput = new ByteBufferOutput();
     private final KryoObjectInput objectInput;
@@ -93,23 +92,25 @@ public class ProtocolHost<T> {
         this.hostName = hostName;
     }
 
-
-
     public ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress) {
         return register(topic, remoteAddress, null);
     }
     public ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress, final DataListener<T> listener) {
-        ProtocolId protocolId = new ProtocolId(topic, remoteAddress);
+        final ProtocolId protocolId = new ProtocolId(topic, remoteAddress);
+
+        listeners.put(protocolId, listener);
 
         ProtocolListener<T> protocolListener = new ProtocolListener<T>() {
             @Override
             public void handleOrderedData(short dataId, T orderedData) {
-                if (listener != null)
-                    listener.handleOrderedData(orderedData);
+                Queue<T> orderedQueue = orderedQueues.get(protocolId);
+                if (orderedQueue == null) {
+                    orderedQueue = new LinkedList<T>();
+                    orderedQueues.put(protocolId, orderedQueue);
+                }
+                orderedQueue.offer(orderedData);
             }
         };
-        listeners.put(protocolId, listener);
-
         Protocol<T> protocol;
         if (hostName != null)
             protocol = new Protocol<T>(protocolListener, Logger.getConsoleLogger(hostName));
@@ -119,9 +120,6 @@ public class ProtocolHost<T> {
 
         return new ProtocolHandle<T>(protocolId, this);
     }
-
-
-
 
     private void send(ProtocolId protocolId, T data) throws IOException {
         buffer.clear();
@@ -133,9 +131,10 @@ public class ProtocolHost<T> {
         channel.send(buffer, protocolId.remoteAddress);
     }
 
-    private Map<ProtocolId, Short> newestIds = new HashMap<ProtocolId, Short>();
-    private Map<ProtocolId, T> newestDatas = new HashMap<ProtocolId, T>();
-    private Map<ProtocolId, Queue<T>> receivedQueues = new HashMap<ProtocolId, Queue<T>>();
+    private final Map<ProtocolId, Short> newestIds = new HashMap<ProtocolId, Short>();
+    private final Map<ProtocolId, T> newestDatas = new HashMap<ProtocolId, T>();
+    private final Map<ProtocolId, Queue<T>> receivedQueues = new HashMap<ProtocolId, Queue<T>>();
+    private final Map<ProtocolId, Queue<T>> orderedQueues = new HashMap<ProtocolId, Queue<T>>();
 
     private void receive() throws IOException, ClassNotFoundException {
         buffer.clear();
@@ -175,21 +174,27 @@ public class ProtocolHost<T> {
     }
 
     private T receive(ProtocolId protocolId) {
+        DataListener<T> listener = listeners.get(protocolId);
+
+        Queue<T> orderedQueue = orderedQueues.get(protocolId);
+        T orderedData = orderedQueue != null ? orderedQueue.poll() : null;
+        while (orderedData != null) {
+            if (listener != null)
+                listener.handleOrderedData(orderedData);
+
+            orderedData = orderedQueue.poll();
+        }
+
         Queue<T> receivedQueue = receivedQueues.get(protocolId);
         T receivedData = receivedQueue != null ? receivedQueue.poll() : null;
-
         if (receivedData == null) {
             T newestData = newestDatas.remove(protocolId);
-            if (newestData != null) {
-                DataListener<T> listener = listeners.get(protocolId);
-                if (listener != null)
-                    listener.handleNewestData(newestData);
-            }
+            if (newestData != null && listener != null)
+                listener.handleNewestData(newestData);
         }
 
         return receivedData;
     }
-
 
     private static class ProtocolId {
         private final byte topic;

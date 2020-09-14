@@ -6,6 +6,7 @@
 package com.github.mucaho.jnetrobust.example.advanced;
 
 
+import com.github.mucaho.jnetrobust.example.ProtocolHost;
 import com.github.mucaho.jnetrobust.example.advanced.SynchronizationMain.*;
 
 import java.io.IOException;
@@ -23,10 +24,15 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
                                            HandleInformation handleRelayAInfo) throws IOException {
         super(hostInfo);
 
-        clientAHandle = register(handleDirectAInfo);
+        ModeRelayDataListener relayBDataListener = new ModeRelayDataListener(handleRelayBInfo.updateMode);
+        clientAHandle = register(handleDirectAInfo, relayBDataListener);
         relayBHandle = register(handleRelayBInfo);
-        clientBHandle = register(handleDirectBInfo);
+        relayBDataListener.setHandle(relayBHandle);
+
+        ModeRelayDataListener relayADataListener = new ModeRelayDataListener(handleRelayAInfo.updateMode);
+        clientBHandle = register(handleDirectBInfo, relayADataListener);
         relayAHandle = register(handleRelayAInfo);
+        relayADataListener.setHandle(relayAHandle);
 
         getGui().addDescription("From " + HOST.CLIENTA.toString() + ": " + handleDirectAInfo.updateMode);
         getGui().addDescription("From " + HOST.CLIENTB.toString() + ": " + handleDirectBInfo.updateMode);
@@ -43,13 +49,17 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
             // receive from A
             while ((receivedData = clientAHandle.receive()) != null) {
                 // relay to B
-                relayBHandle.send(receivedData);
+                if (relayBHandle.getUpdateMode() == MODE.UPDATE_ON_RECEIVED_DATA) {
+                    relayBHandle.send(receivedData);
+                }
             }
 
             // receive from B
             while ((receivedData = clientBHandle.receive()) != null) {
                 // relay to A
-                relayAHandle.send(receivedData);
+                if (relayAHandle.getUpdateMode() == MODE.UPDATE_ON_RECEIVED_DATA) {
+                    relayAHandle.send(receivedData);
+                }
             }
 
             // send server to both
@@ -60,4 +70,38 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
         }
     }
 
+    static class ModeRelayDataListener implements ProtocolHost.DataListener<Vector2D> {
+        private final MODE updateMode;
+        private SynchronizationHandle handle;
+
+        public ModeRelayDataListener(MODE updateMode) {
+            this.updateMode = updateMode;
+        }
+
+        public void setHandle(SynchronizationHandle handle) {
+            this.handle = handle;
+        }
+
+        @Override
+        public void handleOrderedData(Vector2D orderedData) {
+            if (updateMode == MODE.UPDATE_ON_ORDERED_DATA) {
+                try {
+                    handle.send(orderedData);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        @Override
+        public void handleNewestData(Vector2D newestData) {
+            if (updateMode == MODE.UPDATE_ON_NEWEST_DATA) {
+                try {
+                    handle.send(newestData);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
 }

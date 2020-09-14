@@ -21,7 +21,7 @@ addons:
     project:
       name: "mucaho/jnetrobust"
       description: "Build submitted via Travis CI"
-    notification_email: mkucko@gmail.com
+    notification_email: mucaho@gmail.com
     build_command_prepend: "mvn clean"
     build_command:   "mvn -DskipTests=true compile"
     branch_pattern: coverity_scan
