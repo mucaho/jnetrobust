@@ -16,7 +16,7 @@ import com.github.mucaho.jnetrobust.util.IdComparator;
  *
  * @param <T>  the user data type
  */
-public class ProtocolConfig<T> {
+public final class ProtocolConfig<T> {
     /**
      * The constant MAX_PACKET_QUEUE_LIMIT.
      */
@@ -32,9 +32,6 @@ public class ProtocolConfig<T> {
 
     /**
      * Boolean indicating whether the protocol should retransmit data. Defaults to <code>true</code>.
-     * If this setting is changed to <code>false</code>, more "aggressive" values should be set for
-     * {@link ProtocolConfig#packetOffsetLimit packetOffsetLimit} (e.g. <code>16</code>) and
-     * {@link ProtocolConfig#packetQueueLimit packetQueueLimit} (e.g. <code>16</code>).
      */
     private boolean autoRetransmit = true;
     /**
@@ -58,6 +55,18 @@ public class ProtocolConfig<T> {
      * Defaults to {@link ProtocolConfig#MAX_PACKET_RETRANSMIT_LIMIT}.
      */
     private int packetRetransmitLimit = MAX_PACKET_RETRANSMIT_LIMIT;
+
+    /**
+     * Boolean indicating whether to use extended preceding transmissions ack vector
+     * (<code>long</code> instead of <code>int</code>).
+     * The extended preceding transmission ack vector can be used for reliable communication in very short sending intervals
+     * (<code>> @120Hz</code>) or in environments with great amount of jitter (<code>> 250ms</code>).
+     * Increases each packet header by {@link Long#BYTES}{@code -}{@link Integer#BYTES}{@code =4B}.
+     * Defaults to {@code false}.
+     * <br />
+     * Note that this setting can only be set statically for all protocol instances.
+     */
+    private static boolean useExtendedPrecedingTransmissionAcks = false;
 
     /**
      * The <code>K</code> constant used for computing the retransmission timeout.
@@ -281,5 +290,33 @@ public class ProtocolConfig<T> {
      */
     public void setG(int g) {
         G = g;
+    }
+
+    /**
+     * Gets a boolean indicating whether to use extended preceding transmissions ack vector
+     * (<code>long</code> instead of <code>int</code>).
+     * The extended preceding transmission ack vector can be used for reliable communication in very short sending intervals
+     * (<code>> @120Hz</code>) or in environments with great amount of jitter (<code>> 250ms</code>).
+     * Increases each packet header by {@link Long#BYTES}{@code -}{@link Integer#BYTES}{@code =4B}.
+     * Defaults to {@code false}.
+     * <br />
+     * Note that this setting can only be set statically for all protocol instances.
+     */
+    public static boolean useExtendedPrecedingTransmissionAcks() {
+        return useExtendedPrecedingTransmissionAcks;
+    }
+
+    /**
+     * Sets a boolean indicating whether to use extended preceding transmissions ack vector
+     * (<code>long</code> instead of <code>int</code>).
+     * The extended preceding transmission ack vector can be used for reliable communication in very short sending intervals
+     * (<code>> @120Hz</code>) or in environments with great amount of jitter (<code>> 250ms</code>).
+     * Increases each packet header by {@link Long#BYTES}{@code -}{@link Integer#BYTES}{@code =4B}.
+     * Defaults to {@code false}.
+     * <br />
+     * Note that this setting can only be set statically for all protocol instances.
+     */
+    public static void setUseExtendedPrecedingTransmissionAcks(boolean useIt) {
+        useExtendedPrecedingTransmissionAcks = useIt;
     }
 }

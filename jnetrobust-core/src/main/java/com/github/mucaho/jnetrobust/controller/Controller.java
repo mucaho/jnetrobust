@@ -15,18 +15,18 @@ import com.github.mucaho.jnetrobust.util.RTTHandler;
 import java.util.List;
 
 public class Controller<T> {
-    protected short dataId = Short.MIN_VALUE;
-    protected ReceivedMapControl<T> receivedMapControl;
+    private short dataId = Short.MIN_VALUE;
+    private final ReceivedMapControl<T> receivedMapControl;
 
-    protected short localTransmissionId = Short.MIN_VALUE;
-    protected SentMapControl<T> sentMapControl;
+    private short localTransmissionId = Short.MIN_VALUE;
+    private final SentMapControl<T> sentMapControl;
 
-    protected short remoteTransmissionId = Short.MIN_VALUE;
-    protected ReceivedBitsControl receivedBitsControl;
+    private short remoteTransmissionId = Short.MIN_VALUE;
+    private final ReceivedBitsControl receivedBitsControl;
 
-    protected RTTHandler rttHandler;
+    private final RTTHandler rttHandler;
 
-    protected ResponseControl<T> responseControl;
+    private final ResponseControl<T> responseControl;
 
     public Controller(ProtocolConfig<T> config) {
         sentMapControl = new SentMapControl<T>(config.listener, config.getPacketQueueLimit(),
@@ -56,7 +56,7 @@ public class Controller<T> {
         packet.setTransmissionAck(remoteTransmissionId);
 
         // apply remote precedingTransmissionIds
-        packet.setPrecedingTransmissionAcks((int) receivedBitsControl.getReceivedRemoteBits());
+        packet.setPrecedingTransmissionAcks(receivedBitsControl.getReceivedRemoteBits());
 
         return packet;
     }

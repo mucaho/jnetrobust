@@ -7,8 +7,6 @@
 
 package com.github.mucaho.jnetrobust.util;
 
-import com.github.mucaho.jnetrobust.util.BitConstants;
-import com.github.mucaho.jnetrobust.util.IdComparator;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import org.junit.Test;

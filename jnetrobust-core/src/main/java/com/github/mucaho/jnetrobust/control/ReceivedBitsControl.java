@@ -9,7 +9,6 @@ package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.util.ShiftableBitSet;
 
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.NavigableSet;
 
@@ -17,8 +16,6 @@ import static com.github.mucaho.jnetrobust.util.BitConstants.OFFSET;
 import static com.github.mucaho.jnetrobust.util.BitConstants.SIZE;
 
 public class ReceivedBitsControl {
-
-
     /*
      * [remoteTransmissionId-32]-[remoteTransmissionId-31]-...-[remoteTransmissionId-1]
      */

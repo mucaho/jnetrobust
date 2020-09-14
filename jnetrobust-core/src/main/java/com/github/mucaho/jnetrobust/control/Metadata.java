@@ -17,8 +17,8 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.*;
 
-public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
-    private transient long lastTouched = System.currentTimeMillis();
+public final class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
+    private transient long latestTransmissionTime = System.currentTimeMillis();
 
     private Short dataId;
     private final transient NavigableSet<Short> dataIds = new TreeSet<Short>();
@@ -79,12 +79,12 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
 
 
     void updateTime() {
-        lastTouched = System.currentTimeMillis();
+        latestTransmissionTime = System.currentTimeMillis();
     }
 
     @Override
     public long getTime() {
-        return lastTouched;
+        return latestTransmissionTime;
     }
 
     @Override
@@ -128,6 +128,14 @@ public class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
         Metadata<T> metadata = new Metadata<T>();
         metadata.readExternal(in);
         return metadata;
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        writeExternal(out);
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        readExternal(in);
     }
 
     @Override

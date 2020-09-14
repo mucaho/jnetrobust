@@ -8,5 +8,5 @@
 package com.github.mucaho.jnetrobust.util;
 
 public interface Timestamp {
-    public long getTime();
+    long getTime();
 }

@@ -9,6 +9,7 @@ package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.util.FastLog;
 
+import static com.github.mucaho.jnetrobust.util.BitConstants.LSB;
 import static com.github.mucaho.jnetrobust.util.BitConstants.OFFSET;
 
 public class SentMapControl<T> extends AbstractMapControl<T> {
@@ -30,7 +31,7 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
         return new SentMetadataMap<T>();
     }
 
-    public void addToSent(short transmissionId, Metadata<T> metadata) {
+    public final void addToSent(short transmissionId, Metadata<T> metadata) {
         // add to pending map
         dataMap.put(transmissionId, metadata);
 
@@ -38,7 +39,7 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
         discardEntries();
     }
 
-    public void removeFromSent(short transmissionId, int precedingTransmissionIds) {
+    public final void removeFromSent(short transmissionId, long precedingTransmissionIds) {
         // remove multiple (oldest until newest) from pending map
         removeFromSentOnBits(transmissionId, precedingTransmissionIds);
 
@@ -46,30 +47,30 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
         notifyAcked(dataMap.removeAll(transmissionId), true);
     }
 
-    private void removeFromSentOnBits(short transmissionId, int precedingTransmissionIds) {
+    private void removeFromSentOnBits(short transmissionId, long precedingTransmissionIds) {
         short precedingTransmissionId;
         int msbIndex;
         while (precedingTransmissionIds != 0) {
             msbIndex = FastLog.log2(precedingTransmissionIds);
             precedingTransmissionId = (short) (transmissionId - msbIndex - OFFSET);
             notifyAcked(dataMap.removeAll(precedingTransmissionId), false);
-            precedingTransmissionIds &= ~(0x1 << msbIndex);
+            precedingTransmissionIds &= ~(LSB << msbIndex);
         }
 
     }
 
     @Override
-    protected void discardEntry(short key) {
+    protected final void discardEntry(short key) {
         notifyNotAcked(dataMap.removeAll(key));
     }
 
     @Override
-    protected void discardEntry(Metadata<T> metadata) {
+    protected final void discardEntry(Metadata<T> metadata) {
         notifyNotAcked(dataMap.removeAll(metadata));
     }
 
     @Override
-    protected void discardEntryKey(short key) {
+    protected final void discardEntryKey(short key) {
         Metadata<T> shrankMetadata = dataMap.remove(key);
         if (shrankMetadata != null && shrankMetadata.getTransmissionIds().isEmpty())
             notifyNotAcked(shrankMetadata);

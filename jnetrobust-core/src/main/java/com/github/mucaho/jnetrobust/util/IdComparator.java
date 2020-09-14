@@ -9,7 +9,7 @@ package com.github.mucaho.jnetrobust.util;
 
 import java.util.Comparator;
 
-public class IdComparator implements Comparator<Short> {
+public final class IdComparator implements Comparator<Short> {
     public static final IdComparator instance = new IdComparator();
 
     public static final int MAX_SEQUENCE = Short.MAX_VALUE - Short.MIN_VALUE + 1;

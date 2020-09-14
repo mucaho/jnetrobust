@@ -25,7 +25,7 @@ public interface EntryIterator<K, V> {
      * @return <K> the next key higher than the current key or the first key
      * or null if there is no higher key
      */
-    public K getHigherKey(K currentKey);
+    K getHigherKey(K currentKey);
 
     /**
      * Returns the next key lower than the current key.
@@ -35,7 +35,7 @@ public interface EntryIterator<K, V> {
      * @return <K> the previous key lower than the current key or the last key
      * or null if there is no lower key
      */
-    public K getLowerKey(K currentKey);
+    K getLowerKey(K currentKey);
 
     /**
      * Returns the value at the current key.
@@ -43,7 +43,7 @@ public interface EntryIterator<K, V> {
      * @param currentKey the current key that is mapped to the returned value
      * @return <V> the value bound to the current key
      */
-    public V getValue(K currentKey);
+    V getValue(K currentKey);
 
     /**
      * Removes the mapping the current key.
@@ -51,5 +51,5 @@ public interface EntryIterator<K, V> {
      * @param currentKey the current key that is to be removed
      * @return <V> the value bound to the current key
      */
-    public V removeValue(K currentKey);
+    V removeValue(K currentKey);
 }

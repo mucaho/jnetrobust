@@ -7,8 +7,9 @@
 
 package com.github.mucaho.jnetrobust.controller;
 
+import com.github.mucaho.jnetrobust.ProtocolConfig;
 import com.github.mucaho.jnetrobust.control.Metadata;
-import com.github.mucaho.jnetrobust.util.CollectionUtils;
+import com.github.mucaho.jnetrobust.util.BitConstants;
 import com.github.mucaho.jnetrobust.util.Freezable;
 
 import java.io.IOException;
@@ -17,8 +18,8 @@ import java.io.ObjectOutput;
 import java.util.*;
 
 
-public class Packet<T> implements Freezable<Packet<T>> {
-    public final static transient int MAX_DATAS_PER_PACKET = (Byte.MAX_VALUE - Byte.MIN_VALUE + 1) - 1;
+public final class Packet<T> implements Freezable<Packet<T>> {
+    public static final transient int MAX_DATAS_PER_PACKET = (Byte.MAX_VALUE - Byte.MIN_VALUE + 1) - 1;
 
     public Packet() {
         super();
@@ -27,8 +28,7 @@ public class Packet<T> implements Freezable<Packet<T>> {
     private LinkedList<Metadata<T>> metadatas = new LinkedList<Metadata<T>>();
     private transient List<Metadata<T>> metadatasOut = Collections.unmodifiableList(metadatas);
     private short transmissionAck;
-    private int precedingTransmissionAcks;
-
+    private long precedingTransmissionAcks;
 
     public List<Metadata<T>> getMetadatas() {
         return metadatasOut;
@@ -69,11 +69,11 @@ public class Packet<T> implements Freezable<Packet<T>> {
         this.transmissionAck = ack;
     }
 
-    public int getPrecedingTransmissionAcks() {
+    public long getPrecedingTransmissionAcks() {
         return precedingTransmissionAcks;
     }
 
-    void setPrecedingTransmissionAcks(int lastAcks) {
+    void setPrecedingTransmissionAcks(long lastAcks) {
         this.precedingTransmissionAcks = lastAcks;
     }
 
@@ -116,11 +116,23 @@ public class Packet<T> implements Freezable<Packet<T>> {
         return packet;
     }
 
+    private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+        writeExternal(out);
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        readExternal(in);
+    }
 
     @Override
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeShort(transmissionAck);
-        out.writeInt(precedingTransmissionAcks);
+
+        if (ProtocolConfig.useExtendedPrecedingTransmissionAcks())
+            out.writeLong(precedingTransmissionAcks);
+        else
+            out.writeInt(BitConstants.convertBits(precedingTransmissionAcks));
+
         out.writeByte(metadatas.size());
         for (int i = 0, l = metadatas.size(); i < l; ++i)
             Metadata.<T>writeExternalStatic(metadatas.get(i), out);
@@ -129,7 +141,12 @@ public class Packet<T> implements Freezable<Packet<T>> {
     @Override
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         transmissionAck = in.readShort();
-        precedingTransmissionAcks = in.readInt();
+
+        if (ProtocolConfig.useExtendedPrecedingTransmissionAcks())
+            precedingTransmissionAcks = in.readLong();
+        else
+            precedingTransmissionAcks = BitConstants.convertBits(in.readInt());
+
         int size = in.readUnsignedByte();
         for (int i = 0; i < size; ++i)
             metadatas.addLast(Metadata.<T>readExternalStatic(in));

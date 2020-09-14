@@ -7,12 +7,12 @@
 
 package com.github.mucaho.jnetrobust;
 
+import com.github.mucaho.jnetrobust.control.AbstractMapControl;
+import com.github.mucaho.jnetrobust.control.AbstractMetadataMap;
+import com.github.mucaho.jnetrobust.controller.Controller;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
-import mockit.Delegate;
-import mockit.Injectable;
-import mockit.NonStrictExpectations;
-import mockit.Verifications;
+import mockit.*;
 import com.github.mucaho.jnetrobust.control.Metadata;
 import com.github.mucaho.jnetrobust.controller.Packet;
 import com.github.mucaho.jnetrobust.util.DebugProtocolListener;
@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.*;
+import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -34,7 +35,7 @@ import static org.junit.Assert.assertTrue;
 public class DelayedTest {
     private final static boolean DEBUG = false;
 
-    private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
+    private static final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
 
     @Injectable
     private QueueListener<Packet<Long>> queueListenerAtoB;
@@ -243,123 +244,105 @@ public class DelayedTest {
 
         // determine occurence counts
 
+        final Map<Long, Integer> sentAOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> ackedAOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> notAckedAOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> orderedAOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> unorderedAOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> retransmitsAOccurrences = new HashMap<Long, Integer>();
-        final Map<Long, Integer> ackedADupes = new HashMap<Long, Integer>();
-        final Map<Long, Integer> notAckedADupes = new HashMap<Long, Integer>();
-        final Map<Long, Integer> orderedADupes = new HashMap<Long, Integer>();
-        final Map<Long, Integer> unorderedADupes = new HashMap<Long, Integer>();
-        final Map<Long, Integer> retransmitsADupes = new HashMap<Long, Integer>();
 
+        final Map<Long, Integer> sentBOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> ackedBOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> notAckedBOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> orderedBOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> unorderedBOccurrences = new HashMap<Long, Integer>();
         final Map<Long, Integer> retransmitsBOccurrences = new HashMap<Long, Integer>();
-        final Map<Long, Integer> ackedBDupes = new HashMap<Long, Integer>();
-        final Map<Long, Integer> notAckedBDupes = new HashMap<Long, Integer>();
-        final Map<Long, Integer> orderedBDupes = new HashMap<Long, Integer>();
-        final Map<Long, Integer> unorderedBDupes = new HashMap<Long, Integer>();
-        final Map<Long, Integer> retransmitsBDupes = new HashMap<Long, Integer>();
 
+        for (Long item : sentA) {
+            Integer count = sentAOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            sentAOccurrences.put(item, count);
+        }
         for (Long item : ackedA) {
             Integer count = ackedAOccurrences.get(item);
             count = count == null ? 1 : count + 1;
             ackedAOccurrences.put(item, count);
-            if (count > 1)
-                ackedADupes.put(item, count - 1);
         }
         for (Long item : notAckedA) {
             Integer count = notAckedAOccurrences.get(item);
             count = count == null ? 1 : count + 1;
-            notAckedAOccurrences.put(item, count);
-            if (count > 1)
-                notAckedADupes.put(item, count - 1);
+            notAckedAOccurrences.put(item, count);;
         }
         for (Long item : orderedA) {
             Integer count = orderedAOccurrences.get(item);
             count = count == null ? 1 : count + 1;
             orderedAOccurrences.put(item, count);
-            if (count > 1)
-                orderedADupes.put(item, count - 1);
         }
         for (Long item : unorderedA) {
             Integer count = unorderedAOccurrences.get(item);
             count = count == null ? 1 : count + 1;
             unorderedAOccurrences.put(item, count);
-            if (count > 1)
-                unorderedADupes.put(item, count - 1);
         }
         for (Long item : retransmitsA) {
             Integer count = retransmitsAOccurrences.get(item);
             count = count == null ? 1 : count + 1;
             retransmitsAOccurrences.put(item, count);
-            if (count > 1)
-                retransmitsADupes.put(item, count - 1);
         }
 
+        for (Long item : sentB) {
+            Integer count = sentBOccurrences.get(item);
+            count = count == null ? 1 : count + 1;
+            sentBOccurrences.put(item, count);
+        }
         for (Long item : ackedB) {
             Integer count = ackedBOccurrences.get(item);
             count = count == null ? 1 : count + 1;
             ackedBOccurrences.put(item, count);
-            if (count > 1)
-                ackedBDupes.put(item, count - 1);
         }
         for (Long item : notAckedB) {
             Integer count = notAckedBOccurrences.get(item);
             count = count == null ? 1 : count + 1;
             notAckedBOccurrences.put(item, count);
-            if (count > 1)
-                notAckedBDupes.put(item, count - 1);
         }
         for (Long item : orderedB) {
             Integer count = orderedBOccurrences.get(item);
             count = count == null ? 1 : count + 1;
             orderedBOccurrences.put(item, count);
-            if (count > 1)
-                orderedBDupes.put(item, count - 1);
         }
         for (Long item : unorderedB) {
             Integer count = unorderedBOccurrences.get(item);
             count = count == null ? 1 : count + 1;
             unorderedBOccurrences.put(item, count);
-            if (count > 1)
-                unorderedBDupes.put(item, count - 1);
         }
         for (Long item : retransmitsB) {
             Integer count = retransmitsBOccurrences.get(item);
             count = count == null ? 1 : count + 1;
             retransmitsBOccurrences.put(item, count);
-            if (count > 1)
-                retransmitsBDupes.put(item, count - 1);
         }
 
         // do verifications
 
         for (Long item : notAckedA)
-            assertTrue("notAcked data should not have been acked", !ackedA.contains(item));
+            assertTrue("notAcked data should not have been acked", !ackedAOccurrences.containsKey(item));
         for (Long item : notAckedB)
-            assertTrue("notAcked data should not have been acked", !ackedB.contains(item));
+            assertTrue("notAcked data should not have been acked", !ackedBOccurrences.containsKey(item));
 
         for (Long item : retransmitsA)
-            assertTrue("retransmitted data should have been sent from sender", sentA.contains(item));
+            assertTrue("retransmitted data should have been sent from sender", sentAOccurrences.containsKey(item));
         for (Long item : retransmitsB)
-            assertTrue("retransmitted data should have been sent from sender", sentB.contains(item));
+            assertTrue("retransmitted data should have been sent from sender", sentBOccurrences.containsKey(item));
         for (Long item : lostSentA)
-            assertTrue("over medium lost data should have been sent from sender", sentA.contains(item));
+            assertTrue("over medium lost data should have been sent from sender", sentAOccurrences.containsKey(item));
         for (Long item : lostSentB)
-            assertTrue("over medium lost data should have been sent from sender", sentB.contains(item));
+            assertTrue("over medium lost data should have been sent from sender", sentBOccurrences.containsKey(item));
         for (Long item : dupedSentA)
-            assertTrue("over medium duplicated data should have been sent from sender", sentA.contains(item));
+            assertTrue("over medium duplicated data should have been sent from sender", sentAOccurrences.containsKey(item));
         for (Long item : dupedSentB)
-            assertTrue("over medium duplicated data should have been sent from sender", sentB.contains(item));
+            assertTrue("over medium duplicated data should have been sent from sender", sentBOccurrences.containsKey(item));
 
         Long lastItem = null;
         for (Long item : orderedA) {
-            assertTrue("orderly received data should have been sent from sender", sentB.contains(item));
+            assertTrue("orderly received data should have been sent from sender", sentBOccurrences.containsKey(item));
 
             if (lastItem != null) {
                 assertTrue("ordered data should be ordered", item > lastItem);
@@ -368,7 +351,7 @@ public class DelayedTest {
         }
         lastItem = null;
         for (Long item : orderedB) {
-            assertTrue("orderly received data should have been sent from sender", sentA.contains(item));
+            assertTrue("orderly received data should have been sent from sender", sentAOccurrences.containsKey(item));
 
             if (lastItem != null) {
                 assertTrue("ordered data should be ordered", item > lastItem);
@@ -378,50 +361,50 @@ public class DelayedTest {
 
         lastItem = null;
         for (Long item : unorderedA) {
-            assertTrue("unorderly received data should have been sent from sender", sentB.contains(item));
+            assertTrue("unorderly received data should have been sent from sender", sentBOccurrences.containsKey(item));
 
             if (lastItem != null) {
                 assertTrue("unordered data should be ordered", item > lastItem);
             }
             lastItem = item;
 
-            assertTrue("unordered data should not have been orderly received", !orderedA.contains(item));
+            assertTrue("unordered data should not have been orderly received", !orderedAOccurrences.containsKey(item));
 
 // The following assertions can not be guaranteed, since there may be multiple unordered events and multiple holes until an ordered event occurs
 //			Long pred = item;
 //			do {
 //				pred--;
-//			} while(unorderedA.contains(pred));
+//			} while(unorderedAOccurrences.containsKey(pred));
 //			Long succ = item;
 //			do {
 //				succ++;
-//			} while(unorderedA.contains(succ));
-//			assertTrue("ordered data contains predecessor of unorderedData", orderedA.contains(pred));
-//			assertTrue("ordered data contains successor of unorderedData", orderedA.contains(succ));
+//			} while(unorderedAOccurrences.containsKey(succ));
+//			assertTrue("ordered data contains predecessor of unorderedData", orderedAOccurrences.containsKey(pred));
+//			assertTrue("ordered data contains successor of unorderedData", orderedAOccurrences.containsKey(succ));
         }
 
         lastItem = null;
         for (Long item : unorderedB) {
-            assertTrue("orderly received data should have been sent from sender", sentA.contains(item));
+            assertTrue("orderly received data should have been sent from sender", sentAOccurrences.containsKey(item));
 
             if (lastItem != null) {
                 assertTrue("unordered data should be ordered", item > lastItem);
             }
             lastItem = item;
 
-            assertTrue("unordered data should not have been orderly received", !orderedB.contains(item));
+            assertTrue("unordered data should not have been orderly received", !orderedBOccurrences.containsKey(item));
 
 // The following assertions can not be guaranteed, since there may be multiple unordered events and multiple holes until an ordered event occurs
 //			Long pred = item;
 //			do {
 //				pred--;
-//			} while(unorderedB.contains(pred));
+//			} while(unorderedBOccurrences.containsKey(pred));
 //			Long succ = item;
 //			do {
 //				succ++;
-//			} while(unorderedB.contains(succ));
-//			assertTrue("ordered data contains predecessor of unorderedData", orderedB.contains(pred));
-//			assertTrue("ordered data contains successor of unorderedData", orderedB.contains(succ));
+//			} while(unorderedBOccurrences.containsKey(succ));
+//			assertTrue("ordered data contains predecessor of unorderedData", orderedBOccurrences.containsKey(pred));
+//			assertTrue("ordered data contains successor of unorderedData", orderedBOccurrences.containsKey(succ));
         }
 
         // the following addition of "magic constants" is due to the scheduling procedure of the very last messages
@@ -476,6 +459,54 @@ public class DelayedTest {
             assertEquals("all packets acked", 0, notAckedB.size());
             assertEquals("all packets ordered", 0, unorderedB.size());
         }
+
+        // additionally make sure internal data structures are empty and properly exhaused
+        // otherwise this is a good indicator something went wrong
+        {
+            DelayQueue aToBQueue = Deencapsulation.getField(aToB, "queue");
+            assertEquals(0, aToBQueue.size());
+            DelayQueue bToAQueue = Deencapsulation.getField(bToA, "queue");
+            assertEquals(0, bToAQueue.size());
+
+            Protocol protocolA = Deencapsulation.getField(hostA, "protocol");
+            Controller controllerA = Deencapsulation.getField(protocolA, "controller");
+            {
+                AbstractMapControl sentMapControl = Deencapsulation.getField(controllerA, "sentMapControl");
+                AbstractMetadataMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
+                Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
+                assertEquals(1, keyMap.size());
+                Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
+                assertEquals(1, valueMap.size());
+            }
+            {
+                AbstractMapControl receivedMapControl = Deencapsulation.getField(controllerA, "receivedMapControl");
+                AbstractMetadataMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
+                Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
+                assertEquals(0, keyMap.size());
+                Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
+                assertEquals(0, valueMap.size());
+            }
+
+            Protocol protocolB = Deencapsulation.getField(hostB, "protocol");
+            Controller controllerB = Deencapsulation.getField(protocolB, "controller");
+            {
+                AbstractMapControl sentMapControl = Deencapsulation.getField(controllerB, "sentMapControl");
+                AbstractMetadataMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
+                Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
+                assertEquals(1, keyMap.size());
+                Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
+                assertEquals(1, valueMap.size());
+            }
+            {
+                AbstractMapControl receivedMapControl = Deencapsulation.getField(controllerB, "receivedMapControl");
+                AbstractMetadataMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
+                Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
+                assertEquals(0, keyMap.size());
+                Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
+                assertEquals(0, valueMap.size());
+            }
+        }
+
 
     }
 

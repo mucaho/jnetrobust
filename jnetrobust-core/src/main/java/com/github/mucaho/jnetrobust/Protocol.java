@@ -216,6 +216,13 @@ public class Protocol<T> implements Comparator<Short> {
     }
 
     /**
+     * Static version of the {@link #compare(Short, Short) instance compare} method.
+     */
+    public static int compare(short dataId1, short dataId2) {
+        return IdComparator.instance.compare(dataId1, dataId2);
+    }
+
+    /**
      * Get the round-trip time. <br></br>
      * Updated on receiving acknowledgement of data receipt, using the formula
      * <code>RTT_SMOOTHED_AVG = 7/8 * RTT_SMOOTHED_AVG + 1/8 * RTT_NEW</code>

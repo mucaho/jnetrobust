@@ -11,7 +11,7 @@ import java.io.Serializable;
 import java.util.*;
 import java.util.Map.Entry;
 
-public class CollectionUtils {
+public final class CollectionUtils {
 
     /**
      * Returns an unmodifiable view of the specified navigable set.

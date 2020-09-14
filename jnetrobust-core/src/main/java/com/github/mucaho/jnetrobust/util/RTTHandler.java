@@ -25,7 +25,7 @@ package com.github.mucaho.jnetrobust.util;
  * Everytime timer expires, RTO += RTO as linear backoff (or more conservatively RTO *= 2 as exponential backoff),
  * until the RTT of the newly retransmitted message arrives
  */
-public class RTTHandler {
+public final class RTTHandler {
     private static final float ALPHA = 1f / 8f;
     private static final float BETA = 1f / 4f;
 

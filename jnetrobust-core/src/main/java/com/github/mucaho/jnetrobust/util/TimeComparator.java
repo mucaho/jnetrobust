@@ -9,8 +9,8 @@ package com.github.mucaho.jnetrobust.util;
 
 import java.util.Comparator;
 
-public class TimeComparator implements Comparator<Timestamp> {
-    public final static TimeComparator instance = new TimeComparator();
+public final class TimeComparator implements Comparator<Timestamp> {
+    public static final TimeComparator instance = new TimeComparator();
 
     @Override
     public int compare(Timestamp o1, Timestamp o2) {

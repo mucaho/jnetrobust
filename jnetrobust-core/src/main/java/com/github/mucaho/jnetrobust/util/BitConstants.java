@@ -8,18 +8,20 @@
 package com.github.mucaho.jnetrobust.util;
 
 public final class BitConstants {
-    public final static int OFFSET = 1;
-    public final static int SIZE = Long.SIZE;
-    public final static long MSB = 0x8000000000000000L;
-    public final static long LSB = 0x1;
+    public static final int OFFSET = 1;
+    public static final int SIZE = Long.SIZE;
+    public static final long MSB = 0x8000000000000000L;
+    public static final long LSB = 0x1L;
+    private static final long INT_MASK = 0xFFFFFFFFL;
 
-    private final static long LONG_MASK = 0x7FFFFFFFFFFFFFFFL;
-
-    public final static long convertBits(int bits) {
-        return ((long) bits) & LONG_MASK;
+    private BitConstants() {
     }
 
-    public final static int convertBits(long bits) {
+    public static final long convertBits(int bits) {
+        return ((long) bits) & INT_MASK;
+    }
+
+    public static final int convertBits(long bits) {
         return (int) bits;
     }
 }

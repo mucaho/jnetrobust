@@ -11,7 +11,7 @@ import com.github.mucaho.jnetrobust.control.Metadata;
 
 import java.util.Comparator;
 
-public class SentMetadataComparator implements Comparator<Metadata<?>> {
+public final class SentMetadataComparator implements Comparator<Metadata<?>> {
     public static final SentMetadataComparator instance = new SentMetadataComparator();
 
     @Override

@@ -10,7 +10,7 @@ package com.github.mucaho.jnetrobust.util;
 import static com.github.mucaho.jnetrobust.util.BitConstants.LSB;
 import static com.github.mucaho.jnetrobust.util.BitConstants.SIZE;
 
-public class ShiftableBitSet {
+public final class ShiftableBitSet {
     private long bits;
 
 

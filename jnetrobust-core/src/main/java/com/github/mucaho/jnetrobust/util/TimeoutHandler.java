@@ -9,7 +9,7 @@ package com.github.mucaho.jnetrobust.util;
 
 import java.util.*;
 
-public class TimeoutHandler<T extends Timestamp> {
+public final class TimeoutHandler<T extends Timestamp> {
     // TODO: add everywhere meaningful initial capacities, e.g. in this case MAX_PACKET_QUEUE_LIMIT
     private final List<T> timeouts = new ArrayList<T>();
     private final List<T> timeoutsOut = Collections.unmodifiableList(timeouts);
