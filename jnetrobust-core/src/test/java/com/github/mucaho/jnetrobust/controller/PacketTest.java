@@ -7,7 +7,6 @@
 
 package com.github.mucaho.jnetrobust.controller;
 
-import com.github.mucaho.jnetrobust.controller.Packet;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.Deencapsulation;

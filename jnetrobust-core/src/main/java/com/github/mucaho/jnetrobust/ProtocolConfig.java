@@ -12,11 +12,10 @@ import com.github.mucaho.jnetrobust.util.IdComparator;
 
 /**
  * Configuration class which will be used to configure a {@link Protocol protocol instance}. <br></br>
- * Default configuration values are provided, but can/should be changed if needed.
- *
- * @param <T>  the user data type
+ * Default configuration values are provided, but can/should be changed if needed.<br />
+ * Note that there are also static, global configuration options which apply to all protocol instances.
  */
-public final class ProtocolConfig<T> {
+public final class ProtocolConfig {
     /**
      * The constant MAX_PACKET_QUEUE_LIMIT.
      */
@@ -90,36 +89,27 @@ public final class ProtocolConfig<T> {
     private int G = 25;
 
     /**
-     * The Listener.
+     * Instantiates a new Protocol config with default values.
      */
-    public final ProtocolListener<T> listener;
-
-    /**
-     * Instantiates a new Protocol config.
-     *
-     * @param listener the listener
-     */
-    public ProtocolConfig(ProtocolListener<T> listener) {
+    public ProtocolConfig() {
         super();
-        this.listener = listener;
     }
 
-
     /**
-     * Instantiates a new Protocol config.
+     * Instantiates a new Protocol config by copying the provided config options.
      *
-     * @param listener the listener
      * @param config the config
      */
-    public ProtocolConfig(ProtocolListener<T> listener, ProtocolConfig<T> config) {
+    public ProtocolConfig(ProtocolConfig config) {
         super();
-        this.listener = listener;
+        this.autoRetransmit = config.autoRetransmit;
         this.packetQueueLimit = config.packetQueueLimit;
+        this.packetOffsetLimit = config.packetOffsetLimit;
         this.packetQueueTimeout = config.packetQueueTimeout;
+        this.packetRetransmitLimit = config.packetRetransmitLimit;
         this.G = config.G;
         this.K = config.K;
     }
-
 
     /**
      * Gets a positive number indicating how many <code>unacked</code> or <code>unordered</code> packaged user-datas should be

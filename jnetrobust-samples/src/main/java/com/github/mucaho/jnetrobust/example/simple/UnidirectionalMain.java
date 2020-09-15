@@ -42,7 +42,7 @@ public class UnidirectionalMain {
         private ProtocolHost.ProtocolHandle<Long> senderHandle;
 
         private Sender() throws IOException {
-            ProtocolHost<Long> senderHost = new ProtocolHost<Long>(null, Long.class, senderAddress);
+            ProtocolHost senderHost = new ProtocolHost(null, senderAddress, Long.class);
             senderHandle = senderHost.register(Byte.MIN_VALUE, emulatorAddress);
         }
         @Override
@@ -63,7 +63,7 @@ public class UnidirectionalMain {
         private ProtocolHost.ProtocolHandle<Long> receiverHandle;
 
         private Receiver() throws IOException {
-            ProtocolHost<Long> receiverHost = new ProtocolHost<Long>(null, Long.class, receiverAddress);
+            ProtocolHost receiverHost = new ProtocolHost(null, receiverAddress, Long.class);
             receiverHandle = receiverHost.register(Byte.MIN_VALUE, emulatorAddress);
         }
 

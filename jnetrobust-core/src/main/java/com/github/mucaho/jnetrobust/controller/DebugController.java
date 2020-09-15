@@ -8,6 +8,7 @@
 package com.github.mucaho.jnetrobust.controller;
 
 import com.github.mucaho.jnetrobust.ProtocolConfig;
+import com.github.mucaho.jnetrobust.ProtocolListener;
 import com.github.mucaho.jnetrobust.control.Metadata;
 import com.github.mucaho.jnetrobust.Logger;
 
@@ -17,8 +18,8 @@ import java.util.List;
 public class DebugController<T> extends Controller<T> {
     private final Logger logger;
 
-    public DebugController(ProtocolConfig<T> config, Logger logger) {
-        super(config);
+    public DebugController(ProtocolListener<T> listener, ProtocolConfig config, Logger logger) {
+        super(listener, config);
         this.logger = logger;
     }
 

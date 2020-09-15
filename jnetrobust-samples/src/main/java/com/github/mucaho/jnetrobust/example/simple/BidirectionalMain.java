@@ -25,11 +25,11 @@ public class BidirectionalMain {
         InetSocketAddress ADDRESS_B = new InetSocketAddress(InetAddress.getLocalHost(), 12346);
 
         // setup ProtocolHost A
-        ProtocolHost<String> protocolHostA = new ProtocolHost<String>("A", String.class, ADDRESS_A);
+        ProtocolHost protocolHostA = new ProtocolHost("A", ADDRESS_A, String.class);
         ProtocolHost.ProtocolHandle<String> protocolHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
 
         // setup ProtocolHost B
-        ProtocolHost<String> protocolHostB = new ProtocolHost<String>("B", String.class, ADDRESS_B);
+        ProtocolHost protocolHostB = new ProtocolHost("B", ADDRESS_B, String.class);
         ProtocolHost.ProtocolHandle<String> protocolHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
 
 

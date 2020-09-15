@@ -8,6 +8,7 @@
 package com.github.mucaho.jnetrobust.controller;
 
 import com.github.mucaho.jnetrobust.ProtocolConfig;
+import com.github.mucaho.jnetrobust.ProtocolListener;
 import com.github.mucaho.jnetrobust.control.*;
 import com.github.mucaho.jnetrobust.util.IdComparator;
 import com.github.mucaho.jnetrobust.util.RTTHandler;
@@ -28,8 +29,8 @@ public class Controller<T> {
 
     private final ResponseControl<T> responseControl;
 
-    public Controller(ProtocolConfig<T> config) {
-        sentMapControl = new SentMapControl<T>(config.listener, config.getPacketQueueLimit(),
+    public Controller(ProtocolListener<T> listener, ProtocolConfig config) {
+        sentMapControl = new SentMapControl<T>(listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
             @Override
             protected void notifyAcked(Metadata<T> ackedMetadata, boolean directlyAcked) {
@@ -41,12 +42,12 @@ public class Controller<T> {
         };
 
         receivedBitsControl = new ReceivedBitsControl(IdComparator.instance);
-        receivedMapControl = new ReceivedMapControl<T>(dataId, config.listener, config.getPacketQueueLimit(),
+        receivedMapControl = new ReceivedMapControl<T>(dataId, listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
         rttHandler = new RTTHandler(config.getK(), config.getG());
 
-        responseControl = new ResponseControl<T>(sentMapControl.getValues(), config.listener, config.autoRetransmit());
+        responseControl = new ResponseControl<T>(sentMapControl.getValues(), listener, config.autoRetransmit());
     }
 
     public Packet<T> produce() {

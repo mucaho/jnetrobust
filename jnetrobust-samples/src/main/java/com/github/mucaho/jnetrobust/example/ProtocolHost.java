@@ -34,7 +34,7 @@ import java.util.*;
  * <br />
  * See the various examples for usage scenarios.
  */
-public class ProtocolHost<T> {
+public class ProtocolHost {
     public interface DataListener<T> {
         void handleOrderedData(T orderedData);
         void handleNewestData(T newestData);
@@ -43,8 +43,8 @@ public class ProtocolHost<T> {
 
     public static class ProtocolHandle<T> {
         private final ProtocolId protocolId;
-        private final ProtocolHost<T> host;
-        private ProtocolHandle(ProtocolId protocolId, ProtocolHost<T> host) {
+        private final ProtocolHost host;
+        private ProtocolHandle(ProtocolId protocolId, ProtocolHost host) {
             this.host = host;
             this.protocolId = protocolId;
         }
@@ -61,8 +61,8 @@ public class ProtocolHost<T> {
     private final String hostName;
 
     // protocol fields
-    private final Map<ProtocolId, Protocol<T>> protocols = new HashMap<ProtocolId, Protocol<T>>();
-    private final Map<ProtocolId, DataListener<T>> listeners = new HashMap<ProtocolId, DataListener<T>>();
+    private final Map<ProtocolId, Protocol<?>> protocols = new HashMap<ProtocolId, Protocol<?>>();
+    private final Map<ProtocolId, DataListener<?>> listeners = new HashMap<ProtocolId, DataListener<?>>();
 
     // serialization fields
     private final Kryo kryo;
@@ -75,7 +75,7 @@ public class ProtocolHost<T> {
     // network communication fields
     private final DatagramChannel channel;
 
-    public ProtocolHost(String hostName, Class<T> dataClass, SocketAddress localAddress) throws IOException {
+    public ProtocolHost(String hostName, SocketAddress localAddress, Class<?>... dataClasses) throws IOException {
         // setup network communication
         channel = DatagramChannel.open();
         channel.configureBlocking(false);
@@ -85,17 +85,20 @@ public class ProtocolHost<T> {
         kryo = new Kryo();
         kryo.register(Packet.class); // add argument `new ExternalizableSerializer()` if needed
         kryo.register(Metadata.class); // add argument `new ExternalizableSerializer()` if needed
-        kryo.register(dataClass);
+        for (Class<?> dataClass : dataClasses)
+            kryo.register(dataClass);
         objectInput = new KryoObjectInput(kryo, bufferInput);
         objectOutput = new KryoObjectOutput(kryo, bufferOutput);
 
         this.hostName = hostName;
     }
 
-    public ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress) {
+    public <T> ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress) {
         return register(topic, remoteAddress, null);
     }
-    public ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress, final DataListener<T> listener) {
+
+    @SuppressWarnings("unchecked")
+    public <T> ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress, final DataListener<T> listener) {
         final ProtocolId protocolId = new ProtocolId(topic, remoteAddress);
 
         listeners.put(protocolId, listener);
@@ -103,7 +106,7 @@ public class ProtocolHost<T> {
         ProtocolListener<T> protocolListener = new ProtocolListener<T>() {
             @Override
             public void handleOrderedData(short dataId, T orderedData) {
-                Queue<T> orderedQueue = orderedQueues.get(protocolId);
+                Queue<T> orderedQueue = (Queue<T>) orderedQueues.get(protocolId);
                 if (orderedQueue == null) {
                     orderedQueue = new LinkedList<T>();
                     orderedQueues.put(protocolId, orderedQueue);
@@ -121,21 +124,25 @@ public class ProtocolHost<T> {
         return new ProtocolHandle<T>(protocolId, this);
     }
 
-    private void send(ProtocolId protocolId, T data) throws IOException {
+    @SuppressWarnings("unchecked")
+    private <T> void send(ProtocolId protocolId, T data) throws IOException {
         buffer.clear();
         buffer.put(protocolId.topic);
         bufferOutput.setBuffer(buffer);
-        protocols.get(protocolId).send(data, objectOutput);
+        Protocol<T> protocol = (Protocol<T>) protocols.get(protocolId);
+        protocol.send(data, objectOutput);
+        bufferOutput.flush();
 
         buffer.flip();
         channel.send(buffer, protocolId.remoteAddress);
     }
 
     private final Map<ProtocolId, Short> newestIds = new HashMap<ProtocolId, Short>();
-    private final Map<ProtocolId, T> newestDatas = new HashMap<ProtocolId, T>();
-    private final Map<ProtocolId, Queue<T>> receivedQueues = new HashMap<ProtocolId, Queue<T>>();
-    private final Map<ProtocolId, Queue<T>> orderedQueues = new HashMap<ProtocolId, Queue<T>>();
+    private final Map<ProtocolId, Object> newestDatas = new HashMap<ProtocolId, Object>();
+    private final Map<ProtocolId, Queue<?>> receivedQueues = new HashMap<ProtocolId, Queue<?>>();
+    private final Map<ProtocolId, Queue<?>> orderedQueues = new HashMap<ProtocolId, Queue<?>>();
 
+    @SuppressWarnings("unchecked")
     private void receive() throws IOException, ClassNotFoundException {
         buffer.clear();
         SocketAddress remoteAddress = channel.receive(buffer);
@@ -144,16 +151,16 @@ public class ProtocolHost<T> {
             ProtocolId protocolId = new ProtocolId(buffer.get(), remoteAddress);
             bufferInput.setBuffer(buffer);
 
-            Protocol<T> protocol = protocols.get(protocolId);
-            NavigableMap<Short, T> receivedEntries = protocol.receive(objectInput);
-            for (Map.Entry<Short, T> receivedEntry: receivedEntries.entrySet()) {
+            Protocol<?> protocol = protocols.get(protocolId);
+            NavigableMap<Short, ?> receivedEntries = protocol.receive(objectInput);
+            for (Map.Entry<Short, ?> receivedEntry: receivedEntries.entrySet()) {
                 Short receivedId = receivedEntry.getKey();
-                T receivedData = receivedEntry.getValue();
+                Object receivedData = receivedEntry.getValue();
 
                 {
-                    Queue<T> receivedQueue = receivedQueues.get(protocolId);
+                    Queue<Object> receivedQueue = (Queue<Object>) receivedQueues.get(protocolId);
                     if (receivedQueue == null) {
-                        receivedQueue = new LinkedList<T>();
+                        receivedQueue = new LinkedList<Object>();
                         receivedQueues.put(protocolId, receivedQueue);
                     }
                     receivedQueue.offer(receivedData);
@@ -167,16 +174,16 @@ public class ProtocolHost<T> {
                 }
             }
 
-
             buffer.clear();
             remoteAddress = channel.receive(buffer);
         }
     }
 
-    private T receive(ProtocolId protocolId) {
-        DataListener<T> listener = listeners.get(protocolId);
+    @SuppressWarnings("unchecked")
+    private <T> T receive(ProtocolId protocolId) {
+        DataListener<T> listener = (DataListener<T>) listeners.get(protocolId);
 
-        Queue<T> orderedQueue = orderedQueues.get(protocolId);
+        Queue<T> orderedQueue = (Queue<T>) orderedQueues.get(protocolId);
         T orderedData = orderedQueue != null ? orderedQueue.poll() : null;
         while (orderedData != null) {
             if (listener != null)
@@ -185,10 +192,10 @@ public class ProtocolHost<T> {
             orderedData = orderedQueue.poll();
         }
 
-        Queue<T> receivedQueue = receivedQueues.get(protocolId);
+        Queue<T> receivedQueue = (Queue<T>) receivedQueues.get(protocolId);
         T receivedData = receivedQueue != null ? receivedQueue.poll() : null;
         if (receivedData == null) {
-            T newestData = newestDatas.remove(protocolId);
+            T newestData = (T) newestDatas.remove(protocolId);
             if (newestData != null && listener != null)
                 listener.handleNewestData(newestData);
         }

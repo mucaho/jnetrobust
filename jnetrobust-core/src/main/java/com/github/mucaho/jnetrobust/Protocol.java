@@ -53,71 +53,101 @@ import java.util.*;
 public class Protocol<T> implements Comparator<Short> {
     private final Controller<T> controller;
     // TODO: possibly add currentlyInUse boolean to prevent reentering send / receive procedure while listeners fire
-    // TODO: add T.. datas send
 
     /**
-     * Construct a new protocol instance using the default {@link ProtocolConfig protocol configuration}.
-     * @param protocolListener  the <code>ProtocolListener</code> which will be notified about protocol events
+     * Convenience constructor that wraps the {@link #Protocol(ProtocolListener, ProtocolConfig, Logger) "default" constructor}.
+     * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
      */
-    public Protocol(ProtocolListener<T> protocolListener) {
-        this(protocolListener, null);
+    public Protocol(ProtocolListener<T> listener) {
+        this(listener, new ProtocolConfig(), null);
     }
 
     /**
-     * Construct a new protocol instance using the supplied {@link ProtocolConfig protocol configuration}.
-     * @param config    the <code>protocol configuration</code> which will be used to configure this protocol instance
+     * Convenience constructor that wraps the {@link #Protocol(ProtocolListener, ProtocolConfig, Logger) "default" constructor}.
+     * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
      */
-    public Protocol(ProtocolConfig<T> config) {
-        this(config, null);
+    public Protocol(ProtocolConfig config) {
+        this(new ProtocolListener<T>(), config, null);
     }
 
     /**
-     * Construct a new protocol instance using the default {@link ProtocolConfig protocol configuration}.
+     * Convenience constructor that wraps the {@link #Protocol(ProtocolListener, ProtocolConfig, Logger) "default" constructor}.
+     * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
+     */
+    public Protocol(Logger logger) {
+        this(new ProtocolListener<T>(), new ProtocolConfig(), logger);
+    }
+
+    /**
+     * Convenience constructor that wraps the {@link #Protocol(ProtocolListener, ProtocolConfig, Logger) "default" constructor}.
+     * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
+     */
+    public Protocol(ProtocolConfig config, Logger logger) {
+        this(new ProtocolListener<T>(), config, logger);
+    }
+
+    /**
+     * Convenience constructor that wraps the {@link #Protocol(ProtocolListener, ProtocolConfig, Logger) "default" constructor}.
+     * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
+     */
+    public Protocol(ProtocolListener<T> listener, Logger logger) {
+        this(listener, new ProtocolConfig(), logger);
+    }
+
+    /**
+     * Convenience constructor that wraps the {@link #Protocol(ProtocolListener, ProtocolConfig, Logger) "default" constructor}.
+     * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
+     */
+    public Protocol(ProtocolListener<T> listener, ProtocolConfig config) {
+        this(listener, config, null);
+    }
+
+    /**
+     * Construct a new protocol instance using the supplied {@link ProtocolListener protocol listener}
+     * and {@link ProtocolConfig protocol configuration}.
      * Internal state changes will be logged using the supplied {@link Logger logger}.
-     * @param protocolListener  the <code>ProtocolListener</code> which will be notified about protocol events
-     * @param logger    the <code>Logger</code> which will be used to track internal state changes
-     */
-    public Protocol(ProtocolListener<T> protocolListener, Logger logger) {
-        this(new ProtocolConfig<T>(protocolListener), logger);
-    }
-
-    /**
-     * Construct a new protocol instance using the supplied {@link ProtocolConfig protocol configuration}.
-     * Internal state changes will be logged using the supplied {@link Logger logger}.
+     * @param listener  the <code>protocol listener</code> which will be informed about various protocol events
      * @param config    the <code>protocol configuration</code> which will be used to configure this protocol instance
-     * @param logger    the <code>Logger</code> which will be used to track internal state changes
+     * @param logger    the <code>Logger</code> which will be used to log internal state changes
      */
-    public Protocol(ProtocolConfig<T> config, Logger logger) {
+    public Protocol(ProtocolListener<T> listener, ProtocolConfig config, Logger logger) {
+        if (listener == null) listener = new ProtocolListener<T>();
+        if (config == null) config = new ProtocolConfig();
+
         if (logger != null) {
-            ProtocolListener<T> debugListener = new DebugProtocolListener<T>(config.listener, logger);
-            this.controller = new DebugController<T>(new ProtocolConfig<T>(debugListener, config), logger);
+            ProtocolListener<T> debugListener = new DebugProtocolListener<T>(listener, logger);
+            this.controller = new DebugController<T>(debugListener, config, logger);
         } else {
-            this.controller = new Controller<T>(config);
+            this.controller = new Controller<T>(listener, config);
         }
-
     }
 
-
+    private final List<T> sendDatas = new ArrayList<T>();
+    private final NavigableMap<Short, Packet<T>> sentPacketMap = new TreeMap<Short, Packet<T>>(IdComparator.instance);
+    private final NavigableMap<Short, Packet<T>> sentPacketMapOut = CollectionUtils.unmodifiableNavigableMap(sentPacketMap);
     private final PacketEntry<T> sentPacketOut = new PacketEntry<T>();
 
     /**
      * Convenience method does the same as {@link Protocol#send(Object) <code>send(null)</code>}.
+     * Typically used from a receiver in an unidirectional communication channel, where the receiver just acknowledges receipt of data.
      * @see Protocol#send(Object) send(null)
      */
     public synchronized Map.Entry<Short, Packet<T>> send() {
-        return send(null);
+        return send((T) null);
     }
 
     /**
      * Package the user-data, in order to transmit the user-data, acknowledge
      * received data and retransmit data (if {@link ProtocolConfig#setAutoRetransmit(boolean) retransmission is enabled}).
      * <br>
-     * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events may be fired before
-     * this method returns.
+     * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events
+     * and zero or more {@link ProtocolListener#shouldRetransmit(short, Object) retransmit} events
+     * may be fired before this method returns.
      *
      * @param data the user-data to package, if it's <code>null</code> no user-data will be contained in the package;
      *             the supplied user-data should not be modified afterwards by the user / application, as the data
-     *             is referenced internally by protocol and used for retransmission later on
+     *             is referenced internally by protocol and used for retransmission later on;
+     *             thus it's safest to clone the data before passing to this method
      * @return a <code>Map.Entry</code> containing the {@link Packet packaged user-data} and
      *          the <code>dataId</code> that was assigned to the user-data;
      *          the returned mapEntry should not be saved by the user,
@@ -125,17 +155,63 @@ public class Protocol<T> implements Comparator<Short> {
      */
     public synchronized Map.Entry<Short, Packet<T>> send(T data) {
         Packet<T> packet = controller.produce();
-
-        List<Metadata<T>> retransmits = controller.retransmit();
-        for (int i = 0, l = retransmits.size(); i < l; ++i)
-            controller.send(packet, retransmits.get(i));
-
-        if (data != null)
-            controller.send(packet, controller.produce(data));
+        sendDatas.clear();
+        sendDatas.add(data);
+        send(packet, sendDatas);
 
         sentPacketOut.packet = packet;
         sentPacketOut.id = data != null ? packet.getLastMetadata().getDataId() : null;
         return sentPacketOut;
+    }
+
+    /**
+     * Package the user-datas, in order to transmit the user-datas, acknowledge
+     * received data and retransmit data (if {@link ProtocolConfig#setAutoRetransmit(boolean) retransmission is enabled}).
+     * <br>
+     * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events
+     * and zero or more {@link ProtocolListener#shouldRetransmit(short, Object) retransmit} events
+     * may be fired before this method returns.
+     *
+     * @param datas the user-datas to package, if it's <code>null</code> no user-data will be contained in the package;
+     *             the supplied user-data should not be modified afterwards by the user / application, as the data
+     *             is referenced internally by protocol and used for retransmission later on;
+     *             thus it's safest to clone the data before passing to this method
+     * @return a <code>NavigableMap<Short, Packet<T>></code> containing a single {@link Packet package of all user-datas}
+     *          and the <code>dataIds</code> (in iteration order) that were assigned to the user-datas (in iteration order);
+     *          the returned map should not be saved by the user,
+     *          as its contents are invalidated next time one of the <code>send</code> methods is called
+     */
+    public synchronized NavigableMap<Short, Packet<T>> send(List<T> datas) {
+        Packet<T> packet = controller.produce();
+        send(packet, datas);
+
+        sentPacketMap.clear();
+        if (datas != null) {
+            for (int i = 0, l = packet.getMetadatas().size(); i < l; ++i) {
+                Metadata<T> metadata = packet.getMetadatas().get(i);
+                if (datas.contains(metadata.getData()))
+                    sentPacketMap.put(metadata.getDataId(), packet);
+            }
+        }
+        return sentPacketMapOut;
+    }
+
+    private void send(Packet<T> packet, List<T> datas) {
+        int dataSize = datas != null ? datas.size() : 0;
+        if (dataSize > Packet.MAX_DATAS_PER_PACKET)
+            throw new IndexOutOfBoundsException("Cannot add more than " + Packet.MAX_DATAS_PER_PACKET + " datas to packet!");
+
+        List<Metadata<T>> retransmits = controller.retransmit();
+        for (int i = 0, l = retransmits.size(); i < l && i + dataSize < Packet.MAX_DATAS_PER_PACKET; ++i)
+            controller.send(packet, retransmits.get(i));
+
+        if (datas != null) {
+            for (int i = 0, l = datas.size(); i < l; ++i) {
+                T data = datas.get(i);
+                if (data != null)
+                    controller.send(packet, controller.produce(data));
+            }
+        }
     }
 
     /**
@@ -151,8 +227,6 @@ public class Protocol<T> implements Comparator<Short> {
         Packet.<T>writeExternalStatic(packetEntry.getValue(), objectOutput);
         return packetEntry;
     }
-
-
 
     private final NavigableMap<Short, T> receivedDatas = new TreeMap<Short, T>(IdComparator.instance);
     private final NavigableMap<Short, T> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
@@ -171,7 +245,8 @@ public class Protocol<T> implements Comparator<Short> {
      *         the returned object should not be saved by the user,
      *         as its contents are invalidated next time one of the <code>receive</code> methods is called;
      *         the returned user-data should also not be modified afterwards by the user / application, as data is
-     *         referenced internally by the protocol and used for informing proper receipt of ordered data later on
+     *         referenced internally by the protocol and used for informing proper receipt of ordered data later on;
+     *         thus it's safest to clone the data received from this method
      */
     public synchronized NavigableMap<Short, T> receive(Packet<T> packet) {
         receivedDatas.clear();
@@ -186,7 +261,6 @@ public class Protocol<T> implements Comparator<Short> {
         return receivedDatasOut;
     }
 
-
     /**
      * Convenience method which reads the input of an {@link java.io.ObjectInput} with the help of
      * internally called {@link Protocol#receive(Packet) <code>receive(package)</code>}.
@@ -200,7 +274,6 @@ public class Protocol<T> implements Comparator<Short> {
         Packet<T> packet = Packet.<T>readExternalStatic(objectInput);
         return receive(packet);
     }
-
 
     /**
      * Compare <code>dataIds</code> against each other. The user <b>must not compare these ids</b> with built-in comparison

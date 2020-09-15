@@ -22,7 +22,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
     private final HashSet<Short> discardedKeys = new HashSet<Short>();
     private final HashSet<Metadata<Object>> discardedMetadatas = new HashSet<Metadata<Object>>();
 
-    private final ProtocolConfig<Object> config = new ProtocolConfig<Object>(null);
+    private final ProtocolConfig config = new ProtocolConfig();
 
     private AbstractMapControl<Object> control = new AbstractMapControl<Object>(config.getPacketQueueLimit(), config.getPacketOffsetLimit(),
             config.getPacketRetransmitLimit(), config.getPacketQueueTimeout()) {

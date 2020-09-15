@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(JUnitParamsRunner.class)
 public class SentMapControlTest extends AbstractMapControlTest {
 
-    protected SentMapControl<Object> handler = new SentMapControl<Object>(config.listener, config.getPacketQueueLimit(),
+    protected SentMapControl<Object> handler = new SentMapControl<Object>(null, config.getPacketQueueLimit(),
             config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
     public SentMapControlTest() {

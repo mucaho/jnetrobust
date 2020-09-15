@@ -19,7 +19,7 @@ import java.util.List;
 public class AbstractSynchronizationController {
     private final HOST hostMode;
     private final SynchronizationGUI gui;
-    private final ProtocolHost<Vector2D> host;
+    private final ProtocolHost host;
 
     AbstractSynchronizationController(HostInformation info) throws IOException {
         hostMode = info.hostMode;
@@ -27,7 +27,7 @@ public class AbstractSynchronizationController {
         gui = new SynchronizationGUI(info.hostMode);
         gui.setVisible(true);
 
-        host = new ProtocolHost<Vector2D>(info.hostMode.toString(), Vector2D.class, info.localAddress);
+        host = new ProtocolHost(info.hostMode.toString(), info.localAddress, Vector2D.class);
     }
 
     SynchronizationHandle register(HandleInformation info, ProtocolHost.DataListener<Vector2D>... additionalDataListeners) {

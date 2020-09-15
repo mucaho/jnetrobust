@@ -9,6 +9,7 @@ package com.github.mucaho.jnetrobust.util;
 
 import com.github.mucaho.jnetrobust.Protocol;
 import com.github.mucaho.jnetrobust.ProtocolConfig;
+import com.github.mucaho.jnetrobust.ProtocolListener;
 import com.github.mucaho.jnetrobust.control.Metadata;
 import com.github.mucaho.jnetrobust.controller.Packet;
 
@@ -41,11 +42,11 @@ public class TestHost<T> implements Runnable {
 
     public TestHost(TestHostListener<T> hostListener, TestHostDataGenerator<T> dataGenerator,
                     UnreliableQueue<Packet<T>> inQueue, UnreliableQueue<Packet<T>> outQueue,
-                    ProtocolConfig<T> config, String debugName) {
+                    ProtocolListener<T> protocolListener, ProtocolConfig config, String debugName) {
         this.debugName = debugName;
         this.hostListener = hostListener;
         this.dataGenerator = dataGenerator;
-        this.protocol = new Protocol<T>(config);
+        this.protocol = new Protocol<T>(protocolListener, config);
         this.inQueue = inQueue;
         this.outQueue = outQueue;
     }

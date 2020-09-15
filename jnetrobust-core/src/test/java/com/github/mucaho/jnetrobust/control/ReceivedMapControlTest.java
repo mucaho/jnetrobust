@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
 public class ReceivedMapControlTest extends AbstractMapControlTest {
-    protected static ReceivedMapControl<Object> handler = new ReceivedMapControl<Object>((short) 0, config.listener,
+    protected static ReceivedMapControl<Object> handler = new ReceivedMapControl<Object>((short) 0, null,
             config.getPacketQueueLimit(), config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1,
             config.getPacketQueueTimeout());
 

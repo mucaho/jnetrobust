@@ -44,7 +44,7 @@ public final class Packet<T> implements Freezable<Packet<T>> {
 
     void addLastMetadata(Metadata<T> metadata) {
         if (metadatas.size() >= MAX_DATAS_PER_PACKET)
-            throw new IndexOutOfBoundsException("Cannot add more than " + MAX_DATAS_PER_PACKET + " metadatas to packet.");
+            throw new IndexOutOfBoundsException("Cannot add more than " + MAX_DATAS_PER_PACKET + " metadatas to packet!");
 
         metadatas.addLast(metadata);
     }

@@ -11,7 +11,7 @@ import mockit.Deencapsulation;
 import com.github.mucaho.jnetrobust.ProtocolConfig;
 
 public abstract class AbstractMapControlTest {
-    protected final static ProtocolConfig<Object> config = new ProtocolConfig<Object>(null);
+    protected final static ProtocolConfig config = new ProtocolConfig();
     protected static short dataId = Short.MIN_VALUE;
     protected static AbstractMetadataMap<Object> dataMap;
 
