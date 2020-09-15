@@ -30,7 +30,7 @@ public class ReceivedBitsControlTest {
     public final void testAddToReceivedInt(long preBits, int inDiff, long postBits) {
         ShiftableBitSet actualBitSet = new ShiftableBitSet(preBits);
         ShiftableBitSet expectedBitSet = new ShiftableBitSet(postBits);
-        ReceivedBitsControl handler = new ReceivedBitsControl(null);
+        ReceivedBitsControl handler = new ReceivedBitsControl();
         Deencapsulation.setField(handler, "receivedRemoteBits", actualBitSet);
 
         String debug = "";

@@ -18,7 +18,7 @@ import java.io.ObjectOutput;
 import java.util.*;
 
 public final class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
-    private transient long latestTransmissionTime = System.currentTimeMillis();
+    private transient long newestTransmissionTime = System.currentTimeMillis();
 
     private Short dataId;
     private final transient NavigableSet<Short> dataIds = new TreeSet<Short>();
@@ -79,12 +79,12 @@ public final class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
 
 
     void updateTime() {
-        latestTransmissionTime = System.currentTimeMillis();
+        newestTransmissionTime = System.currentTimeMillis();
     }
 
     @Override
     public long getTime() {
-        return latestTransmissionTime;
+        return newestTransmissionTime;
     }
 
     @Override

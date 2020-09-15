@@ -77,7 +77,7 @@ public class UnidirectionalMain {
                 }
 
                 // send acknowledgements of received messages
-                receiverHandle.send(null);
+                receiverHandle.send();
             } catch (Exception e) {
                 e.printStackTrace();
             }

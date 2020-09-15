@@ -122,10 +122,11 @@ public class Protocol<T> implements Comparator<Short> {
         }
     }
 
-    private final List<T> sendDatas = new ArrayList<T>();
-    private final NavigableMap<Short, Packet<T>> sentPacketMap = new TreeMap<Short, Packet<T>>(IdComparator.instance);
-    private final NavigableMap<Short, Packet<T>> sentPacketMapOut = CollectionUtils.unmodifiableNavigableMap(sentPacketMap);
-    private final PacketEntry<T> sentPacketOut = new PacketEntry<T>();
+    private final List<T> datasIn = new ArrayList<T>();
+    private final List<Short> dataIdsOut = new ArrayList<Short>();
+    private final List<Short> dataIdsOutOut = Collections.unmodifiableList(dataIdsOut);
+    private final PacketEntry<Short, T> packetOut = new PacketEntry<Short, T>();
+    private final PacketEntry<List<Short>, T> packetsOut = new PacketEntry<List<Short>, T>();
 
     /**
      * Convenience method does the same as {@link Protocol#send(Object) <code>send(null)</code>}.
@@ -138,7 +139,7 @@ public class Protocol<T> implements Comparator<Short> {
 
     /**
      * Package the user-data, in order to transmit the user-data, acknowledge
-     * received data and retransmit data (if {@link ProtocolConfig#setAutoRetransmit(boolean) retransmission is enabled}).
+     * received data and retransmit data (if {@link ProtocolConfig#getAutoRetransmitMode() automatic retransmission} is enabled).
      * <br>
      * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events
      * and zero or more {@link ProtocolListener#shouldRetransmit(short, Object) retransmit} events
@@ -155,45 +156,57 @@ public class Protocol<T> implements Comparator<Short> {
      */
     public synchronized Map.Entry<Short, Packet<T>> send(T data) {
         Packet<T> packet = controller.produce();
-        sendDatas.clear();
-        sendDatas.add(data);
-        send(packet, sendDatas);
+        datasIn.clear();
+        if (data != null)
+            datasIn.add(data);
+        send(packet, datasIn);
 
-        sentPacketOut.packet = packet;
-        sentPacketOut.id = data != null ? packet.getLastMetadata().getDataId() : null;
-        return sentPacketOut;
+        packetOut.packet = packet;
+        packetOut.key = data != null ? packet.getLastMetadata().getDataId() : null;
+        return packetOut;
     }
 
     /**
      * Package the user-datas, in order to transmit the user-datas, acknowledge
-     * received data and retransmit data (if {@link ProtocolConfig#setAutoRetransmit(boolean) retransmission is enabled}).
+     * received data and retransmit data (if {@link ProtocolConfig#getAutoRetransmitMode() automatic retransmission} is enabled).
      * <br>
      * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events
      * and zero or more {@link ProtocolListener#shouldRetransmit(short, Object) retransmit} events
      * may be fired before this method returns.
+     * <br>
+     * Note that no more than {@link Packet#MAX_DATAS_PER_PACKET} user-datas may be sent at once using this method.
+     * Furthermore, as a rule-of-thumb, collections of data that semantically belong to the same version / time frame should
+     * be contained in the user-data itself, rather than being packaged by this method directly.
+     * Thus this method is well suited for sending a collection of user-data that has some form of version / time frame / causal
+     * ordering / natural ordering between its elements.
      *
      * @param datas the user-datas to package, if it's <code>null</code> no user-data will be contained in the package;
      *             the supplied user-data should not be modified afterwards by the user / application, as the data
      *             is referenced internally by protocol and used for retransmission later on;
      *             thus it's safest to clone the data before passing to this method
-     * @return a <code>NavigableMap<Short, Packet<T>></code> containing a single {@link Packet package of all user-datas}
+     * @return a <code>Map.Entry</code> containing a single {@link Packet package of all user-datas}
      *          and the <code>dataIds</code> (in iteration order) that were assigned to the user-datas (in iteration order);
-     *          the returned map should not be saved by the user,
+     *          the returned mapEntry should not be saved by the user,
      *          as its contents are invalidated next time one of the <code>send</code> methods is called
+     * @throws IndexOutOfBoundsException an exception if the amount of <code>datas</code> to send
+     *                                      is larger than {@link Packet#MAX_DATAS_PER_PACKET}
      */
-    public synchronized NavigableMap<Short, Packet<T>> send(List<T> datas) {
+    public synchronized Map.Entry<List<Short>, Packet<T>> send(List<T> datas) {
         Packet<T> packet = controller.produce();
         send(packet, datas);
 
-        sentPacketMap.clear();
+        dataIdsOut.clear();
         if (datas != null) {
             for (int i = 0, l = packet.getMetadatas().size(); i < l; ++i) {
                 Metadata<T> metadata = packet.getMetadatas().get(i);
                 if (datas.contains(metadata.getData()))
-                    sentPacketMap.put(metadata.getDataId(), packet);
+                    dataIdsOut.add(metadata.getDataId());
             }
         }
-        return sentPacketMapOut;
+
+        packetsOut.packet = packet;
+        packetsOut.key = dataIdsOutOut;
+        return packetsOut;
     }
 
     private void send(Packet<T> packet, List<T> datas) {
@@ -228,16 +241,32 @@ public class Protocol<T> implements Comparator<Short> {
         return packetEntry;
     }
 
+    /**
+     * Convenience method which writes the output of internally called {@link Protocol#send(List) <code>send(datas)</code>}
+     * to a {@link java.io.ObjectOutput}.
+     *
+     * @param objectOutput the object output to write the packaged user-data to
+     * @throws IOException  if there was an error writing to the <code>ObjectOutput</code>
+     * @see Protocol#send(List) <code>send(datas)
+     */
+    public synchronized Map.Entry<List<Short>, Packet<T>> send(List<T> datas, ObjectOutput objectOutput) throws IOException {
+        Map.Entry<List<Short>, Packet<T>> packetEntry = send(datas);
+        Packet.<T>writeExternalStatic(packetEntry.getValue(), objectOutput);
+        return packetEntry;
+    }
+
     private final NavigableMap<Short, T> receivedDatas = new TreeMap<Short, T>(IdComparator.instance);
     private final NavigableMap<Short, T> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
 
     /**
      * Unpackage the packaged user-data, in order to retrieve the user-data that was received, acknowledge sent data and
-     * receive retransmitted data (if {@link ProtocolConfig#setAutoRetransmit(boolean) retransmission is enabled}).
+     * receive retransmitted data (if {@link ProtocolConfig#getAutoRetransmitMode() automatic retransmission} is enabled).
      * <br>
      * Zero or more {@link ProtocolListener#handleOrderedData(short, Object) orderedData},
-     * {@link ProtocolListener#handleUnorderedData(short, Object) unorderedData} or
-     * {@link ProtocolListener#handleAckedData(short, Object) ackedData} events may be fired before this method returns.
+     * {@link ProtocolListener#handleUnorderedData(short, Object) unorderedData},
+     * {@link ProtocolListener#handleAckedData(short, Object) ackedData} or
+     * {@link ProtocolListener#handleNewestData(short, Object) newestData}
+     * events may be fired before this method returns.
      *
      * @param packet the packaged-user data to unpackage
      * @return a <code>NavigableMap</code> containing all received (directly received or received by retransmission)
@@ -315,17 +344,16 @@ public class Protocol<T> implements Comparator<Short> {
         return controller.getRTTVariation();
     }
 
-    private static class PacketEntry<T> implements Map.Entry<Short, Packet<T>> {
-        private Short id;
+    private static class PacketEntry<K, T> implements Map.Entry<K, Packet<T>> {
+        private K key;
         private Packet<T> packet;
 
         private PacketEntry() {
         }
 
-
         @Override
-        public Short getKey() {
-            return id;
+        public K getKey() {
+            return key;
         }
 
         @Override

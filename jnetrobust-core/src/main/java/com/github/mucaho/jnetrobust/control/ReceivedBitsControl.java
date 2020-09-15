@@ -7,9 +7,9 @@
 
 package com.github.mucaho.jnetrobust.control;
 
+import com.github.mucaho.jnetrobust.util.IdComparator;
 import com.github.mucaho.jnetrobust.util.ShiftableBitSet;
 
-import java.util.Comparator;
 import java.util.NavigableSet;
 
 import static com.github.mucaho.jnetrobust.util.BitConstants.OFFSET;
@@ -20,22 +20,17 @@ public class ReceivedBitsControl {
      * [remoteTransmissionId-32]-[remoteTransmissionId-31]-...-[remoteTransmissionId-1]
      */
     private final ShiftableBitSet receivedRemoteBits = new ShiftableBitSet();
-    private final Comparator<Short> comparator;
-
-    public ReceivedBitsControl(Comparator<Short> comparator) {
-        this.comparator = comparator;
-    }
 
     public long getReceivedRemoteBits() {
         return this.receivedRemoteBits.get();
     }
 
-    public void addToReceived(NavigableSet<Short> remoteTransmissionIds, final Short remoteTransmissionId) {
+    public void addToReceived(NavigableSet<Short> remoteTransmissionIds, short remoteTransmissionId) {
         int diff;
 
         Short id = remoteTransmissionIds.isEmpty() ? null : remoteTransmissionIds.first();
         while (id != null) {
-            diff = comparator.compare(remoteTransmissionId, id);
+            diff = IdComparator.instance.compare(remoteTransmissionId, id);
             addToReceived(diff);
 
             id = remoteTransmissionIds.higher(id);

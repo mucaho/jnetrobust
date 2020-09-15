@@ -32,7 +32,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
         }
 
         @Override
-        protected void discardEntry(short key) {
+        protected void discardEntry(Short key) {
             discardedKeys.addAll(dataMap.getValue(key).getTransmissionIds());
             discardedMetadatas.add(dataMap.removeAll(key));
         }
@@ -44,7 +44,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
         }
 
         @Override
-        protected void discardEntryKey(short key) {
+        protected void discardEntryKey(Short key) {
             discardedKeys.add(key);
             Metadata<Object> metadata = dataMap.remove(key);
             if (metadata != null && metadata.getTransmissionIds().isEmpty()) {

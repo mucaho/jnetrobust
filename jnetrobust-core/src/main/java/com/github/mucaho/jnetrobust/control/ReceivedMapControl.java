@@ -7,6 +7,8 @@
 
 package com.github.mucaho.jnetrobust.control;
 
+import com.github.mucaho.jnetrobust.util.IdComparator;
+
 public class ReceivedMapControl<T> extends AbstractMapControl<T> {
     public interface TransmissionOrderListener<T> {
         void handleOrderedData(short dataId, T orderedData);
@@ -16,25 +18,24 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
     private final TransmissionOrderListener<T> listener;
     private short nextDataId;
 
-    public ReceivedMapControl(short dataId, TransmissionOrderListener<T> listener, int maxEntries, int maxEntryOffset,
+    public ReceivedMapControl(short initialDataId, TransmissionOrderListener<T> listener, int maxEntries, int maxEntryOffset,
                               int maxEntryOccurrences, long maxEntryTimeout) {
         super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
         this.listener = listener;
-        this.nextDataId = (short) (dataId + 1);
+        this.nextDataId = (short) (initialDataId + 1);
     }
 
     @Override
     protected AbstractMetadataMap<T> createMap() {
         return new ReceivedMetadataMap<T>() {
             Metadata<T> put(Metadata<T> metadata) {
-                if (idComparator.compare(metadata.getDataId(), nextDataId) >= 0) {
+                if (IdComparator.instance.compare(metadata.getDataId(), nextDataId) >= 0) {
                     return super.put(metadata);
                 }
                 return null;
             }
         };
     }
-
 
     public void addToReceived(Metadata<T> metadata) {
         // add original to received map
@@ -58,8 +59,8 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected void discardEntry(short key) {
-        nextDataId = idComparator.compare((short) (key + 1), nextDataId) > 0 ?
+    protected void discardEntry(Short key) {
+        nextDataId = IdComparator.instance.compare((short) (key + 1), nextDataId) > 0 ?
                 (short) (key + 1) : nextDataId;
         notifyUnordered(dataMap.removeAll(key));
     }
@@ -70,16 +71,16 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected void discardEntryKey(short key) {
+    protected void discardEntryKey(Short key) {
         discardEntry(key);
     }
 
-    private void notifyUnordered(Metadata<T> unorderedMetadata) {
+    protected void notifyUnordered(Metadata<T> unorderedMetadata) {
         if (unorderedMetadata != null)
             listener.handleUnorderedData(unorderedMetadata.getDataId(), unorderedMetadata.getData());
     }
 
-    private void notifyOrdered(Metadata<T> orderedMetadata) {
+    protected void notifyOrdered(Metadata<T> orderedMetadata) {
         if (orderedMetadata != null)
             listener.handleOrderedData(orderedMetadata.getDataId(), orderedMetadata.getData());
     }

@@ -49,9 +49,22 @@ public class ProtocolHost {
             this.protocolId = protocolId;
         }
 
-        public void send(T data) throws IOException {
-            host.send(protocolId, data);
+        private List<T> sendDatas = new ArrayList<T>();
+
+        public void send() throws IOException {
+            sendDatas.clear();
+            host.send(protocolId, sendDatas);
         }
+        public void send(T data) throws IOException {
+            sendDatas.clear();
+            sendDatas.add(data);
+
+            host.send(protocolId, sendDatas);
+        }
+        public void send(List<T> datas) throws IOException {
+            host.send(protocolId, datas);
+        }
+
         public T receive() throws IOException, ClassNotFoundException {
             host.receive();
             return host.receive(protocolId);
@@ -112,6 +125,15 @@ public class ProtocolHost {
                     orderedQueues.put(protocolId, orderedQueue);
                 }
                 orderedQueue.offer(orderedData);
+
+                super.handleOrderedData(dataId, orderedData);
+            }
+
+            @Override
+            public void handleNewestData(short dataId, T newestData) {
+                newestDatas.put(protocolId, newestData);
+
+                super.handleNewestData(dataId, newestData);
             }
         };
         Protocol<T> protocol;
@@ -125,19 +147,18 @@ public class ProtocolHost {
     }
 
     @SuppressWarnings("unchecked")
-    private <T> void send(ProtocolId protocolId, T data) throws IOException {
+    private <T> void send(ProtocolId protocolId, List<T> datas) throws IOException {
         buffer.clear();
         buffer.put(protocolId.topic);
         bufferOutput.setBuffer(buffer);
         Protocol<T> protocol = (Protocol<T>) protocols.get(protocolId);
-        protocol.send(data, objectOutput);
+        protocol.send(datas, objectOutput);
         bufferOutput.flush();
 
         buffer.flip();
         channel.send(buffer, protocolId.remoteAddress);
     }
 
-    private final Map<ProtocolId, Short> newestIds = new HashMap<ProtocolId, Short>();
     private final Map<ProtocolId, Object> newestDatas = new HashMap<ProtocolId, Object>();
     private final Map<ProtocolId, Queue<?>> receivedQueues = new HashMap<ProtocolId, Queue<?>>();
     private final Map<ProtocolId, Queue<?>> orderedQueues = new HashMap<ProtocolId, Queue<?>>();
@@ -153,10 +174,8 @@ public class ProtocolHost {
 
             Protocol<?> protocol = protocols.get(protocolId);
             NavigableMap<Short, ?> receivedEntries = protocol.receive(objectInput);
-            for (Map.Entry<Short, ?> receivedEntry: receivedEntries.entrySet()) {
-                Short receivedId = receivedEntry.getKey();
+            for (Map.Entry<Short, ?> receivedEntry : receivedEntries.entrySet()) {
                 Object receivedData = receivedEntry.getValue();
-
                 {
                     Queue<Object> receivedQueue = (Queue<Object>) receivedQueues.get(protocolId);
                     if (receivedQueue == null) {
@@ -164,13 +183,6 @@ public class ProtocolHost {
                         receivedQueues.put(protocolId, receivedQueue);
                     }
                     receivedQueue.offer(receivedData);
-                }
-                {
-                    Short newestId = newestIds.get(protocolId);
-                    if (newestId == null || protocol.compare(receivedId, newestId) > 0) {
-                        newestIds.put(protocolId, receivedId);
-                        newestDatas.put(protocolId, receivedData);
-                    }
                 }
             }
 

@@ -16,6 +16,12 @@ import com.github.mucaho.jnetrobust.util.IdComparator;
  * Note that there are also static, global configuration options which apply to all protocol instances.
  */
 public final class ProtocolConfig {
+    public enum AutoRetransmitMode {
+        ALWAYS,
+        NEVER,
+        NEWEST
+    }
+
     /**
      * The constant MAX_PACKET_QUEUE_LIMIT.
      */
@@ -30,9 +36,24 @@ public final class ProtocolConfig {
     public static final int MAX_PACKET_RETRANSMIT_LIMIT = Packet.MAX_DATAS_PER_PACKET;
 
     /**
-     * Boolean indicating whether the protocol should retransmit data. Defaults to <code>true</code>.
+     * Enum indicating in which case the protocol should automatically retransmit data.<br />
+     * Note that no matter how this setting is configured, the user still has manual fine-grain control using the
+     * {@link ProtocolListener#shouldRetransmit(short, Object) appropriate listener method}.
+     * <br /><br />
+     * With {@link AutoRetransmitMode#ALWAYS} the protocol will retransmit all potentially lost data automatically,
+     * such that it can be reliably and orderly received at the communication partner.
+     * Usually appropriate setting when sending actions that must not get lost on the way.<br />
+     * With {@link AutoRetransmitMode#NEWEST} the protocol will only retransmit the most recently sent user-data automatically,
+     * which may have been potentially lost during transmission.
+     * Usually appropriate setting when sending state where its newest version must not get lost on the way.<br />
+     * With {@link AutoRetransmitMode#NEVER} the protocol will not retransmit any data on its own automatically,
+     * giving no guarantees to reliable or in-order delivery out-of-the-box.
+     * Usually appropriate setting when the user needs complete control using the
+     * {@link ProtocolListener#shouldRetransmit(short, Object) listener method}.<br />
+     * <br />
+     * Defaults to <code>ALWAYS</code>.
      */
-    private boolean autoRetransmit = true;
+    private AutoRetransmitMode autoRetransmitMode = AutoRetransmitMode.ALWAYS;
     /**
      * Positive number indicating how many <code>unacked</code> or <code>unordered</code> packaged user-datas should be
      * queued at maximum until they can be resolved. Defaults to {@link ProtocolConfig#MAX_PACKET_QUEUE_LIMIT}.
@@ -102,7 +123,7 @@ public final class ProtocolConfig {
      */
     public ProtocolConfig(ProtocolConfig config) {
         super();
-        this.autoRetransmit = config.autoRetransmit;
+        this.autoRetransmitMode = config.autoRetransmitMode;
         this.packetQueueLimit = config.packetQueueLimit;
         this.packetOffsetLimit = config.packetOffsetLimit;
         this.packetQueueTimeout = config.packetQueueTimeout;
@@ -202,24 +223,12 @@ public final class ProtocolConfig {
         this.packetRetransmitLimit = packetRetransmitLimit;
     }
 
-    /**
-     * Gets a boolean indicating whether the protocol should automatically retransmit data.
-     * Defaults to <code>true</code>.
-     *
-     * @return boolean whether to retransmit or not
-     */
-    public boolean autoRetransmit() {
-        return autoRetransmit;
+    public AutoRetransmitMode getAutoRetransmitMode() {
+        return autoRetransmitMode;
     }
 
-    /**
-     * Sets a boolean indicating whether the protocol should automatically retransmit data.
-     * Defaults to <code>true</code>.
-     *
-     * @param autoRetransmit boolean whether to automatically retransmit or not
-     */
-    public void setAutoRetransmit(boolean autoRetransmit) {
-        this.autoRetransmit = autoRetransmit;
+    public void setAutoRetransmitMode(AutoRetransmitMode autoRetransmitMode) {
+        this.autoRetransmitMode = autoRetransmitMode;
     }
 
     /**

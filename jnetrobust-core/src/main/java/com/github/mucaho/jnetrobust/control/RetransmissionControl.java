@@ -7,6 +7,8 @@
 
 package com.github.mucaho.jnetrobust.control;
 
+import com.github.mucaho.jnetrobust.ProtocolConfig;
+import com.github.mucaho.jnetrobust.util.IdComparator;
 import com.github.mucaho.jnetrobust.util.TimeoutHandler;
 
 import java.util.ArrayList;
@@ -14,7 +16,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.NavigableSet;
 
-public class ResponseControl<T> {
+public class RetransmissionControl<T> {
     public interface RetransmissionListener<T> {
         Boolean shouldRetransmit(short dataId, T data);
     }
@@ -24,29 +26,39 @@ public class ResponseControl<T> {
 
     private final NavigableSet<Metadata<T>> sentMetadatas;
 
-    private final boolean autoRetransmit;
+    private final ProtocolConfig.AutoRetransmitMode autoRetransmitMode;
 
     private final List<Metadata<T>> retransmissions = new ArrayList<Metadata<T>>();
     private final List<Metadata<T>> retransmissionsOut = Collections.unmodifiableList(retransmissions);
 
-    public ResponseControl(NavigableSet<Metadata<T>> sentMetadatas, RetransmissionListener<T> listener, boolean autoRetransmit) {
+    public RetransmissionControl(NavigableSet<Metadata<T>> sentMetadatas,
+                                 RetransmissionListener<T> listener,
+                                 ProtocolConfig.AutoRetransmitMode autoRetransmitMode) {
         this.sentMetadatas = sentMetadatas;
         this.listener = listener;
-        this.autoRetransmit = autoRetransmit;
+        this.autoRetransmitMode = autoRetransmitMode;
     }
 
     public void resetPendingTime(Metadata<T> sentMetadatas) {
         sentMetadatas.updateTime();
     }
 
-    public List<Metadata<T>> updatePendingTime(long maxWaitTime) {
+    public List<Metadata<T>> updatePendingTime(long maxWaitTime, short newestDataId) {
         retransmissions.clear();
 
         List<Metadata<T>> potentialRetransmits = sentDataTimeoutHandler.filterTimedOut(sentMetadatas, maxWaitTime);
         for (int i = 0, l = potentialRetransmits.size(); i < l; ++i) {
-            Boolean doIt = determineRetransmit(potentialRetransmits.get(i));
-            if (Boolean.TRUE.equals(doIt) || (doIt == null && autoRetransmit))
-                retransmissions.add(potentialRetransmits.get(i));
+            Metadata<T> potentialRetransmit = potentialRetransmits.get(i);
+
+            Boolean userOk = determineRetransmit(potentialRetransmit);
+            boolean doIt = Boolean.TRUE.equals(userOk);
+            doIt = doIt || userOk == null
+                    && autoRetransmitMode == ProtocolConfig.AutoRetransmitMode.ALWAYS;
+            doIt = doIt || userOk == null
+                    && autoRetransmitMode == ProtocolConfig.AutoRetransmitMode.NEWEST
+                    && IdComparator.instance.equals(potentialRetransmit.getDataId(), newestDataId);
+            if (doIt)
+                retransmissions.add(potentialRetransmit);
         }
 
         return retransmissionsOut;

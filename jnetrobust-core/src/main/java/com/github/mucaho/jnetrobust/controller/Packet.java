@@ -27,7 +27,7 @@ public final class Packet<T> implements Freezable<Packet<T>> {
 
     private LinkedList<Metadata<T>> metadatas = new LinkedList<Metadata<T>>();
     private transient List<Metadata<T>> metadatasOut = Collections.unmodifiableList(metadatas);
-    private short transmissionAck;
+    private Short transmissionAck;
     private long precedingTransmissionAcks;
 
     public List<Metadata<T>> getMetadatas() {
@@ -61,11 +61,11 @@ public final class Packet<T> implements Freezable<Packet<T>> {
         return metadatas.remove(i);
     }
 
-    public short getTransmissionAck() {
+    public Short getTransmissionAck() {
         return transmissionAck;
     }
 
-    void setTransmissionAck(short ack) {
+    void setTransmissionAck(Short ack) {
         this.transmissionAck = ack;
     }
 

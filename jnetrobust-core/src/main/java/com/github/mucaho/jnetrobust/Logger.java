@@ -18,6 +18,7 @@ public abstract class Logger {
     public static enum LoggingEvent {
         SEND("Data sent"),
         RECEIVE("Data received"),
+        NEWEST("Newest data received"),
         SEND_RETRANSMISSION("Data retransmitted"),
         RETRANSMISSION("Data needs to be retransmitted"),
         ORDERED("Data received ordered"),

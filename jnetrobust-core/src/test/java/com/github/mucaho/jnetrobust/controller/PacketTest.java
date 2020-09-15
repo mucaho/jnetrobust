@@ -113,10 +113,10 @@ public class PacketTest {
         original.setTransmissionAck((short) -1);
         original.setPrecedingTransmissionAcks(-1);
         original.addLastMetadata(new Metadata<Object>());
-        assertEquals("Original ack did change", (short) -1, original.getTransmissionAck());
+        assertEquals("Original ack did change", (short) -1, original.getTransmissionAck().shortValue());
         assertEquals("Original lastAck did change", -1, original.getPrecedingTransmissionAcks());
         assertEquals("Original metadatas size did change", 2, original.getMetadatas().size());
-        assertEquals("Cloned ack did not change", ack.shortValue(), clone.getTransmissionAck());
+        assertEquals("Cloned ack did not change", ack.shortValue(), clone.getTransmissionAck().shortValue());
         assertEquals("Cloned lastAck did not change", lastAcks.intValue(), clone.getPrecedingTransmissionAcks());
         assertEquals("Cloned datas size did not change", 1, clone.getMetadatas().size());
     }

@@ -31,7 +31,7 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
         return new SentMetadataMap<T>();
     }
 
-    public void addToSent(short transmissionId, Metadata<T> metadata) {
+    public void addToSent(Short transmissionId, Metadata<T> metadata) {
         // add to pending map
         dataMap.put(transmissionId, metadata);
 
@@ -39,7 +39,7 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
         discardEntries();
     }
 
-    public void removeFromSent(short transmissionId, long precedingTransmissionIds) {
+    public void removeFromSent(Short transmissionId, long precedingTransmissionIds) {
         // remove multiple (oldest until newest) from pending map
         removeFromSentOnBits(transmissionId, precedingTransmissionIds);
 
@@ -60,7 +60,7 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected void discardEntry(short key) {
+    protected void discardEntry(Short key) {
         notifyNotAcked(dataMap.removeAll(key));
     }
 
@@ -70,7 +70,7 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected void discardEntryKey(short key) {
+    protected void discardEntryKey(Short key) {
         Metadata<T> shrankMetadata = dataMap.remove(key);
         if (shrankMetadata != null && shrankMetadata.getTransmissionIds().isEmpty())
             notifyNotAcked(shrankMetadata);

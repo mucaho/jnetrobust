@@ -15,7 +15,6 @@ public class DebugProtocolListener<T> extends ProtocolListener<T> {
     private final Logger logger;
     private final ProtocolListener<T> delegate;
 
-
     public DebugProtocolListener(ProtocolListener<T> delegate, Logger logger) {
         this.logger = logger;
         this.delegate = delegate;
@@ -47,6 +46,13 @@ public class DebugProtocolListener<T> extends ProtocolListener<T> {
         logger.log(Logger.LoggingEvent.NOTACKED.toString(), String.valueOf(dataId),
                 unackedData != null ? unackedData.toString() : "null");
         delegate.handleUnackedData(dataId, unackedData);
+    }
+
+    @Override
+    public void handleNewestData(short dataId, T newestData) {
+        logger.log(Logger.LoggingEvent.NEWEST.toString(), String.valueOf(dataId),
+                newestData != null ? newestData.toString() : "null");
+        delegate.handleNewestData(dataId, newestData);
     }
 
     @Override

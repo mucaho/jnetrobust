@@ -10,6 +10,7 @@ import com.github.mucaho.jnetrobust.example.ProtocolHost;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 
 /**
  * This is the most basic example.
@@ -34,8 +35,7 @@ public class BidirectionalMain {
 
 
         // send from A
-        protocolHandleA.send("Hi!");
-        protocolHandleA.send("How you doing?");
+        protocolHandleA.send(Arrays.asList("Hi!", "How you doing?"));
 
         System.out.println();
         Thread.sleep(100);

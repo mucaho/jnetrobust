@@ -7,16 +7,17 @@
 
 package com.github.mucaho.jnetrobust;
 
+import com.github.mucaho.jnetrobust.control.NewestDataControl.NewestDataListener;
 import com.github.mucaho.jnetrobust.control.SentMapControl.TransmissionSuccessListener;
 import com.github.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderListener;
-import com.github.mucaho.jnetrobust.control.ResponseControl.RetransmissionListener;
+import com.github.mucaho.jnetrobust.control.RetransmissionControl.RetransmissionListener;
 
 /**
  * The listener which will be notified about specific {@link Protocol protocol} events.
  * @param <T> the user data type
  */
 public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
-        TransmissionOrderListener<T>, RetransmissionListener<T> {
+        TransmissionOrderListener<T>, RetransmissionListener<T>, NewestDataListener<T> {
 
     /**
      * This protocol instance received data in the same order it was sent from another protocol instance.
@@ -57,9 +58,18 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
     }
 
     /**
+     * This protocol instance received the newest (latest / most recent) data from another protocol instance.
+     * @param dataId        the <code>id</code> of the data
+     * @param newestData    the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
+     */
+    @Override
+    public void handleNewestData(short dataId, T newestData) {
+    }
+
+    /**
      * This protocol instance has data that needs to be retransmitted.
      * The user can decide whether the protocol should retransmit the data or not on a case-by-case basis,
-     * or let the protocol decide in general based on the {@link ProtocolConfig#autoRetransmit() autoRetransmit} setting.
+     * or let the protocol decide in general based on the {@link ProtocolConfig#getAutoRetransmitMode() AutoRetransmitMode}.
      * <br />
      * Note that by disabling automatic retransmission or purposefully denying retransmission in some cases, the total
      * ordering of data on the receiver end can no longer be guaranteed.
@@ -68,21 +78,24 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
      * the {@link Protocol#send(Object) protocol's send} method.
      * <br /><br />
      * The following table summarizes whether the retransmission will occur based on the
-     * {@link ProtocolConfig#autoRetransmit() autoRetransmit setting} and the user supplied {@code return Boolean value}.
+     * {@link ProtocolConfig#getAutoRetransmitMode() AutoRetransmitMode setting} and
+     * the user supplied {@code return Boolean value}.
      * <pre>
-     * +-----------------------------+------+-------+
-     * |            \ autoRetransmit | true | false |
-     * |             \               |      |       |
-     * | return value \              |      |       |
-     * +-----------------------------+------+-------+
-     * |     null                    |   Y  |   N   |
-     * +-----------------------------+------+-------+
-     * |     true                    |   Y  |   Y   |
-     * +-----------------------------+------+-------+
-     * |     false                   |   N  |   N   |
-     * +-----------------------------+------+-------+
+     *      +---------------------------------+--------+--------+-------+
+     *      |            \ autoRetransmitMode | ALWAYS | NEWEST | NEVER |
+     *      |             \                   |        |        |       |
+     *      | return value \                  |        |        |       |
+     *      +---------------------------------+--------+--------+-------+
+     *      |     null                        |    Y   |   Y/N* |   N   |
+     *      +---------------------------------+--------+--------+-------+
+     *      |     true                        |    Y   |    Y   |   Y   |
+     *      +---------------------------------+--------+--------+-------+
+     *      |     false                       |    N   |    N   |   N   |
+     *      +---------------------------------+--------+--------+-------+
      * </pre>
-
+     * * In case of <code>NEWEST</code> the data is only automatically retransmitted if it was the most recent user-data
+     * encountered so far.
+     *
      * @param dataId    the <code>id</code> of the data
      * @param data      the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      * @return          a <code>null, false or true Boolean</code>, indicating the whether the data should be retransmitted

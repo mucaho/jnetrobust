@@ -16,7 +16,35 @@ public final class IdComparator implements Comparator<Short> {
 
     @Override
     public final int compare(Short seq1, Short seq2) {
+        return compare(seq1.shortValue(), seq2.shortValue());
+    }
+
+    public final int compare(Short seq1, short seq2) {
+        return compare(seq1.shortValue(), seq2);
+    }
+
+    public final int compare(short seq1, Short seq2) {
+        return compare(seq1, seq2.shortValue());
+    }
+
+    public final int compare(short seq1, short seq2) {
         return difference(seq1 - Short.MIN_VALUE, seq2 - Short.MIN_VALUE, MAX_SEQUENCE);
+    }
+
+    public final boolean equals(Short seq1, Short seq2) {
+        return equals(seq1.shortValue(), seq2.shortValue());
+    }
+
+    public final boolean equals(Short seq1, short seq2) {
+        return equals(seq1.shortValue(), seq2);
+    }
+
+    public final boolean equals(short seq1, Short seq2) {
+        return equals(seq1, seq2.shortValue());
+    }
+
+    public final boolean equals(short seq1, short seq2) {
+        return seq1 == seq2;
     }
 
     /*

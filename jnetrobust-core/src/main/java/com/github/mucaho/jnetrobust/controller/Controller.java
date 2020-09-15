@@ -17,21 +17,24 @@ import java.util.List;
 
 public class Controller<T> {
     private short dataId = Short.MIN_VALUE;
-    private final ReceivedMapControl<T> receivedMapControl;
-
     private short localTransmissionId = Short.MIN_VALUE;
     private final SentMapControl<T> sentMapControl;
 
     private short remoteTransmissionId = Short.MIN_VALUE;
+    private final ReceivedMapControl<T> receivedMapControl;
     private final ReceivedBitsControl receivedBitsControl;
 
     private final RTTHandler rttHandler;
+    private final RetransmissionControl<T> retransmissionControl;
 
-    private final ResponseControl<T> responseControl;
+    private final NewestDataControl<T> newestDataControl;
 
     public Controller(ProtocolListener<T> listener, ProtocolConfig config) {
+
+        // sending side
+
         sentMapControl = new SentMapControl<T>(listener, config.getPacketQueueLimit(),
-                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout()) {
+                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit(), config.getPacketQueueTimeout()) {
             @Override
             protected void notifyAcked(Metadata<T> ackedMetadata, boolean directlyAcked) {
                 if (ackedMetadata != null && directlyAcked)
@@ -41,13 +44,16 @@ public class Controller<T> {
             }
         };
 
-        receivedBitsControl = new ReceivedBitsControl(IdComparator.instance);
-        receivedMapControl = new ReceivedMapControl<T>(dataId, listener, config.getPacketQueueLimit(),
-                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
-
         rttHandler = new RTTHandler(config.getK(), config.getG());
+        retransmissionControl = new RetransmissionControl<T>(sentMapControl.getValues(), listener, config.getAutoRetransmitMode());
 
-        responseControl = new ResponseControl<T>(sentMapControl.getValues(), listener, config.autoRetransmit());
+        // receiving side
+
+        receivedBitsControl = new ReceivedBitsControl();
+        receivedMapControl = new ReceivedMapControl<T>(Short.MIN_VALUE, listener, config.getPacketQueueLimit(),
+                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit(), config.getPacketQueueTimeout());
+
+        newestDataControl = new NewestDataControl<T>(listener);
     }
 
     public Packet<T> produce() {
@@ -69,7 +75,7 @@ public class Controller<T> {
 
     public List<Metadata<T>> retransmit() {
         // update outdated not acked packets
-        List<Metadata<T>> retransmits = responseControl.updatePendingTime(rttHandler.getRTO());
+        List<Metadata<T>> retransmits = retransmissionControl.updatePendingTime(rttHandler.getRTO(), dataId);
         if (!retransmits.isEmpty()) {
             rttHandler.backoff();
         }
@@ -78,7 +84,7 @@ public class Controller<T> {
 
     public void send(Packet<T> packet, Metadata<T> metadata) {
         // update last modified time
-        responseControl.resetPendingTime(metadata);
+        retransmissionControl.resetPendingTime(metadata);
 
         // increment local transmissionId; add pending, local transmissionId
         sentMapControl.addToSent(++localTransmissionId, metadata);
@@ -101,12 +107,18 @@ public class Controller<T> {
         Metadata<T> metadata = packet.removeFirstMetadata();
         if (metadata != null)
             receive(metadata);
+        else
+            // emit newest, remote data after packet is empty
+            newestDataControl.emitNewestData();
 
         return metadata;
     }
 
     private void receive(Metadata<T> metadata) {
         short newRemoteTransmissionId = metadata.getLastTransmissionId();
+
+        // update newest, remote data
+        newestDataControl.refreshNewestData(metadata);
 
         // add received, remote transmissionIds
         receivedBitsControl.addToReceived(metadata.getTransmissionIds(), remoteTransmissionId);

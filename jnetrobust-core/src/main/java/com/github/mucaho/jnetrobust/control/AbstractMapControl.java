@@ -14,8 +14,6 @@ import java.util.*;
 
 
 public abstract class AbstractMapControl<T> {
-    protected static final Comparator<Short> idComparator = IdComparator.instance;
-
     private final TimeoutHandler<Metadata<T>> entryTimeoutHandler =
             new TimeoutHandler<Metadata<T>>();
 
@@ -47,9 +45,9 @@ public abstract class AbstractMapControl<T> {
         return dataMap.getValues();
     }
 
-    protected abstract void discardEntry(short key);
+    protected abstract void discardEntry(Short key);
     protected abstract void discardEntry(Metadata<T> metadata);
-    protected abstract void discardEntryKey(short key);
+    protected abstract void discardEntryKey(Short key);
 
     protected void discardEntries() {
         discardTooOldEntryKeys();
@@ -61,9 +59,9 @@ public abstract class AbstractMapControl<T> {
 
     private void discardTooOldEntryKeys() {
         if (!dataMap.isEmpty()) {
-            short newestKey = dataMap.lastKey();
-            short oldestKey = dataMap.firstKey();
-            while (idComparator.compare(newestKey, oldestKey) >= maxEntryOffset) {
+            Short newestKey = dataMap.lastKey();
+            Short oldestKey = dataMap.firstKey();
+            while (IdComparator.instance.compare(newestKey, oldestKey) >= maxEntryOffset) {
                 discardEntryKey(oldestKey);
                 oldestKey = dataMap.firstKey();
             }

@@ -12,7 +12,6 @@ import com.github.mucaho.jnetrobust.ProtocolListener;
 import com.github.mucaho.jnetrobust.control.Metadata;
 import com.github.mucaho.jnetrobust.Logger;
 
-import java.util.Collection;
 import java.util.List;
 
 public class DebugController<T> extends Controller<T> {
