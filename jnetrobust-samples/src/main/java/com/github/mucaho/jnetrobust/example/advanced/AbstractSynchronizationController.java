@@ -69,8 +69,8 @@ public class AbstractSynchronizationController {
     static class SynchronizationHandle {
         private final ProtocolHandle<Vector2D> protocolHandle;
         private final MODE updateMode;
-        private final HOST hostMode;
         private final SynchronizationGUI gui;
+        private final Vector2D data;
 
         private SynchronizationHandle(ProtocolHandle<Vector2D> protocolHandle,
                                       MODE updateMode,
@@ -78,13 +78,11 @@ public class AbstractSynchronizationController {
                                       SynchronizationGUI gui) {
             this.protocolHandle = protocolHandle;
             this.updateMode = updateMode;
-            this.hostMode = hostMode;
             this.gui = gui;
+            this.data = new Vector2D(0, 0, hostMode);
         }
 
         public void send() throws IOException {
-            Vector2D data = new Vector2D();
-            data.setHost(hostMode);
             gui.sendGUI(data);
             protocolHandle.send(data);
         }

@@ -9,6 +9,7 @@ package com.github.mucaho.jnetrobust.example.advanced;
 import com.github.mucaho.jnetemu.DatagramWanEmulator;
 import com.github.mucaho.jnetrobust.example.advanced.AbstractSynchronizationController.*;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
@@ -92,7 +93,7 @@ public class SynchronizationMain {
     }
 
 
-    public static class Vector2D {
+    public static class Vector2D implements Serializable {
         private HOST host;
         private int x;
         private int y;
