@@ -51,7 +51,9 @@ You can use the reference implementation which glues all those pieces together t
 
 Talk is cheap. Show me the code. [[1]](http://lkml.org/lkml/2000/8/25/132)
 --------------------------------
-Here is a minimal, complete example of using the provided reference implementation:  
+Here is a minimal,
+[complete example](https://github.com/mucaho/jnetrobust/blob/master/jnetrobust-samples/src/main/java/com/github/mucaho/jnetrobust/example/simple/BidirectionalMain.java)
+of using the provided reference implementation:  
 **Code**
 ```java
 public class BidirectionalMain {
