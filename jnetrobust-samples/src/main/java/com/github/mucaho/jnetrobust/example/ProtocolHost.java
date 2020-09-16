@@ -21,6 +21,7 @@ import com.github.mucaho.jnetrobust.controller.Packet;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.net.SocketOptions;
 import java.nio.ByteBuffer;
 import java.nio.channels.DatagramChannel;
 import java.util.*;
@@ -35,6 +36,12 @@ import java.util.*;
  * See the various examples for usage scenarios.
  */
 public class ProtocolHost {
+
+    private static final int IPTOS_LOWCOST = 0x02;
+    private static final int IPTOS_RELIABILITY = 0x04;
+    private static final int IPTOS_THROUGHPUT = 0x08;
+    private static final int IPTOS_LOWDELAY = 0x10;
+
     public interface DataListener<T> {
         void handleOrderedData(T orderedData);
         void handleNewestData(T newestData);
@@ -92,6 +99,7 @@ public class ProtocolHost {
         // setup network communication
         channel = DatagramChannel.open();
         channel.configureBlocking(false);
+        channel.socket().setTrafficClass(IPTOS_LOWDELAY | IPTOS_THROUGHPUT | IPTOS_RELIABILITY);
         channel.socket().bind(localAddress);
 
         // setup serialization
