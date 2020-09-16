@@ -16,7 +16,7 @@ import com.esotericsoftware.kryo.io.KryoObjectOutput;
 import com.github.mucaho.jnetrobust.Logger;
 import com.github.mucaho.jnetrobust.Protocol;
 import com.github.mucaho.jnetrobust.ProtocolListener;
-import com.github.mucaho.jnetrobust.control.Metadata;
+import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.controller.Packet;
 import com.github.mucaho.jnetrobust.example.ProtocolHostHandle.ProtocolId;
 
@@ -78,7 +78,7 @@ public class ProtocolHost {
         // setup serialization
         kryo = new Kryo();
         kryo.register(Packet.class); // add argument `new ExternalizableSerializer()` if needed
-        kryo.register(Metadata.class); // add argument `new ExternalizableSerializer()` if needed
+        kryo.register(Segment.class); // add argument `new ExternalizableSerializer()` if needed
         for (Class<? extends Serializable> dataClass : dataClasses)
             kryo.register(dataClass);
 

@@ -9,7 +9,7 @@ package com.github.mucaho.jnetrobust.controller;
 
 import com.github.mucaho.jnetrobust.ProtocolConfig;
 import com.github.mucaho.jnetrobust.ProtocolListener;
-import com.github.mucaho.jnetrobust.control.Metadata;
+import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.Logger;
 
 import java.util.List;
@@ -23,8 +23,8 @@ public class DebugController<T> extends Controller<T> {
     }
 
     @Override
-    public Metadata<T> produce(T data) {
-        Metadata<T> out = super.produce(data);
+    public Segment<T> produce(T data) {
+        Segment<T> out = super.produce(data);
         T value = out.getData();
 
         logger.log(Logger.LoggingEvent.SEND.toString(), String.valueOf(out.getDataId()),
@@ -34,19 +34,19 @@ public class DebugController<T> extends Controller<T> {
     }
 
     @Override
-    public T consume(Metadata<T> metadata) {
-        T value = metadata.getData();
-        logger.log(Logger.LoggingEvent.RECEIVE.toString(), String.valueOf(metadata.getDataId()),
+    public T consume(Segment<T> segment) {
+        T value = segment.getData();
+        logger.log(Logger.LoggingEvent.RECEIVE.toString(), String.valueOf(segment.getDataId()),
                 value != null ? value.toString() : "null");
 
-        return super.consume(metadata);
+        return super.consume(segment);
     }
 
     @Override
-    public List<Metadata<T>> retransmit() {
-        List<Metadata<T>> retransmits = super.retransmit();
+    public List<Segment<T>> retransmit() {
+        List<Segment<T>> retransmits = super.retransmit();
         for (int i = 0, l = retransmits.size(); i < l; ++i) {
-            Metadata<T> retransmit = retransmits.get(i);
+            Segment<T> retransmit = retransmits.get(i);
             logger.log(Logger.LoggingEvent.SEND_RETRANSMISSION.toString(), String.valueOf(retransmit.getDataId()),
                     retransmit.getData() != null ? retransmit.getData().toString() : "null");
         }

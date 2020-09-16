@@ -20,35 +20,35 @@ import static org.junit.Assert.*;
 
 public class SimpleMapControlTest extends AbstractMapControlTest {
     private final HashSet<Short> discardedKeys = new HashSet<Short>();
-    private final HashSet<Metadata<Object>> discardedMetadatas = new HashSet<Metadata<Object>>();
+    private final HashSet<Segment<Object>> discardedSegments = new HashSet<Segment<Object>>();
 
     private final ProtocolConfig config = new ProtocolConfig();
 
     private AbstractMapControl<Object> control = new AbstractMapControl<Object>(config.getPacketQueueLimit(), config.getPacketOffsetLimit(),
             config.getPacketRetransmitLimit(), config.getPacketQueueTimeout()) {
         @Override
-        protected AbstractMetadataMap<Object> createMap() {
-            return new SentMetadataMap<Object>();
+        protected AbstractSegmentMap<Object> createMap() {
+            return new SentSegmentMap<Object>();
         }
 
         @Override
         protected void discardEntry(Short key) {
             discardedKeys.addAll(dataMap.getValue(key).getTransmissionIds());
-            discardedMetadatas.add(dataMap.removeAll(key));
+            discardedSegments.add(dataMap.removeAll(key));
         }
 
         @Override
-        protected void discardEntry(Metadata<Object> metadata) {
-            discardedKeys.addAll(metadata.getTransmissionIds());
-            discardedMetadatas.add(dataMap.removeAll(metadata));
+        protected void discardEntry(Segment<Object> segment) {
+            discardedKeys.addAll(segment.getTransmissionIds());
+            discardedSegments.add(dataMap.removeAll(segment));
         }
 
         @Override
         protected void discardEntryKey(Short key) {
             discardedKeys.add(key);
-            Metadata<Object> metadata = dataMap.remove(key);
-            if (metadata != null && metadata.getTransmissionIds().isEmpty()) {
-                discardedMetadatas.add(metadata);
+            Segment<Object> segment = dataMap.remove(key);
+            if (segment != null && segment.getTransmissionIds().isEmpty()) {
+                discardedSegments.add(segment);
             }
         }
     };
@@ -61,7 +61,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
     public final void prepareDiscardTest() {
         dataMap.clear();
         discardedKeys.clear();
-        discardedMetadatas.clear();
+        discardedSegments.clear();
     }
 
     private interface Decision {
@@ -85,7 +85,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
         Random rand = new Random();
 
         Short key;
-        Metadata<Object> metadata = null;
+        Segment<Object> segment = null;
         int dataCount = 0, max = -IdComparator.MAX_SEQUENCE / 2;
         for (int i = 0; i < loopCount; i++) {
             do {
@@ -93,19 +93,19 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
             } while (dataMap.getValue(key) != null || discardedKeys.contains(key));
             max = Math.max(key, max);
 
-            if (metadata == null || decision.ok()) {
-                metadata = new Metadata<Object>(++dataId, i);
+            if (segment == null || decision.ok()) {
+                segment = new Segment<Object>(++dataId, i);
                 dataCount++;
             }
-            dataMap.put(key, metadata);
+            dataMap.put(key, segment);
         }
 
         return new Result(loopCount, max, dataCount);
     }
 
     private final void assertCommon(int dataCount, int loopCount) {
-        for (Metadata<Object> discardedMetadata : discardedMetadatas) {
-            assertNull("discarded metadata is no longer in dataMap", dataMap.getKeys(discardedMetadata));
+        for (Segment<Object> discardedSegment : discardedSegments) {
+            assertNull("discarded segment is no longer in dataMap", dataMap.getKeys(discardedSegment));
         }
         for (Short discardedKey : discardedKeys) {
             if (!dataMap.isEmpty() && loopCount < ProtocolConfig.MAX_PACKET_OFFSET_LIMIT) {
@@ -115,9 +115,9 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
             assertNull("discarded key is no longer in dataMap", dataMap.getValue(discardedKey));
         }
 
-        HashSet<Metadata<Object>> allMetadatas = new HashSet<Metadata<Object>>(discardedMetadatas);
-        allMetadatas.addAll(dataMap.getValues());
-        assertEquals("total dataCount matches", dataCount, allMetadatas.size());
+        HashSet<Segment<Object>> allSegments = new HashSet<Segment<Object>>(discardedSegments);
+        allSegments.addAll(dataMap.getValues());
+        assertEquals("total dataCount matches", dataCount, allSegments.size());
     }
 
     @Test
@@ -135,15 +135,15 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
         assertCommon(result.dataCount, result.loopCount);
         assertTrue("dataMap data size is limited", control.maxEntries >= dataMap.valueSize());
         assertTrue("discarded data count is in range",
-                result.loopCount - control.maxEntries >= discardedMetadatas.size());
+                result.loopCount - control.maxEntries >= discardedSegments.size());
         assertTrue("dataMap key size is gte than data size", dataMap.keySize() >= dataMap.valueSize());
         assertTrue("dataMap last key is >= max key", result.max >= dataMap.lastKey().intValue());
         assertTrue("discarded key count is gte then discarded data count",
-                discardedKeys.size() >= discardedMetadatas.size());
+                discardedKeys.size() >= discardedSegments.size());
     }
 
     @Test
-    public final void testDiscardTooManyDistinctEntryValues_OneKeyOneMetadata() {
+    public final void testDiscardTooManyDistinctEntryValues_OneKeyOneSegment() {
         Result result = doInsertion(new Decision() {
             @Override
             public boolean ok() {
@@ -154,14 +154,14 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
 
         assertCommon(result.dataCount, result.loopCount);
         assertEquals("dataMap data size matches max allowed data size", control.maxEntries, dataMap.valueSize());
-        assertEquals("discarded data count is 1", 1, discardedMetadatas.size());
+        assertEquals("discarded data count is 1", 1, discardedSegments.size());
         assertEquals("dataMap key size is equal to data size", dataMap.valueSize(), dataMap.keySize());
         assertEquals("dataMap last key is max key", result.max, dataMap.lastKey().intValue());
         assertEquals("discarded key count is 1", 1, discardedKeys.size());
     }
 
     @Test
-    public final void testDiscardTooManyDistinctEntryValues_AllKeysOneMetadata() {
+    public final void testDiscardTooManyDistinctEntryValues_AllKeysOneSegment() {
         Result result = doInsertion(new Decision() {
             @Override
             public boolean ok() {
@@ -172,7 +172,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
 
         assertCommon(result.dataCount, result.loopCount);
         assertEquals("dataMap data size is 1", 1, dataMap.valueSize());
-        assertEquals("discarded data size is 0", 0, discardedMetadatas.size());
+        assertEquals("discarded data size is 0", 0, discardedSegments.size());
         assertEquals("dataMap key size matches insertion count", result.loopCount, dataMap.keySize());
         assertTrue("dataMap key size greater than max allowed data size", control.maxEntries < dataMap.keySize());
         assertEquals("dataMap last key is max key", result.max, dataMap.lastKey().intValue());
@@ -182,16 +182,16 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
     @Test
     public final void testDiscardTooOldEntryKeys() {
         Random rand = new Random();
-        Metadata<Object> metadata = null;
+        Segment<Object> segment = null;
         int dataCount = 0;
         int loopCount;
         for (loopCount = 0; loopCount < IdComparator.MAX_SEQUENCE; loopCount++) {
-            if (metadata == null || rand.nextBoolean()) {
-                metadata = new Metadata<Object>(++dataId, loopCount);
+            if (segment == null || rand.nextBoolean()) {
+                segment = new Segment<Object>(++dataId, loopCount);
                 dataCount++;
             }
 
-            dataMap.put((short) loopCount, metadata);
+            dataMap.put((short) loopCount, segment);
 
             if (loopCount % control.maxEntryOffset == 0) {
                 Deencapsulation.invoke(control, "discardTooOldEntryKeys");
@@ -208,7 +208,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
 
         assertEquals("map key size matches max allowed key offset", control.maxEntryOffset, dataMap.keySize());
         assertTrue("map data size is lte to key size", dataMap.keySize() >= dataMap.valueSize());
-        assertTrue("discarded data count is in range", dataCount >= discardedMetadatas.size());
+        assertTrue("discarded data count is in range", dataCount >= discardedSegments.size());
     }
 
     @Test
@@ -224,16 +224,16 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
 
         assertCommon(result.dataCount, result.loopCount);
 
-        assertTrue("discarded data count is in range", result.loopCount >= discardedMetadatas.size());
+        assertTrue("discarded data count is in range", result.loopCount >= discardedSegments.size());
         assertTrue("discarded key count is gte then discarded data count",
-                discardedKeys.size() >= discardedMetadatas.size());
+                discardedKeys.size() >= discardedSegments.size());
         assertEquals("dataMap key size is same as loopCount", result.loopCount, dataMap.keySize());
         assertTrue("dataMap key size is gte than data size", dataMap.keySize() >= dataMap.valueSize());
         assertTrue("dataMap last key is >= max key", result.max >= dataMap.lastKey().intValue());
     }
 
     @Test
-    public final void testDiscardEntriesWithTooManyEntryKeys_OneKeyOneMetadata() {
+    public final void testDiscardEntriesWithTooManyEntryKeys_OneKeyOneSegment() {
         Result result = doInsertion(new Decision() {
             @Override
             public boolean ok() {
@@ -244,7 +244,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
 
         assertCommon(result.dataCount, result.loopCount);
 
-        assertEquals("discarded data count is 0", 0, discardedMetadatas.size());
+        assertEquals("discarded data count is 0", 0, discardedSegments.size());
         assertEquals("discarded key count is 0", 0, discardedKeys.size());
         assertEquals("dataMap key size is same as loopCount", result.loopCount, dataMap.valueSize());
         assertEquals("dataMap key size is same as loopCount", result.loopCount, dataMap.keySize());
@@ -252,7 +252,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
     }
 
     @Test
-    public final void testDiscardEntriesWithTooManyEntryKeys_AllKeysOneMetadata() {
+    public final void testDiscardEntriesWithTooManyEntryKeys_AllKeysOneSegment() {
         Result result = doInsertion(new Decision() {
             @Override
             public boolean ok() {
@@ -263,7 +263,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
 
         assertCommon(result.dataCount, result.loopCount);
 
-        assertEquals("discarded data count is 1", 1, discardedMetadatas.size());
+        assertEquals("discarded data count is 1", 1, discardedSegments.size());
         assertEquals("discarded key count is loop count", result.loopCount, discardedKeys.size());
         assertTrue("datamap is empty", dataMap.isEmpty());
         assertEquals("dataMap key size is 0", 0, dataMap.keySize());
@@ -274,26 +274,26 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
     public final void testDiscardTimedoutEntries() throws InterruptedException {
         Deencapsulation.setField(control, "maxEntryTimeout", 1000L);
 
-        Metadata<Object> metadata1 = new Metadata<Object>(++dataId, 1);
-        dataMap.put((short) 1, metadata1);
+        Segment<Object> segment1 = new Segment<Object>(++dataId, 1);
+        dataMap.put((short) 1, segment1);
 
         Thread.sleep(2000L);
 
-        Metadata<Object> metadata2 = new Metadata<Object>(++dataId, 2);
-        dataMap.put((short) 2, metadata2);
+        Segment<Object> segment2 = new Segment<Object>(++dataId, 2);
+        dataMap.put((short) 2, segment2);
 
         Deencapsulation.invoke(control, "discardTimedoutEntries");
 
-        assertTrue("timestamp of 2nd metadata is newer than 1s", System.currentTimeMillis() - metadata2.getTime() < 1000L);
+        assertTrue("timestamp of 2nd segment is newer than 1s", System.currentTimeMillis() - segment2.getTime() < 1000L);
         assertEquals("dataMap key size is 1", 1, dataMap.keySize());
-        assertEquals("dataMap key is 2nd metadata's key", (short) 2, (short) dataMap.firstKey());
+        assertEquals("dataMap key is 2nd segment's key", (short) 2, (short) dataMap.firstKey());
         assertEquals("dataMap value size is 1", 1, dataMap.valueSize());
-        assertEquals("dataMap value is 2nd metadata", metadata2, dataMap.firstValue());
+        assertEquals("dataMap value is 2nd segment", segment2, dataMap.firstValue());
 
-        assertTrue("timestamp of 1st metadata is older than 1s", System.currentTimeMillis() - metadata1.getTime() > 1000L);
+        assertTrue("timestamp of 1st segment is older than 1s", System.currentTimeMillis() - segment1.getTime() > 1000L);
         assertEquals("discarded key size is 1", 1, discardedKeys.size());
-        assertEquals("discarded key is 1st metadata's key", (short) 1, (short) discardedKeys.iterator().next());
-        assertEquals("discarded data size is 1", 1, discardedMetadatas.size());
-        assertEquals("dataMap value is 1st metadata", metadata1, discardedMetadatas.iterator().next());
+        assertEquals("discarded key is 1st segment's key", (short) 1, (short) discardedKeys.iterator().next());
+        assertEquals("discarded data size is 1", 1, discardedSegments.size());
+        assertEquals("dataMap value is 1st segment", segment1, discardedSegments.iterator().next());
     }
 }

@@ -8,7 +8,7 @@
 package com.github.mucaho.jnetrobust.controller;
 
 import com.github.mucaho.jnetrobust.ProtocolConfig;
-import com.github.mucaho.jnetrobust.control.Metadata;
+import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.util.BitConstants;
 import com.github.mucaho.jnetrobust.util.Freezable;
 
@@ -25,40 +25,40 @@ public final class Packet<T> implements Freezable<Packet<T>> {
         super();
     }
 
-    private LinkedList<Metadata<T>> metadatas = new LinkedList<Metadata<T>>();
-    private transient List<Metadata<T>> metadatasOut = Collections.unmodifiableList(metadatas);
+    private LinkedList<Segment<T>> segments = new LinkedList<Segment<T>>();
+    private transient List<Segment<T>> segmentsOut = Collections.unmodifiableList(segments);
     private Short transmissionAck;
     private long precedingTransmissionAcks;
 
-    public List<Metadata<T>> getMetadatas() {
-        return metadatasOut;
+    public List<Segment<T>> getSegments() {
+        return segmentsOut;
     }
 
-    public Metadata<T> getFirstMetadata() {
-        return metadatas.peekFirst();
+    public Segment<T> getFirstSegment() {
+        return segments.peekFirst();
     }
 
-    public Metadata<T> getLastMetadata() {
-        return metadatas.peekLast();
+    public Segment<T> getLastSegment() {
+        return segments.peekLast();
     }
 
-    void addLastMetadata(Metadata<T> metadata) {
-        if (metadatas.size() >= MAX_DATAS_PER_PACKET)
-            throw new IndexOutOfBoundsException("Cannot add more than " + MAX_DATAS_PER_PACKET + " metadatas to packet!");
+    void addLastSegment(Segment<T> segment) {
+        if (segments.size() >= MAX_DATAS_PER_PACKET)
+            throw new IndexOutOfBoundsException("Cannot add more than " + MAX_DATAS_PER_PACKET + " segments to packet!");
 
-        metadatas.addLast(metadata);
+        segments.addLast(segment);
     }
 
-    Metadata<T> removeFirstMetadata() {
-        return metadatas.pollFirst();
+    Segment<T> removeFirstSegment() {
+        return segments.pollFirst();
     }
 
-    Metadata<T> removeLastMetadata() {
-        return metadatas.pollLast();
+    Segment<T> removeLastSegment() {
+        return segments.pollLast();
     }
 
-    Metadata<T> remove(int i) {
-        return metadatas.remove(i);
+    Segment<T> remove(int i) {
+        return segments.remove(i);
     }
 
     public Short getTransmissionAck() {
@@ -86,7 +86,7 @@ public final class Packet<T> implements Freezable<Packet<T>> {
         return "Packet:" + "\t"
                 + "transmissionAck = " + transmissionAck + "\t"
                 + "precedingTransmissionAcks = " + String.format("%33s", Long.toBinaryString(precedingTransmissionAcks)) + "\t"
-                + "metadatas = " + Arrays.deepToString(metadatas.toArray()) + "\n";
+                + "segments = " + Arrays.deepToString(segments.toArray()) + "\n";
     }
 
     /**
@@ -133,9 +133,9 @@ public final class Packet<T> implements Freezable<Packet<T>> {
         else
             out.writeInt(BitConstants.convertBits(precedingTransmissionAcks));
 
-        out.writeByte(metadatas.size());
-        for (int i = 0, l = metadatas.size(); i < l; ++i)
-            Metadata.<T>writeExternalStatic(metadatas.get(i), out);
+        out.writeByte(segments.size());
+        for (int i = 0, l = segments.size(); i < l; ++i)
+            Segment.<T>writeExternalStatic(segments.get(i), out);
     }
 
     @Override
@@ -149,7 +149,7 @@ public final class Packet<T> implements Freezable<Packet<T>> {
 
         int size = in.readUnsignedByte();
         for (int i = 0; i < size; ++i)
-            metadatas.addLast(Metadata.<T>readExternalStatic(in));
+            segments.addLast(Segment.<T>readExternalStatic(in));
     }
 
     @Override
@@ -157,8 +157,8 @@ public final class Packet<T> implements Freezable<Packet<T>> {
         Packet<T> clone = new Packet<T>();
         clone.transmissionAck = transmissionAck;
         clone.precedingTransmissionAcks = precedingTransmissionAcks;
-        for (int i = 0, l = metadatas.size(); i < l; ++i)
-            clone.addLastMetadata(metadatas.get(i).clone());
+        for (int i = 0, l = segments.size(); i < l; ++i)
+            clone.addLastSegment(segments.get(i).clone());
         return clone;
     }
 }

@@ -36,11 +36,11 @@ public class Controller<T> {
         sentMapControl = new SentMapControl<T>(listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit(), config.getPacketQueueTimeout()) {
             @Override
-            protected void notifyAcked(Metadata<T> ackedMetadata, boolean directlyAcked) {
-                if (ackedMetadata != null && directlyAcked)
-                    rttHandler.updateRTT(ackedMetadata.getTime()); // update RTT
+            protected void notifyAcked(Segment<T> ackedSegment, boolean directlyAcked) {
+                if (ackedSegment != null && directlyAcked)
+                    rttHandler.updateRTT(ackedSegment.getTime()); // update RTT
 
-                super.notifyAcked(ackedMetadata, directlyAcked);
+                super.notifyAcked(ackedSegment, directlyAcked);
             }
         };
 
@@ -68,32 +68,32 @@ public class Controller<T> {
         return packet;
     }
 
-    public Metadata<T> produce(T data) {
+    public Segment<T> produce(T data) {
         // increment unique data id; apply unique data id
-        return new Metadata<T>(++dataId, data);
+        return new Segment<T>(++dataId, data);
     }
 
-    public List<Metadata<T>> retransmit() {
+    public List<Segment<T>> retransmit() {
         // update outdated not acked packets
-        List<Metadata<T>> retransmits = retransmissionControl.updatePendingTime(rttHandler.getRTO(), dataId);
+        List<Segment<T>> retransmits = retransmissionControl.updatePendingTime(rttHandler.getRTO(), dataId);
         if (!retransmits.isEmpty()) {
             rttHandler.backoff();
         }
         return retransmits;
     }
 
-    public void send(Packet<T> packet, Metadata<T> metadata) {
+    public void send(Packet<T> packet, Segment<T> segment) {
         // update last modified time
-        retransmissionControl.resetPendingTime(metadata);
+        retransmissionControl.resetPendingTime(segment);
 
         // increment local transmissionId; add pending, local transmissionId
-        sentMapControl.addToSent(++localTransmissionId, metadata);
+        sentMapControl.addToSent(++localTransmissionId, segment);
 
-        packet.addLastMetadata(metadata);
+        packet.addLastSegment(segment);
 
-        // remove metadatas that were discarded retroactively by pending map
-        for (int i = packet.getMetadatas().size() - 1; i >= 0; --i) {
-            if (packet.getMetadatas().get(i).getTransmissionIds().isEmpty())
+        // remove segments that were discarded retroactively by pending map
+        for (int i = packet.getSegments().size() - 1; i >= 0; --i) {
+            if (packet.getSegments().get(i).getTransmissionIds().isEmpty())
                 packet.remove(i);
         }
     }
@@ -103,36 +103,36 @@ public class Controller<T> {
         sentMapControl.removeFromSent(packet.getTransmissionAck(), packet.getPrecedingTransmissionAcks());
     }
 
-    public Metadata<T> receive(Packet<T> packet) {
-        Metadata<T> metadata = packet.removeFirstMetadata();
-        if (metadata != null)
-            receive(metadata);
+    public Segment<T> receive(Packet<T> packet) {
+        Segment<T> segment = packet.removeFirstSegment();
+        if (segment != null)
+            receive(segment);
         else
             // emit newest, remote data after packet is empty
             newestDataControl.emitNewestData();
 
-        return metadata;
+        return segment;
     }
 
-    private void receive(Metadata<T> metadata) {
-        short newRemoteTransmissionId = metadata.getLastTransmissionId();
+    private void receive(Segment<T> segment) {
+        short newRemoteTransmissionId = segment.getLastTransmissionId();
 
         // update newest, remote data
-        newestDataControl.refreshNewestData(metadata);
+        newestDataControl.refreshNewestData(segment);
 
         // add received, remote transmissionIds
-        receivedBitsControl.addToReceived(metadata.getTransmissionIds(), remoteTransmissionId);
+        receivedBitsControl.addToReceived(segment.getTransmissionIds(), remoteTransmissionId);
 
         // add received, remote dataIds
-        receivedMapControl.addToReceived(metadata);
+        receivedMapControl.addToReceived(segment);
 
         // change remote transmissionId
         if (IdComparator.instance.compare(remoteTransmissionId, newRemoteTransmissionId) < 0)
             remoteTransmissionId = newRemoteTransmissionId;
     }
 
-    public T consume(Metadata<T> metadata) {
-        return metadata.getData();
+    public T consume(Segment<T> segment) {
+        return segment.getData();
     }
 
     @Override

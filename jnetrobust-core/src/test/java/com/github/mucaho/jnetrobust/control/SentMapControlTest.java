@@ -83,10 +83,10 @@ public class SentMapControlTest extends AbstractMapControlTest {
         new MockUp<SentMapControl<Object>>() {
             @Mock
             @SuppressWarnings("unused")
-            protected void notifyAcked(Invocation invocation, Metadata<Object> ackedMetadata, boolean directlyAcked) {
-                if (ackedMetadata != null) {
+            protected void notifyAcked(Invocation invocation, Segment<Object> ackedSegment, boolean directlyAcked) {
+                if (ackedSegment != null) {
                     assertEquals("Expected other value (insertion order must be remove order)",
-                            wrapper.invocations, ackedMetadata.getData());
+                            wrapper.invocations, ackedSegment.getData());
                     wrapper.invocations++;
                 }
             }
@@ -118,9 +118,9 @@ public class SentMapControlTest extends AbstractMapControlTest {
     @Parameters
     public final void testAddToPending(final Short[][] referenceGroups) {
         for (Short[] referenceGroup : referenceGroups) {
-            Metadata<Object> metadata = new Metadata<Object>(++dataId, referenceGroup);
+            Segment<Object> segment = new Segment<Object>(++dataId, referenceGroup);
             for (Short reference : referenceGroup) {
-                handler.addToSent(reference, metadata);
+                handler.addToSent(reference, segment);
             }
         }
 
@@ -131,15 +131,15 @@ public class SentMapControlTest extends AbstractMapControlTest {
             referenceCount += referenceGroup.length;
         }
         assertEquals("Total data count match", dataCount,
-                new HashSet<Metadata<Object>>(handler.dataMap.getKeyMap().values()).size());
+                new HashSet<Segment<Object>>(handler.dataMap.getKeyMap().values()).size());
         assertEquals("Total reference count match", referenceCount, handler.dataMap.getKeyMap().keySet().size());
 
 
-        for (Metadata<Object> metadata : handler.dataMap.getKeyMap().values()) {
-            Short[] dataValues = (Short[]) metadata.getData();
-            assertEquals("Reference count match", dataValues.length, metadata.getTransmissionIds().size());
+        for (Segment<Object> segment : handler.dataMap.getKeyMap().values()) {
+            Short[] dataValues = (Short[]) segment.getData();
+            assertEquals("Reference count match", dataValues.length, segment.getTransmissionIds().size());
             for (Short dataValue : dataValues) {
-                assertTrue("Reference match", metadata.getTransmissionIds().contains(dataValue));
+                assertTrue("Reference match", segment.getTransmissionIds().contains(dataValue));
             }
         }
 

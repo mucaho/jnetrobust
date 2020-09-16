@@ -17,7 +17,7 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.*;
 
-public final class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
+public final class Segment<T> implements Timestamp, Freezable<Segment<T>> {
     private transient long newestTransmissionTime = System.currentTimeMillis();
 
     private Short dataId;
@@ -29,13 +29,13 @@ public final class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
 
     private T value;
 
-    public Metadata(Short dataId, T value) {
+    public Segment(Short dataId, T value) {
         this.dataId = dataId;
         this.dataIds.add(dataId);
         this.value = value;
     }
 
-    public Metadata() {
+    public Segment() {
         super();
     }
 
@@ -104,15 +104,15 @@ public final class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     }
 
     /**
-     * Externalize the metadata.
+     * Externalize the segment.
      * Static method that does the same thing as {@link java.io.Externalizable#writeExternal(java.io.ObjectOutput)} .
      *
-     * @param metadata the instance to write
+     * @param segment the instance to write
      * @param out           the {@link java.io.ObjectOutput} to write to
      * @throws IOException if an error occurs
      */
-    public static <T> void writeExternalStatic(Metadata<T> metadata, ObjectOutput out) throws IOException {
-        metadata.writeExternal(out);
+    public static <T> void writeExternalStatic(Segment<T> segment, ObjectOutput out) throws IOException {
+        segment.writeExternal(out);
     }
 
     /**
@@ -124,10 +124,10 @@ public final class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
      * @throws IOException            if an error occurs
      * @throws ClassNotFoundException if an error occurs.
      */
-    public static <T> Metadata<T> readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
-        Metadata<T> metadata = new Metadata<T>();
-        metadata.readExternal(in);
-        return metadata;
+    public static <T> Segment<T> readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
+        Segment<T> segment = new Segment<T>();
+        segment.readExternal(in);
+        return segment;
     }
 
     private void writeObject(java.io.ObjectOutputStream out) throws IOException {
@@ -155,8 +155,8 @@ public final class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
     }
 
     @Override
-    public Metadata<T> clone() {
-        Metadata<T> clone = new Metadata<T>();
+    public Segment<T> clone() {
+        Segment<T> clone = new Segment<T>();
         clone.value = value;
         clone.dataId = new Short(dataId);
         clone.dataIds.add(dataId);
@@ -169,9 +169,9 @@ public final class Metadata<T> implements Timestamp, Freezable<Metadata<T>> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Metadata<?> metadata = (Metadata<?>) o;
+        Segment<?> segment = (Segment<?>) o;
 
-        return dataId != null ? dataId.equals(metadata.dataId) : metadata.dataId == null;
+        return dataId != null ? dataId.equals(segment.dataId) : segment.dataId == null;
     }
 
     @Override

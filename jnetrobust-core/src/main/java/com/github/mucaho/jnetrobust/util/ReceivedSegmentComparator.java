@@ -7,15 +7,15 @@
 
 package com.github.mucaho.jnetrobust.util;
 
-import com.github.mucaho.jnetrobust.control.Metadata;
+import com.github.mucaho.jnetrobust.control.Segment;
 
 import java.util.Comparator;
 
-public final class ReceivedMetadataComparator implements Comparator<Metadata<?>> {
-    public static final ReceivedMetadataComparator instance = new ReceivedMetadataComparator();
+public final class ReceivedSegmentComparator implements Comparator<Segment<?>> {
+    public static final ReceivedSegmentComparator instance = new ReceivedSegmentComparator();
 
     @Override
-    public int compare(Metadata<?> o1, Metadata<?> o2) {
+    public int compare(Segment<?> o1, Segment<?> o2) {
         return IdComparator.instance.compare(o1.getDataId(), o2.getDataId());
     }
 }

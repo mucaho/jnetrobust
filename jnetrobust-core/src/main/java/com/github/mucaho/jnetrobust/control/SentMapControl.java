@@ -27,13 +27,13 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected AbstractMetadataMap<T> createMap() {
-        return new SentMetadataMap<T>();
+    protected AbstractSegmentMap<T> createMap() {
+        return new SentSegmentMap<T>();
     }
 
-    public void addToSent(Short transmissionId, Metadata<T> metadata) {
+    public void addToSent(Short transmissionId, Segment<T> segment) {
         // add to pending map
-        dataMap.put(transmissionId, metadata);
+        dataMap.put(transmissionId, segment);
 
         // discard old entries in pending map
         discardEntries();
@@ -65,24 +65,24 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected void discardEntry(Metadata<T> metadata) {
-        notifyNotAcked(dataMap.removeAll(metadata));
+    protected void discardEntry(Segment<T> segment) {
+        notifyNotAcked(dataMap.removeAll(segment));
     }
 
     @Override
     protected void discardEntryKey(Short key) {
-        Metadata<T> shrankMetadata = dataMap.remove(key);
-        if (shrankMetadata != null && shrankMetadata.getTransmissionIds().isEmpty())
-            notifyNotAcked(shrankMetadata);
+        Segment<T> shrankSegment = dataMap.remove(key);
+        if (shrankSegment != null && shrankSegment.getTransmissionIds().isEmpty())
+            notifyNotAcked(shrankSegment);
     }
 
-    protected void notifyNotAcked(Metadata<T> unackedMetadata) {
-        if (unackedMetadata != null)
-            listener.handleUnackedData(unackedMetadata.getDataId(), unackedMetadata.getData());
+    protected void notifyNotAcked(Segment<T> unackedSegment) {
+        if (unackedSegment != null)
+            listener.handleUnackedData(unackedSegment.getDataId(), unackedSegment.getData());
     }
 
-    protected void notifyAcked(Metadata<T> ackedMetadata, boolean directlyAcked) {
-        if (ackedMetadata != null)
-            listener.handleAckedData(ackedMetadata.getDataId(), ackedMetadata.getData());
+    protected void notifyAcked(Segment<T> ackedSegment, boolean directlyAcked) {
+        if (ackedSegment != null)
+            listener.handleAckedData(ackedSegment.getDataId(), ackedSegment.getData());
     }
 }

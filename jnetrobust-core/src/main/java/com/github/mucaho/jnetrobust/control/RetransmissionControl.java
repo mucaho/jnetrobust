@@ -22,33 +22,33 @@ public class RetransmissionControl<T> {
     }
     private final RetransmissionListener<T> listener;
 
-    private final TimeoutHandler<Metadata<T>> sentDataTimeoutHandler = new TimeoutHandler<Metadata<T>>();
+    private final TimeoutHandler<Segment<T>> sentDataTimeoutHandler = new TimeoutHandler<Segment<T>>();
 
-    private final NavigableSet<Metadata<T>> sentMetadatas;
+    private final NavigableSet<Segment<T>> sentSegments;
 
     private final ProtocolConfig.AutoRetransmitMode autoRetransmitMode;
 
-    private final List<Metadata<T>> retransmissions = new ArrayList<Metadata<T>>();
-    private final List<Metadata<T>> retransmissionsOut = Collections.unmodifiableList(retransmissions);
+    private final List<Segment<T>> retransmissions = new ArrayList<Segment<T>>();
+    private final List<Segment<T>> retransmissionsOut = Collections.unmodifiableList(retransmissions);
 
-    public RetransmissionControl(NavigableSet<Metadata<T>> sentMetadatas,
+    public RetransmissionControl(NavigableSet<Segment<T>> sentSegments,
                                  RetransmissionListener<T> listener,
                                  ProtocolConfig.AutoRetransmitMode autoRetransmitMode) {
-        this.sentMetadatas = sentMetadatas;
+        this.sentSegments = sentSegments;
         this.listener = listener;
         this.autoRetransmitMode = autoRetransmitMode;
     }
 
-    public void resetPendingTime(Metadata<T> sentMetadatas) {
-        sentMetadatas.updateTime();
+    public void resetPendingTime(Segment<T> sentSegments) {
+        sentSegments.updateTime();
     }
 
-    public List<Metadata<T>> updatePendingTime(long maxWaitTime, short newestDataId) {
+    public List<Segment<T>> updatePendingTime(long maxWaitTime, short newestDataId) {
         retransmissions.clear();
 
-        List<Metadata<T>> potentialRetransmits = sentDataTimeoutHandler.filterTimedOut(sentMetadatas, maxWaitTime);
+        List<Segment<T>> potentialRetransmits = sentDataTimeoutHandler.filterTimedOut(sentSegments, maxWaitTime);
         for (int i = 0, l = potentialRetransmits.size(); i < l; ++i) {
-            Metadata<T> potentialRetransmit = potentialRetransmits.get(i);
+            Segment<T> potentialRetransmit = potentialRetransmits.get(i);
 
             Boolean userOk = determineRetransmit(potentialRetransmit);
             boolean doIt = Boolean.TRUE.equals(userOk);
@@ -64,7 +64,7 @@ public class RetransmissionControl<T> {
         return retransmissionsOut;
     }
 
-    protected Boolean determineRetransmit(Metadata<T> retransmit) {
+    protected Boolean determineRetransmit(Segment<T> retransmit) {
         return listener.shouldRetransmit(retransmit.getDataId(), retransmit.getData());
     }
 }

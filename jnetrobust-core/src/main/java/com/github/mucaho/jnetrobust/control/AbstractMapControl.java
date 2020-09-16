@@ -14,8 +14,8 @@ import java.util.*;
 
 
 public abstract class AbstractMapControl<T> {
-    private final TimeoutHandler<Metadata<T>> entryTimeoutHandler =
-            new TimeoutHandler<Metadata<T>>();
+    private final TimeoutHandler<Segment<T>> entryTimeoutHandler =
+            new TimeoutHandler<Segment<T>>();
 
     protected final int maxEntries;
     protected final int maxEntryOffset;
@@ -25,7 +25,7 @@ public abstract class AbstractMapControl<T> {
     /*
      * [lastSeq]-...-[seq-32]-[seq-31]-...-[seq-1]-[seq]
      */
-    protected AbstractMetadataMap<T> dataMap;
+    protected AbstractSegmentMap<T> dataMap;
 
     public AbstractMapControl(int maxEntries, int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
         this.maxEntries = maxEntries;
@@ -35,18 +35,18 @@ public abstract class AbstractMapControl<T> {
         this.dataMap = createMap();
     }
 
-    protected abstract AbstractMetadataMap<T> createMap();
+    protected abstract AbstractSegmentMap<T> createMap();
 
     public NavigableSet<Short> getKeys() {
         return dataMap.getKeys();
     }
 
-    public NavigableSet<Metadata<T>> getValues() {
+    public NavigableSet<Segment<T>> getValues() {
         return dataMap.getValues();
     }
 
     protected abstract void discardEntry(Short key);
-    protected abstract void discardEntry(Metadata<T> metadata);
+    protected abstract void discardEntry(Segment<T> segment);
     protected abstract void discardEntryKey(Short key);
 
     protected void discardEntries() {
@@ -70,7 +70,7 @@ public abstract class AbstractMapControl<T> {
 
     private void discardTimedoutEntries() {
         if (maxEntryTimeout > 0) {
-            List<Metadata<T>> timedOuts =
+            List<Segment<T>> timedOuts =
                     entryTimeoutHandler.filterTimedOut(dataMap.getValues(), maxEntryTimeout);
             for (int i = 0, l = timedOuts.size(); i < l; ++i)
                 discardEntry(timedOuts.get(i));
@@ -78,19 +78,19 @@ public abstract class AbstractMapControl<T> {
     }
 
     private void discardTooManyDistinctEntryValues() {
-        Metadata<T> metadata = dataMap.firstValue();
-        while (metadata != null && dataMap.valueSize() > maxEntries) {
-            discardEntry(metadata);
-            metadata = dataMap.firstValue();
+        Segment<T> segment = dataMap.firstValue();
+        while (segment != null && dataMap.valueSize() > maxEntries) {
+            discardEntry(segment);
+            segment = dataMap.firstValue();
         }
     }
 
     private void discardEntriesWithTooManyEntryKeys() {
         if (maxEntryOccurrences > 0) {
-            Metadata<T> metadata = dataMap.firstValue();
-            while (metadata != null && dataMap.getKeys(metadata).size() > maxEntryOccurrences) {
-                discardEntry(metadata);
-                metadata = dataMap.firstValue();
+            Segment<T> segment = dataMap.firstValue();
+            while (segment != null && dataMap.getKeys(segment).size() > maxEntryOccurrences) {
+                discardEntry(segment);
+                segment = dataMap.firstValue();
             }
         }
     }

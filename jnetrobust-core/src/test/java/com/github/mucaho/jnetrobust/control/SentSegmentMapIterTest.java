@@ -21,7 +21,7 @@ import static com.github.mucaho.jarrayliterals.ArrayShortcuts.$S;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
-public class SentMetadataMapIterTest {
+public class SentSegmentMapIterTest {
     private static short dataId = Short.MIN_VALUE;
 
     public Object[][] parametersForTestIterator() {
@@ -35,11 +35,11 @@ public class SentMetadataMapIterTest {
     @Test
     @Parameters
     public final void testIterator(Short[][] refGroups) {
-        AbstractMetadataMap<Object> dataMap = new SentMetadataMap<Object>();
-        EntryIterator<Short, Metadata<Object>> iter = dataMap.getIterator();
+        AbstractSegmentMap<Object> dataMap = new SentSegmentMap<Object>();
+        EntryIterator<Short, Segment<Object>> iter = dataMap.getIterator();
         List<Short> refs = new ArrayList<Short>();
-        HashSet<Metadata<Object>> metadatas = new HashSet<Metadata<Object>>();
-        Metadata<Object> metadata;
+        HashSet<Segment<Object>> segments = new HashSet<Segment<Object>>();
+        Segment<Object> segment;
         int expectedCount, actualCount;
         Short key;
 
@@ -47,9 +47,9 @@ public class SentMetadataMapIterTest {
         expectedCount = 0;
         for (final Short[] refGroup : refGroups) {
             expectedCount += refGroup.length;
-            metadata = new Metadata<Object>(++dataId, refGroup);
-            dataMap.putAll(new TreeSet<Short>(Arrays.asList(refGroup)), metadata);
-            metadatas.add(metadata);
+            segment = new Segment<Object>(++dataId, refGroup);
+            dataMap.putAll(new TreeSet<Short>(Arrays.asList(refGroup)), segment);
+            segments.add(segment);
             refs.addAll(Arrays.asList(refGroup));
         }
 
@@ -57,13 +57,13 @@ public class SentMetadataMapIterTest {
         key = iter.getHigherKey(null);
         while (key != null) {
             actualCount++;
-            metadatas.remove(iter.getValue(key));
+            segments.remove(iter.getValue(key));
             refs.remove(key);
             key = iter.getHigherKey(key);
         }
         assertEquals("Iterator didn't iterate over all datas!", expectedCount, actualCount);
         assertEquals("All refs should have been removed.", 0, refs.size());
-        assertEquals("All metadatas should have been removed.", 0, metadatas.size());
+        assertEquals("All segments should have been removed.", 0, segments.size());
 
 
         actualCount = 0;

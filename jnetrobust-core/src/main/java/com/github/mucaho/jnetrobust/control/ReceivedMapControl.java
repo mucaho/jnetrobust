@@ -26,20 +26,20 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected AbstractMetadataMap<T> createMap() {
-        return new ReceivedMetadataMap<T>() {
-            Metadata<T> put(Metadata<T> metadata) {
-                if (IdComparator.instance.compare(metadata.getDataId(), nextDataId) >= 0) {
-                    return super.put(metadata);
+    protected AbstractSegmentMap<T> createMap() {
+        return new ReceivedSegmentMap<T>() {
+            Segment<T> put(Segment<T> segment) {
+                if (IdComparator.instance.compare(segment.getDataId(), nextDataId) >= 0) {
+                    return super.put(segment);
                 }
                 return null;
             }
         };
     }
 
-    public void addToReceived(Metadata<T> metadata) {
+    public void addToReceived(Segment<T> segment) {
         // add original to received map
-        dataMap.put(metadata);
+        dataMap.put(segment);
 
         // discard old entries in received map
         discardEntries();
@@ -66,8 +66,8 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected void discardEntry(Metadata<T> metadata) {
-        discardEntry(metadata.getDataId());
+    protected void discardEntry(Segment<T> segment) {
+        discardEntry(segment.getDataId());
     }
 
     @Override
@@ -75,13 +75,13 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
         discardEntry(key);
     }
 
-    protected void notifyUnordered(Metadata<T> unorderedMetadata) {
-        if (unorderedMetadata != null)
-            listener.handleUnorderedData(unorderedMetadata.getDataId(), unorderedMetadata.getData());
+    protected void notifyUnordered(Segment<T> unorderedSegment) {
+        if (unorderedSegment != null)
+            listener.handleUnorderedData(unorderedSegment.getDataId(), unorderedSegment.getData());
     }
 
-    protected void notifyOrdered(Metadata<T> orderedMetadata) {
-        if (orderedMetadata != null)
-            listener.handleOrderedData(orderedMetadata.getDataId(), orderedMetadata.getData());
+    protected void notifyOrdered(Segment<T> orderedSegment) {
+        if (orderedSegment != null)
+            listener.handleOrderedData(orderedSegment.getDataId(), orderedSegment.getData());
     }
 }

@@ -10,7 +10,7 @@ package com.github.mucaho.jnetrobust.util;
 import com.github.mucaho.jnetrobust.Protocol;
 import com.github.mucaho.jnetrobust.ProtocolConfig;
 import com.github.mucaho.jnetrobust.ProtocolListener;
-import com.github.mucaho.jnetrobust.control.Metadata;
+import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.controller.Packet;
 
 import java.util.ArrayList;
@@ -92,9 +92,9 @@ public class TestHost<T> implements Runnable {
         T data = dataGenerator.generateData();
         Packet<T> packet = networkClone(protocol.send(data).getValue());
 
-        List<Metadata<T>> metadatas = new ArrayList<Metadata<T>>(packet.getMetadatas());
-        for (Metadata<T> metadata : metadatas) {
-            hostListener.notifySent(metadata.getData());
+        List<Segment<T>> segments = new ArrayList<Segment<T>>(packet.getSegments());
+        for (Segment<T> segment : segments) {
+            hostListener.notifySent(segment.getData());
         }
 
         outQueue.offer(networkClone(packet));

@@ -20,18 +20,18 @@ public class NewestDataControl<T> {
     }
 
     private boolean newestDataChanged = false;
-    private Metadata<T> newestMetadata;
+    private Segment<T> newestSegment;
 
-    public void refreshNewestData(Metadata<T> metadata) {
-        if (newestMetadata == null || IdComparator.instance.compare(metadata.getDataId(), newestMetadata.getDataId()) > 0) {
-            newestMetadata = metadata;
+    public void refreshNewestData(Segment<T> segment) {
+        if (newestSegment == null || IdComparator.instance.compare(segment.getDataId(), newestSegment.getDataId()) > 0) {
+            newestSegment = segment;
             newestDataChanged = true;
         }
     }
 
     public void emitNewestData() {
-        if (newestDataChanged && newestMetadata != null)
-            listener.handleNewestData(newestMetadata.getDataId(), newestMetadata.getData());
+        if (newestDataChanged && newestSegment != null)
+            listener.handleNewestData(newestSegment.getDataId(), newestSegment.getData());
         newestDataChanged = false;
     }
 }

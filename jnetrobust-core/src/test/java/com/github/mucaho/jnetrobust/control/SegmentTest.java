@@ -26,33 +26,33 @@ import static com.github.mucaho.jarrayliterals.ArrayShortcuts.$S;
 import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
-public class MetadataTest {
+public class SegmentTest {
     public Object[][] parametersForTestReferences() {
-        Metadata<Object> metadata2 = new Metadata<Object>();
-        metadata2.addTransmissionId((short)2);
+        Segment<Object> segment2 = new Segment<Object>();
+        segment2.addTransmissionId((short)2);
 
-        Metadata<Object> metadata22 = new Metadata<Object>();
-        metadata22.addTransmissionId((short)2);
-        metadata22.addTransmissionId((short)2);
+        Segment<Object> segment22 = new Segment<Object>();
+        segment22.addTransmissionId((short)2);
+        segment22.addTransmissionId((short)2);
 
-        Metadata<Object> metadata345 = new Metadata<Object>();
-        metadata345.addTransmissionId((short)3);
-        metadata345.addTransmissionId((short)4);
-        metadata345.addTransmissionId((short)5);
+        Segment<Object> segment345 = new Segment<Object>();
+        segment345.addTransmissionId((short)3);
+        segment345.addTransmissionId((short)4);
+        segment345.addTransmissionId((short)5);
 
         Object[][] out = (Object[][])
                 $($(
-                        new Metadata<Object>(), true, $S(2), $S(2)
+                        new Segment<Object>(), true, $S(2), $S(2)
                 ), $(
-                        metadata2, false, $S(2), $S
+                        segment2, false, $S(2), $S
                 ), $(
-                        new Metadata<Object>(), true, $S(2, 2), $S(2)
+                        new Segment<Object>(), true, $S(2, 2), $S(2)
                 ), $(
-                        metadata22, false, $S(2, 2), $S
+                        segment22, false, $S(2, 2), $S
                 ), $(
-                        new Metadata<Object>(), true, $S(5, 3, 4), $S(3, 4, 5)
+                        new Segment<Object>(), true, $S(5, 3, 4), $S(3, 4, 5)
                 ), $(
-                        metadata345, false, $S(4), $S(3, 5)
+                        segment345, false, $S(4), $S(3, 5)
                 ));
 
         return out;
@@ -61,21 +61,21 @@ public class MetadataTest {
 
     @Test
     @Parameters
-    public final void testReferences(Metadata<Object> metadata, boolean shouldAdd,
+    public final void testReferences(Segment<Object> segment, boolean shouldAdd,
                                      Short[] inRefs, Short[] expectedRefs) {
         if (shouldAdd) {
             for (short ref : inRefs)
-                metadata.addTransmissionId(ref);
+                segment.addTransmissionId(ref);
         } else {
             for (short ref : inRefs)
-                metadata.removeTransmissionId(ref);
+                segment.removeTransmissionId(ref);
         }
 
         assertEquals("Reference count mismatch.",
-                expectedRefs.length, metadata.getTransmissionIds().size());
+                expectedRefs.length, segment.getTransmissionIds().size());
 
         int i = 0;
-        for (short ref : metadata.getTransmissionIds()) {
+        for (short ref : segment.getTransmissionIds()) {
             assertEquals("Reference does not match.", expectedRefs[i++], new Short(ref));
         }
     }
@@ -99,30 +99,30 @@ public class MetadataTest {
     @Test
     @Parameters
     public final void testSerialization(Short[] refs, String value) throws Exception {
-        Metadata<Object> inMetadata, outMetadata;
+        Segment<Object> inSegment, outSegment;
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(outStream);
         {
-            outMetadata = new Metadata<Object>(refs[0], value);
+            outSegment = new Segment<Object>(refs[0], value);
             for (Short ref : refs)
-                outMetadata.addTransmissionId(ref);
-            outMetadata.writeExternal(out);
+                outSegment.addTransmissionId(ref);
+            outSegment.writeExternal(out);
         }
         out.close();
 
         ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
         ObjectInputStream in = new ObjectInputStream(inStream);
         {
-            inMetadata = new Metadata<Object>();
-            inMetadata.readExternal(in);
+            inSegment = new Segment<Object>();
+            inSegment.readExternal(in);
         }
         in.close();
 
-        assertEquals("Value mismatch.", outMetadata.getData(), inMetadata.getData());
-        assertEquals("Static reference mismatch", outMetadata.getDataId(), inMetadata.getDataId());
-        assertEquals("Reference count mismatch.", 1, inMetadata.getTransmissionIds().size());
-        assertEquals("TransmissionId mismatch", outMetadata.getLastTransmissionId(), inMetadata.getLastTransmissionId());
+        assertEquals("Value mismatch.", outSegment.getData(), inSegment.getData());
+        assertEquals("Static reference mismatch", outSegment.getDataId(), inSegment.getDataId());
+        assertEquals("Reference count mismatch.", 1, inSegment.getTransmissionIds().size());
+        assertEquals("TransmissionId mismatch", outSegment.getLastTransmissionId(), inSegment.getLastTransmissionId());
     }
 
 
@@ -140,10 +140,10 @@ public class MetadataTest {
     @Test
     @Parameters
     public final void testClone(Short[] refs, String value) throws Exception {
-        Metadata<Object> original = new Metadata<Object>(refs[0], value);
+        Segment<Object> original = new Segment<Object>(refs[0], value);
         for (Short ref : refs)
             original.addTransmissionId(ref);
-        Metadata<Object> clone = original.clone();
+        Segment<Object> clone = original.clone();
 
         assertEquals("Value mismatch.", original.getData(), clone.getData());
         assertEquals("Value mismatch", original.getDataId(), clone.getDataId());
@@ -184,17 +184,17 @@ public class MetadataTest {
 
     @Test
     public void testImmutableCollectionsReturned() {
-        Metadata<Object> metadata2 = new Metadata<Object>();
-        metadata2.addTransmissionId((short)2);
+        Segment<Object> segment2 = new Segment<Object>();
+        segment2.addTransmissionId((short)2);
 
         try {
-            metadata2.getTransmissionIds().remove((short)2);
+            segment2.getTransmissionIds().remove((short)2);
             fail("Returned collection should be immutable");
         } catch (UnsupportedOperationException e) {
         }
 
         try {
-            metadata2.getDataIds().remove((short)2);
+            segment2.getDataIds().remove((short)2);
             fail("Returned collection should be immutable");
         } catch (UnsupportedOperationException e) {
         }

@@ -7,7 +7,7 @@
 
 package com.github.mucaho.jnetrobust;
 
-import com.github.mucaho.jnetrobust.control.Metadata;
+import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.controller.Controller;
 import com.github.mucaho.jnetrobust.controller.DebugController;
 import com.github.mucaho.jnetrobust.controller.Packet;
@@ -174,7 +174,7 @@ public class Protocol<T> implements Comparator<Short> {
         send(packet, datasIn);
 
         packetOut.packet = packet;
-        packetOut.key = data != null ? packet.getLastMetadata().getDataId() : null;
+        packetOut.key = data != null ? packet.getLastSegment().getDataId() : null;
         return packetOut;
     }
 
@@ -209,10 +209,10 @@ public class Protocol<T> implements Comparator<Short> {
 
         dataIdsOut.clear();
         if (datas != null) {
-            for (int i = 0, l = packet.getMetadatas().size(); i < l; ++i) {
-                Metadata<T> metadata = packet.getMetadatas().get(i);
-                if (datas.contains(metadata.getData()))
-                    dataIdsOut.add(metadata.getDataId());
+            for (int i = 0, l = packet.getSegments().size(); i < l; ++i) {
+                Segment<T> segment = packet.getSegments().get(i);
+                if (datas.contains(segment.getData()))
+                    dataIdsOut.add(segment.getDataId());
             }
         }
 
@@ -226,7 +226,7 @@ public class Protocol<T> implements Comparator<Short> {
         if (dataSize > Packet.MAX_DATAS_PER_PACKET)
             throw new IndexOutOfBoundsException("Cannot add more than " + Packet.MAX_DATAS_PER_PACKET + " datas to packet!");
 
-        List<Metadata<T>> retransmits = controller.retransmit();
+        List<Segment<T>> retransmits = controller.retransmit();
         for (int i = 0, l = retransmits.size(); i < l && i + dataSize < Packet.MAX_DATAS_PER_PACKET; ++i)
             controller.send(packet, retransmits.get(i));
 
@@ -293,10 +293,10 @@ public class Protocol<T> implements Comparator<Short> {
         receivedDatas.clear();
 
         controller.consume(packet);
-        Metadata<T> metadata = controller.receive(packet);
-        while (metadata != null) {
-            receivedDatas.put(metadata.getDataId(), controller.consume(metadata));
-            metadata = controller.receive(packet);
+        Segment<T> segment = controller.receive(packet);
+        while (segment != null) {
+            receivedDatas.put(segment.getDataId(), controller.consume(segment));
+            segment = controller.receive(packet);
         }
 
         return receivedDatasOut;

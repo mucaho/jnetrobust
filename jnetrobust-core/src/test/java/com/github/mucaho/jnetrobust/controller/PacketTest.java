@@ -10,7 +10,7 @@ package com.github.mucaho.jnetrobust.controller;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.Deencapsulation;
-import com.github.mucaho.jnetrobust.control.Metadata;
+import com.github.mucaho.jnetrobust.control.Segment;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,7 +33,7 @@ public class PacketTest {
     public final void testExceptions() {
         Packet<Object> packet = new Packet<Object>();
         for (int i = 0; i <= Packet.MAX_DATAS_PER_PACKET; ++i) {
-            packet.addLastMetadata(new Metadata<Object>());
+            packet.addLastSegment(new Segment<Object>());
         }
     }
 
@@ -60,10 +60,10 @@ public class PacketTest {
             outPacket = new Packet<Object>();
             outPacket.setTransmissionAck(ack);
             outPacket.setPrecedingTransmissionAcks(lastAcks);
-            Metadata<Object> metadata = new Metadata<Object>();
-            Deencapsulation.setField(metadata, "dataId", Short.MIN_VALUE);
-            Deencapsulation.invoke(metadata, "addTransmissionId", Short.MIN_VALUE);
-            outPacket.addLastMetadata(metadata);
+            Segment<Object> segment = new Segment<Object>();
+            Deencapsulation.setField(segment, "dataId", Short.MIN_VALUE);
+            Deencapsulation.invoke(segment, "addTransmissionId", Short.MIN_VALUE);
+            outPacket.addLastSegment(segment);
             outPacket.writeExternal(out);
         }
         out.close();
@@ -78,7 +78,7 @@ public class PacketTest {
 
         assertEquals("ack mismatch", outPacket.getTransmissionAck(), inPacket.getTransmissionAck());
         assertEquals("lastAck mismatch", outPacket.getPrecedingTransmissionAcks(), inPacket.getPrecedingTransmissionAcks());
-        assertNotSame("datas are different objects", outPacket.getFirstMetadata(), inPacket.getFirstMetadata());
+        assertNotSame("datas are different objects", outPacket.getFirstSegment(), inPacket.getFirstSegment());
     }
 
 
@@ -100,24 +100,24 @@ public class PacketTest {
         original.setTransmissionAck(ack);
         original.setPrecedingTransmissionAcks(lastAcks);
 
-        Metadata<Object> metadata = new Metadata<Object>();
-        Deencapsulation.setField(metadata, "dataId", Short.MIN_VALUE);
-        Deencapsulation.invoke(metadata, "addTransmissionId", Short.MIN_VALUE);
-        original.addLastMetadata(metadata);
+        Segment<Object> segment = new Segment<Object>();
+        Deencapsulation.setField(segment, "dataId", Short.MIN_VALUE);
+        Deencapsulation.invoke(segment, "addTransmissionId", Short.MIN_VALUE);
+        original.addLastSegment(segment);
         Packet<Object> clone = original.clone();
 
         assertEquals("ack mismatch", original.getTransmissionAck(), clone.getTransmissionAck());
         assertEquals("lastAck mismatch", original.getPrecedingTransmissionAcks(), clone.getPrecedingTransmissionAcks());
-        assertNotSame("datas are different objects", original.getFirstMetadata(), clone.getFirstMetadata());
+        assertNotSame("datas are different objects", original.getFirstSegment(), clone.getFirstSegment());
 
         original.setTransmissionAck((short) -1);
         original.setPrecedingTransmissionAcks(-1);
-        original.addLastMetadata(new Metadata<Object>());
+        original.addLastSegment(new Segment<Object>());
         assertEquals("Original ack did change", (short) -1, original.getTransmissionAck().shortValue());
         assertEquals("Original lastAck did change", -1, original.getPrecedingTransmissionAcks());
-        assertEquals("Original metadatas size did change", 2, original.getMetadatas().size());
+        assertEquals("Original segments size did change", 2, original.getSegments().size());
         assertEquals("Cloned ack did not change", ack.shortValue(), clone.getTransmissionAck().shortValue());
         assertEquals("Cloned lastAck did not change", lastAcks.intValue(), clone.getPrecedingTransmissionAcks());
-        assertEquals("Cloned datas size did not change", 1, clone.getMetadatas().size());
+        assertEquals("Cloned datas size did not change", 1, clone.getSegments().size());
     }
 }

@@ -8,12 +8,12 @@
 package com.github.mucaho.jnetrobust;
 
 import com.github.mucaho.jnetrobust.control.AbstractMapControl;
-import com.github.mucaho.jnetrobust.control.AbstractMetadataMap;
+import com.github.mucaho.jnetrobust.control.AbstractSegmentMap;
 import com.github.mucaho.jnetrobust.controller.Controller;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.*;
-import com.github.mucaho.jnetrobust.control.Metadata;
+import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.controller.Packet;
 import com.github.mucaho.jnetrobust.util.DebugProtocolListener;
 import com.github.mucaho.jnetrobust.util.TestHost;
@@ -161,20 +161,20 @@ public class DelayedTest {
             queueListenerAtoB.notifyDuplicate((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
                 @SuppressWarnings("unused")
                 void delegate(Packet<Long> dup) {
-                    for (Metadata<Long> metadata: dup.getMetadatas()) {
-                        dupedSentA.add(metadata.getData());
+                    for (Segment<Long> segment: dup.getSegments()) {
+                        dupedSentA.add(segment.getData());
                         if (DEBUG)
-                            System.out.println("[A-dupedSent]: " + metadata.getData());
+                            System.out.println("[A-dupedSent]: " + segment.getData());
                     }
                 }
             };
             queueListenerAtoB.notifyLoss((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
                 @SuppressWarnings("unused")
                 void delegate(Packet<Long> loss) {
-                    for (Metadata<Long> metadata: loss.getMetadatas()) {
-                        lostSentA.add(metadata.getData());
+                    for (Segment<Long> segment: loss.getSegments()) {
+                        lostSentA.add(segment.getData());
                         if (DEBUG)
-                            System.out.println("[A-lostSent]: " + metadata.getData());
+                            System.out.println("[A-lostSent]: " + segment.getData());
                     }
                 }
             };
@@ -182,20 +182,20 @@ public class DelayedTest {
             queueListenerBtoA.notifyDuplicate((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
                 @SuppressWarnings("unused")
                 void delegate(Packet<Long> dup) {
-                    for (Metadata<Long> metadata: dup.getMetadatas()) {
-                        dupedSentB.add(metadata.getData());
+                    for (Segment<Long> segment: dup.getSegments()) {
+                        dupedSentB.add(segment.getData());
                         if (DEBUG)
-                            System.out.println("[B-dupedSent]: " + metadata.getData());
+                            System.out.println("[B-dupedSent]: " + segment.getData());
                     }
                 }
             };
             queueListenerBtoA.notifyLoss((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
                 @SuppressWarnings("unused")
                 void delegate(Packet<Long> loss) {
-                    for (Metadata<Long> metadata: loss.getMetadatas()) {
-                        lostSentB.add(metadata.getData());
+                    for (Segment<Long> segment: loss.getSegments()) {
+                        lostSentB.add(segment.getData());
                         if (DEBUG)
-                            System.out.println("[B-lostSent]: " + metadata.getData());
+                            System.out.println("[B-lostSent]: " + segment.getData());
                     }
                 }
             };
@@ -472,7 +472,7 @@ public class DelayedTest {
             Controller controllerA = Deencapsulation.getField(protocolA, "controller");
             {
                 AbstractMapControl sentMapControl = Deencapsulation.getField(controllerA, "sentMapControl");
-                AbstractMetadataMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
+                AbstractSegmentMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
                 Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
                 assertEquals(1, keyMap.size());
                 Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
@@ -480,7 +480,7 @@ public class DelayedTest {
             }
             {
                 AbstractMapControl receivedMapControl = Deencapsulation.getField(controllerA, "receivedMapControl");
-                AbstractMetadataMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
+                AbstractSegmentMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
                 Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
                 assertEquals(0, keyMap.size());
                 Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
@@ -491,7 +491,7 @@ public class DelayedTest {
             Controller controllerB = Deencapsulation.getField(protocolB, "controller");
             {
                 AbstractMapControl sentMapControl = Deencapsulation.getField(controllerB, "sentMapControl");
-                AbstractMetadataMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
+                AbstractSegmentMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
                 Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
                 assertEquals(1, keyMap.size());
                 Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
@@ -499,7 +499,7 @@ public class DelayedTest {
             }
             {
                 AbstractMapControl receivedMapControl = Deencapsulation.getField(controllerB, "receivedMapControl");
-                AbstractMetadataMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
+                AbstractSegmentMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
                 Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
                 assertEquals(0, keyMap.size());
                 Map valueMap = Deencapsulation.getField(dataMap, "valueMap");

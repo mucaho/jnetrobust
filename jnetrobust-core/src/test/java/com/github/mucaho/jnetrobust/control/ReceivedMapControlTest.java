@@ -68,18 +68,18 @@ public class ReceivedMapControlTest extends AbstractMapControlTest {
     @Parameters
     public final void testRemoveTail(final Short input, final Short[] outputs, final Short nextRemoteSeq) {
 
-        final LinkedHashSet<Metadata<Object>> orderedMetadatas = new LinkedHashSet<Metadata<Object>>();
+        final LinkedHashSet<Segment<Object>> orderedSegments = new LinkedHashSet<Segment<Object>>();
         new MockUp<ReceivedMapControl<Object>>() {
             @SuppressWarnings("unused")
             @Mock
-            private void notifyOrdered(Metadata<Object> orderedPackage) {
+            private void notifyOrdered(Segment<Object> orderedPackage) {
                 if (orderedPackage != null)
-                    orderedMetadatas.add(orderedPackage);
+                    orderedSegments.add(orderedPackage);
             }
         };
 
-        Metadata<Object> metadata = new Metadata<Object>(input, input);
-        dataMap.put(metadata);
+        Segment<Object> segment = new Segment<Object>(input, input);
+        dataMap.put(segment);
         Deencapsulation.invoke(handler, "removeTail");
 
 
@@ -87,13 +87,13 @@ public class ReceivedMapControlTest extends AbstractMapControlTest {
         assertEquals("Next remote sequence must match", nextRemoteSeq, actualNextRemoteSeq);
 
         if (outputs.length != 0)
-            assertEquals("Ordered metadata count must match", outputs.length, orderedMetadatas.size());
+            assertEquals("Ordered segment count must match", outputs.length, orderedSegments.size());
         else
-            assertEquals("No ordered metadata must have occured", 0, orderedMetadatas.size());
+            assertEquals("No ordered segment must have occured", 0, orderedSegments.size());
 
         int i = 0;
-        for (Metadata<Object> orderedMetadata : orderedMetadatas) {
-            assertEquals("Order and contents of datas must match", outputs[i], orderedMetadata.getData());
+        for (Segment<Object> orderedSegment : orderedSegments) {
+            assertEquals("Order and contents of datas must match", outputs[i], orderedSegment.getData());
             i++;
         }
     }
@@ -116,10 +116,10 @@ public class ReceivedMapControlTest extends AbstractMapControlTest {
         Deencapsulation.setField(handler, "nextDataId", (short) 1);
         dataMap.clear();
 
-        Metadata<Object> metadata = new Metadata<Object>(ref, ref);
-        dataMap.put(metadata);
+        Segment<Object> segment = new Segment<Object>(ref, ref);
+        dataMap.put(segment);
         if (addedRef)
-            assertEquals("Ref was added as expected", metadata, dataMap.getValue(ref));
+            assertEquals("Ref was added as expected", segment, dataMap.getValue(ref));
         else
             assertNull("Ref was not added as expected", dataMap.getValue(ref));
 

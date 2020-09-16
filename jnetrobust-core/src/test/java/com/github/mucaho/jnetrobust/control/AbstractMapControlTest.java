@@ -13,18 +13,18 @@ import com.github.mucaho.jnetrobust.ProtocolConfig;
 public abstract class AbstractMapControlTest {
     protected final static ProtocolConfig config = new ProtocolConfig();
     protected static short dataId = Short.MIN_VALUE;
-    protected static AbstractMetadataMap<Object> dataMap;
+    protected static AbstractSegmentMap<Object> dataMap;
 
     protected static void initDataMap(AbstractMapControl<Object> handler) {
         dataMap = Deencapsulation.getField(handler, "dataMap");
     }
 
-    protected final Metadata<Object> addData(Object data, Short... references) {
-        Metadata<Object> metadata = new Metadata<Object>(++dataId, data);
+    protected final Segment<Object> addData(Object data, Short... references) {
+        Segment<Object> segment = new Segment<Object>(++dataId, data);
         for (short reference : references) {
-            dataMap.put(reference, metadata);
+            dataMap.put(reference, segment);
         }
-        return metadata;
+        return segment;
     }
 
 }

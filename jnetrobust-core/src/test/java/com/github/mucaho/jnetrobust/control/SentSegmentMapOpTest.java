@@ -20,12 +20,12 @@ import static com.github.mucaho.jarrayliterals.ArrayShortcuts.*;
 import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
-public class SentMetadataMapOpTest {
+public class SentSegmentMapOpTest {
     static {
         System.setProperty("jmockit-mockParameters", "annotated");
     }
 
-    private final static AbstractMetadataMap<Object> dataMap = new SentMetadataMap<Object>();
+    private final static AbstractSegmentMap<Object> dataMap = new SentSegmentMap<Object>();
 
     public enum Op {
         PUT_DATA, PUT_REF,
@@ -80,18 +80,18 @@ public class SentMetadataMapOpTest {
     private void testDataOperations(Short dataId, final Short[] initialRefs,
                                     final Op op, final Short[] opRefs) {
 
-        final Metadata<Object> metadata;
+        final Segment<Object> segment;
         if (dataId != null) {
-            metadata = new Metadata<Object>(dataId, null);
+            segment = new Segment<Object>(dataId, null);
         } else {
-            metadata = dataMap.getValue(initialRefs[0]);
-            assertNotNull("There should be a valid metadata.", metadata);
+            segment = dataMap.getValue(initialRefs[0]);
+            assertNotNull("There should be a valid segment.", segment);
         }
 
         final List<Short> addRefs = new ArrayList<Short>();
         final List<Short> removeRefs = new ArrayList<Short>();
-        new NonStrictExpectations(metadata) {{
-            onInstance(metadata).getTransmissionIds();
+        new NonStrictExpectations(segment) {{
+            onInstance(segment).getTransmissionIds();
             result = new Delegate<Object>() {
                 NavigableSet<Short> delegate() {
                     NavigableSet<Short> out = new TreeSet<Short>();
@@ -101,9 +101,9 @@ public class SentMetadataMapOpTest {
                     return out;
                 }
             };
-            onInstance(metadata).addTransmissionId(withCapture(addRefs));
+            onInstance(segment).addTransmissionId(withCapture(addRefs));
             result = true;
-            onInstance(metadata).removeTransmissionId(withCapture(removeRefs));
+            onInstance(segment).removeTransmissionId(withCapture(removeRefs));
             result = true;
         }};
 
@@ -111,7 +111,7 @@ public class SentMetadataMapOpTest {
             case PUT_DATA:
                 // temporarily mock getLastTransmissionId, as it needs to return non-empty transmissionIds for this test to work
                 new NonStrictExpectations() {{
-                    onInstance(metadata).getLastTransmissionId();
+                    onInstance(segment).getLastTransmissionId();
                     result = new Delegate<Object>() {
                         Short delegate() {
                             NavigableSet<Short> out = new TreeSet<Short>();
@@ -123,11 +123,11 @@ public class SentMetadataMapOpTest {
                     };
                 }};
 
-                dataMap.put(metadata);
+                dataMap.put(segment);
 
                 // remove temporary mock
                 new NonStrictExpectations() {{
-                    onInstance(metadata).getLastTransmissionId();
+                    onInstance(segment).getLastTransmissionId();
                     result = new Delegate<Object>() {
                         Short delegate(Invocation invocation) {
                             return invocation.proceed();
@@ -136,13 +136,13 @@ public class SentMetadataMapOpTest {
                 }};
                 break;
             case PUT_REF:
-                dataMap.put(opRefs[0], metadata);
+                dataMap.put(opRefs[0], segment);
                 break;
             case PUTALL_DATA:
-                dataMap.putAll(metadata);
+                dataMap.putAll(segment);
                 break;
             case PUTALL_REFS:
-                dataMap.putAll(new TreeSet<Short>(Arrays.asList(opRefs)), metadata);
+                dataMap.putAll(new TreeSet<Short>(Arrays.asList(opRefs)), segment);
                 break;
             case REMOVE:
                 dataMap.remove(opRefs[0]);
@@ -151,39 +151,39 @@ public class SentMetadataMapOpTest {
                 dataMap.removeAll(opRefs[0]);
                 break;
             case REMOVEALL_DATA:
-                properlyMockOldMetadataTransmissionIds(metadata, removeRefs, Collections.<Short>emptyList());
-                dataMap.removeAll(metadata);
+                properlyMockOldSegmentTransmissionIds(segment, removeRefs, Collections.<Short>emptyList());
+                dataMap.removeAll(segment);
                 break;
             case REMOVEALL_REFS:
-                properlyMockOldMetadataTransmissionIds(metadata, removeRefs, Collections.<Short>emptyList());
+                properlyMockOldSegmentTransmissionIds(segment, removeRefs, Collections.<Short>emptyList());
                 dataMap.removeAll(new TreeSet<Short>(Arrays.asList(opRefs)));
                 break;
             case REPLACE:
-                properlyMockOldMetadataTransmissionIds(dataMap.getValue(opRefs[0]), removeRefs, Arrays.asList(opRefs));
-                dataMap.put(opRefs[0], metadata);
+                properlyMockOldSegmentTransmissionIds(dataMap.getValue(opRefs[0]), removeRefs, Arrays.asList(opRefs));
+                dataMap.put(opRefs[0], segment);
                 break;
         }
 
         new Verifications() {{
             if (op.toString().startsWith(Op.PUT_DATA.toString())) {
                 // TODO: figure out what's wrong in the verification here
-                // onInstance(metadata).addTransmissionId(withEqual(initialRefs[initialRefs.length - 1])); times = 1;
-                onInstance(metadata).removeTransmissionId(anyShort); times = 0;
+                // onInstance(segment).addTransmissionId(withEqual(initialRefs[initialRefs.length - 1])); times = 1;
+                onInstance(segment).removeTransmissionId(anyShort); times = 0;
             } else if (op.toString().startsWith("PUT")) {
                 for (Short addRef : addRefs) {
-                    onInstance(metadata).addTransmissionId(withEqual(addRef)); times = 1;
+                    onInstance(segment).addTransmissionId(withEqual(addRef)); times = 1;
                 }
-                onInstance(metadata).removeTransmissionId(anyShort); times = 0;
+                onInstance(segment).removeTransmissionId(anyShort); times = 0;
             } else if (op.toString().startsWith(Op.REMOVE.toString())) {
                 for (Short removeRef : removeRefs) {
-                    onInstance(metadata).removeTransmissionId(withEqual(removeRef)); times = 1;
+                    onInstance(segment).removeTransmissionId(withEqual(removeRef)); times = 1;
                 }
-                onInstance(metadata).addTransmissionId(anyShort); times = 0;
+                onInstance(segment).addTransmissionId(anyShort); times = 0;
             } else if (op == Op.REPLACE) {
                 for (Short addRef : addRefs) {
-                    onInstance(metadata).addTransmissionId(withEqual(addRef)); times = 1;
+                    onInstance(segment).addTransmissionId(withEqual(addRef)); times = 1;
                 }
-                onInstance(metadata).removeTransmissionId(anyShort); times = 0;
+                onInstance(segment).removeTransmissionId(anyShort); times = 0;
             }
         }};
     }
@@ -196,46 +196,46 @@ public class SentMetadataMapOpTest {
         } else {
             int elementCount = 0;
 
-            Metadata<Object> metadata;
+            Segment<Object> segment;
             for (Short[] dataRefs : expectedDataMap) {
                 elementCount += dataRefs.length;
 
-                metadata = dataMap.getValue(dataRefs[0]);
-                assertNotNull("Shouldn't be null!", metadata);
+                segment = dataMap.getValue(dataRefs[0]);
+                assertNotNull("Shouldn't be null!", segment);
                 for (Short dataRef : dataRefs) {
-                    assertSame("Should be same object!", metadata, dataMap.getValue(dataRef));
+                    assertSame("Should be same object!", segment, dataMap.getValue(dataRef));
                 }
-                assertArrayEquals("Should be equal!", dataRefs, dataMap.getKeys(metadata).toArray());
+                assertArrayEquals("Should be equal!", dataRefs, dataMap.getKeys(segment).toArray());
             }
 
-            assertEquals("Data map metadata count mismatch.", elementCount, dataMap.keySize());
-            assertEquals("Data map metadata count mismatch.", expectedDataMap.length, dataMap.valueSize());
+            assertEquals("Data map segment count mismatch.", elementCount, dataMap.keySize());
+            assertEquals("Data map segment count mismatch.", expectedDataMap.length, dataMap.valueSize());
         }
     }
 
-    private void properlyMockOldMetadataTransmissionIds(final Metadata<Object> metadata,
+    private void properlyMockOldSegmentTransmissionIds(final Segment<Object> segment,
                                                         final List<Short> removeRefs,
                                                         final List<Short> replaceRefs) {
         // due to mocking transmissionIds, old already added instances have no transmissionIds
         // workaround this by manually re-adding the transmissionIds
 
-        final NavigableSet<Short> toBeRemovedMetadataTransmissionIds = new TreeSet<Short>();
+        final NavigableSet<Short> toBeRemovedSegmentTransmissionIds = new TreeSet<Short>();
 
-        EntryIterator<Short, Metadata<Object>> iter = dataMap.getIterator();
+        EntryIterator<Short, Segment<Object>> iter = dataMap.getIterator();
         Short key = iter.getHigherKey(null);
         while (key != null) {
-            if (iter.getValue(key) == metadata && !replaceRefs.contains(key)) {
-                toBeRemovedMetadataTransmissionIds.add(key);
+            if (iter.getValue(key) == segment && !replaceRefs.contains(key)) {
+                toBeRemovedSegmentTransmissionIds.add(key);
             }
             key = iter.getHigherKey(key);
         }
 
         new NonStrictExpectations() {{
-            onInstance(metadata).getTransmissionIds();
+            onInstance(segment).getTransmissionIds();
             result = new Delegate<Object>() {
                 NavigableSet<Short> delegate() {
-                    toBeRemovedMetadataTransmissionIds.removeAll(removeRefs);
-                    return toBeRemovedMetadataTransmissionIds;
+                    toBeRemovedSegmentTransmissionIds.removeAll(removeRefs);
+                    return toBeRemovedSegmentTransmissionIds;
                 }
             };
         }};
