@@ -39,17 +39,20 @@ If you need reliability, but you benefit from receiving unvalidated data with no
 How do I use it?
 ------------------
 It is a library and imposes no restrictions on how you use it:   
-* the protocol maintains an internal state, that is updated every time you use it
+* the [protocol](http://mucaho.github.io/jnetrobust/com/github/mucaho/jnetrobust/Protocol.html) maintains an internal state, that is updated every time you use it
 * the protocol just adds/removes metadata to/from your original data
 * you decide what to do with the metadata-packaged data (e.g. add some of your own metadata, etc... )
 * you decide how you want to serialize the metadata-packaged data (e.g. with [default serialization](http://docs.oracle.com/javase/7/docs/api/java/io/Externalizable.html), [Kryo](https://github.com/EsotericSoftware/kryo), etc... )
 * you decide how you want to send the metadata-packaged data (e.g. plain [DatagramSocket](http://docs.oracle.com/javase/7/docs/api/java/net/DatagramSocket.html), newer NIO [DatagramChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/DatagramChannel.html) or even network frameworks like [Apache MINA](https://mina.apache.org/))
 
+A reference implementation which glues all those pieces together is also provided for convenience,
+with an example listed below.
+
 **Refer to the [Wiki pages](https://github.com/mucaho/jnetrobust/wiki) for additional information!**
 
 Talk is cheap. Show me the code. [[1]](http://lkml.org/lkml/2000/8/25/132)
 --------------------------------
-Here is a minimal, complete example:   
+Here is a minimal, complete example of using the provided reference implementation:
 **Code**
 ```java
 public class BidirectionalMain {
@@ -60,18 +63,19 @@ public class BidirectionalMain {
         InetSocketAddress ADDRESS_A = new InetSocketAddress(InetAddress.getLocalHost(), 12345);
         InetSocketAddress ADDRESS_B = new InetSocketAddress(InetAddress.getLocalHost(), 12346);
 
-        // setup ProtocolHost A
-        ProtocolHost<String> protocolHostA = new ProtocolHost<String>("A", String.class, ADDRESS_A);
-        ProtocolHandle<String> protocolHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
+        // setup ProtocolHost A using the host's local address and registering all serialization dataTypes
+        ProtocolHost protocolHostA = new ProtocolHost("A", ADDRESS_A, String.class);
+        // ProtocolHost supports multiplexing between different peers using respective topicId, remote address and dataType
+        ProtocolHost.ProtocolHandle<String> protocolHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
 
-        // setup ProtocolHost B
-        ProtocolHost<String> protocolHostB = new ProtocolHost<String>("B", String.class, ADDRESS_B);
-        ProtocolHandle<String> protocolHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
+        // setup ProtocolHost B using the host's local address and registering all serialization dataTypes
+        ProtocolHost protocolHostB = new ProtocolHost("B", ADDRESS_B, String.class);
+        // ProtocolHost supports multiplexing between different peers using respective topicId, remote address and dataType
+        ProtocolHost.ProtocolHandle<String> protocolHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
 
 
         // send from A
-        protocolHandleA.send("Hi!");
-        protocolHandleA.send("How you doing?");
+        protocolHandleA.send(Arrays.asList("Hi!", "How you doing?"));
 
         System.out.println();
         Thread.sleep(100);
@@ -96,22 +100,24 @@ public class BidirectionalMain {
 ```
 **Console Output**
 ```
- A	Data sent	                     -32767	      Hi!	 
- A	Data sent	                     -32766	      How you doing?	   
+[A]: Data sent                      -32767    Hi!
+[A]: Data sent                      -32766    How you doing?
 
- B	Data received ordered	         -32767	      Hi!	  
- B	Data received	                 -32767	      Hi!	  
- B	Data received ordered	         -32766	      How you doing?	  
- B	Data received	                 -32766	      How you doing?
- <B>: Hi!  
- <B>: How you doing?   
- B	Data sent	                     -32767	      Howdy! Fine, thanks.	  
+[B]: Data received ordered          -32767    Hi!
+[B]: Data received                  -32767    Hi!
+[B]: Data received ordered          -32766    How you doing?
+[B]: Data received                  -32766    How you doing?
+[B]: Newest data received           -32766    How you doing?
+<B> Hi!
+<B> How you doing?
+[B]: Data sent                      -32767    Howdy! Fine, thanks.
 
- A	Data was received at other end   -32767	      Hi!	  
- A	Data was received at other end	 -32766	      How you doing?	  
- A	Data received ordered	         -32767	      Howdy! Fine, thanks.	  
- A	Data received	                 -32767	      Howdy! Fine, thanks.	  
- <A>: Howdy! Fine, thanks.  
+[A]: Data was received at other end -32767    Hi!
+[A]: Data was received at other end -32766    How you doing?
+[A]: Data received ordered          -32767    Howdy! Fine, thanks.
+[A]: Data received                  -32767    Howdy! Fine, thanks.
+[A]: Newest data received           -32767    Howdy! Fine, thanks.
+<A> Howdy! Fine, thanks.
 ```
 
 Where can I download the binaries, sources and javadoc?

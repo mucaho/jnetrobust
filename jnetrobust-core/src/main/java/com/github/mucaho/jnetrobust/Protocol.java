@@ -23,25 +23,37 @@ import java.util.*;
 /**
  * The central API class that represents the virtual protocol.
  * It maintains the state of a virtual protocol instance and
- * offers methods to alter that state by wrapping user data with protocol specific metadata. <p></p>
- * Various constructors are offered to instantiate a new protocol instance. <p></p>
+ * offers methods to alter that state by wrapping user data with protocol specific metadata.
+ * <p></p>
+ * Various constructors are offered to instantiate a new protocol instance.
+ * <p></p>
  * Typically you call the protocol's {@link Protocol#send(Object)}
  * and {@link Protocol#receive(Packet)} methods in order to attach/detach protocol-specific information
  * to your user data. This protocol-specific information and the protocol's internal state is then used
  * to enable reliable & ordered communication even over an unreliable medium. <br></br>
  * Note that both {@link Protocol#send(Object)} and {@link Protocol#receive(Packet)} methods may trigger zero or more
  * {@link ProtocolListener listener} events before they return. <br></br>
- * How serialization is done and over which medium the {@link Packet packaged user-data} is sent is
- * up to the user (analogue for receiving and deserialization). <br></br>
- * Note that always the <b>same two protocol instances must communicate with each other</b>, as they share a distributed
- * state together. <br></br>
- * In order for the protocol to work the user <b>must immediately acknowledge received data</b>, either by sending
- * an empty transmission or sending new user-data if it is available. The user may delay doing this, if he is sending
- * new data at a <b>fixed interval &lt; 50ms</b>. <br></br>
+ * The user data that is passed to or returned from the protocol should not be modified by the user later on,
+ * as the protocol saves this data internally (for retransmits, invoking listener methods at appropriate times, etc.).
+ * The most straightforward and safest solution is to <b>clone the data before sending, after receiving or
+ * after being notified about it from the protocol instance</b>.
+ * The protocol does not do this automatically, since the sent / received data can be more efficiently produced / consumed
+ * depending on user needs without the allocation of new objects (e.g. by using a circular object pool larger than
+ * <code>2 * </code>{@link ProtocolConfig#MAX_PACKET_QUEUE_LIMIT}).<br></br>
  * The {@link Protocol#send(Object, java.io.ObjectOutput)} & {@link Protocol#receive(java.io.ObjectInput)}
  * are utility methods which automatically write the packaged user-data to a {@link java.io.ObjectOutput} or
  * read the packaged user-data from a {@link java.io.ObjectInput} respectively. Other than that, they behave
- * exactly like the {@link Protocol#send(Object)} and {@link Protocol#receive(Packet)} methods.<p></p>
+ * exactly like the {@link Protocol#send(Object)} and {@link Protocol#receive(Packet)} methods. <br></br>
+ * How serialization is done and over which medium the {@link Packet packaged user-data} is sent is
+ * up to the user (analogue for receiving and deserialization).
+ * <p></p>
+ * Note that always the <b>same two protocol instances must communicate with each other</b>, as they share a distributed
+ * state together. <br></br>
+ * In order for the protocol to work the user <b>must immediately acknowledge received data</b>, either by sending
+ * an empty transmission or sending new user-data if it is available. The user may delay doing this, if he
+ * is sending new data at a <b>"slower" side fixed interval (ms) &lt; "faster" side fixed interval * 5 (ms)</b>.
+ * Note that the congestion control only works if both sides send at the same periodic interval.<br></br>
+ * <p></p>
  * This class also offer utility methods to query the {@link Protocol#getSmoothedRTT() round-trip time}, as well
  * as the {@link Protocol#getRTTVariation() round-trip time variation}. <p></p>
  * This class also offers the ability to {@link Protocol#compare(Short, Short) compare <code>dataIds</code>} against each other. The user <b>must not compare these ids</b> with built-in comparison
