@@ -6,8 +6,8 @@
 package com.github.mucaho.jnetrobust.example.advanced;
 
 import com.github.mucaho.jnetrobust.example.ProtocolHost;
-import com.github.mucaho.jnetrobust.example.ProtocolHostHandle;
-import com.github.mucaho.jnetrobust.example.ProtocolHostListener;
+import com.github.mucaho.jnetrobust.example.ProtocolHandle;
+import com.github.mucaho.jnetrobust.example.ProtocolHandleListener;
 import com.github.mucaho.jnetrobust.example.advanced.SynchronizationMain.*;
 
 import java.io.IOException;
@@ -31,13 +31,13 @@ public class AbstractSynchronizationController {
         host = new ProtocolHost(info.hostMode.toString(), info.localAddress, Vector2D.class);
     }
 
-    SynchronizationHandle register(HandleInformation info, ProtocolHostListener<Vector2D>... additionalProtocolHostListeners) {
-        List<ProtocolHostListener<Vector2D>> listeners = new ArrayList<ProtocolHostListener<Vector2D>>();
-        listeners.add(new ModeGUIHostListener(info.updateMode, gui));
-        listeners.addAll(Arrays.asList(additionalProtocolHostListeners));
+    SynchronizationHandle register(HandleInformation info, ProtocolHandleListener<Vector2D>... additionalHandleListeners) {
+        List<ProtocolHandleListener<Vector2D>> listeners = new ArrayList<ProtocolHandleListener<Vector2D>>();
+        listeners.add(new ModeGUIHandleListener(info.updateMode, gui));
+        listeners.addAll(Arrays.asList(additionalHandleListeners));
 
-        ProtocolHostHandle<Vector2D> handle =
-                host.register(info.topic, info.remoteAddress, new CombinedHostListener(listeners));
+        ProtocolHandle<Vector2D> handle =
+                host.register(info.topic, info.remoteAddress, new CombinedHandleListener(listeners));
         return new SynchronizationHandle(handle, info.updateMode, hostMode, gui);
     }
 
@@ -68,12 +68,12 @@ public class AbstractSynchronizationController {
     }
 
     static class SynchronizationHandle {
-        private final ProtocolHostHandle<Vector2D> hostHandle;
+        private final ProtocolHandle<Vector2D> hostHandle;
         private final MODE updateMode;
         private final SynchronizationGUI gui;
         private final Vector2D data;
 
-        private SynchronizationHandle(ProtocolHostHandle<Vector2D> hostHandle,
+        private SynchronizationHandle(ProtocolHandle<Vector2D> hostHandle,
                                       MODE updateMode,
                                       HOST hostMode,
                                       SynchronizationGUI gui) {
@@ -104,22 +104,22 @@ public class AbstractSynchronizationController {
         }
     }
 
-    static class CombinedHostListener implements ProtocolHostListener<Vector2D> {
-        private final List<ProtocolHostListener<Vector2D>> listeners;
+    static class CombinedHandleListener implements ProtocolHandleListener<Vector2D> {
+        private final List<ProtocolHandleListener<Vector2D>> listeners;
 
-        CombinedHostListener(List<ProtocolHostListener<Vector2D>> listeners) {
+        CombinedHandleListener(List<ProtocolHandleListener<Vector2D>> listeners) {
             this.listeners = listeners;
         }
 
         @Override
         public void handleOrderedData(Vector2D orderedData) {
-            for (ProtocolHostListener<Vector2D> listener : listeners)
+            for (ProtocolHandleListener<Vector2D> listener : listeners)
                 listener.handleOrderedData(orderedData);
         }
 
         @Override
         public void handleNewestData(Vector2D newestData) {
-            for (ProtocolHostListener<Vector2D> listener : listeners)
+            for (ProtocolHandleListener<Vector2D> listener : listeners)
                 listener.handleNewestData(newestData);
         }
 
@@ -128,11 +128,11 @@ public class AbstractSynchronizationController {
         }
     }
 
-    static class ModeGUIHostListener implements ProtocolHostListener<Vector2D> {
+    static class ModeGUIHandleListener implements ProtocolHandleListener<Vector2D> {
         private final MODE updateMode;
         private final SynchronizationGUI gui;
 
-        ModeGUIHostListener(MODE updateMode, SynchronizationGUI gui) {
+        ModeGUIHandleListener(MODE updateMode, SynchronizationGUI gui) {
             this.updateMode = updateMode;
             this.gui = gui;
         }

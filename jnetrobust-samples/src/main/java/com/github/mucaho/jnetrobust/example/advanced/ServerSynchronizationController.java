@@ -6,7 +6,7 @@
 package com.github.mucaho.jnetrobust.example.advanced;
 
 
-import com.github.mucaho.jnetrobust.example.ProtocolHostListener;
+import com.github.mucaho.jnetrobust.example.ProtocolHandleListener;
 import com.github.mucaho.jnetrobust.example.advanced.SynchronizationMain.*;
 
 import java.io.IOException;
@@ -24,12 +24,12 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
                                            HandleInformation handleRelayAInfo) throws IOException {
         super(hostInfo);
 
-        ModeRelayHostListener relayBDataListener = new ModeRelayHostListener(handleRelayBInfo.updateMode);
+        ModeRelayHandleListener relayBDataListener = new ModeRelayHandleListener(handleRelayBInfo.updateMode);
         clientAHandle = register(handleDirectAInfo, relayBDataListener);
         relayBHandle = register(handleRelayBInfo);
         relayBDataListener.setHandle(relayBHandle);
 
-        ModeRelayHostListener relayADataListener = new ModeRelayHostListener(handleRelayAInfo.updateMode);
+        ModeRelayHandleListener relayADataListener = new ModeRelayHandleListener(handleRelayAInfo.updateMode);
         clientBHandle = register(handleDirectBInfo, relayADataListener);
         relayAHandle = register(handleRelayAInfo);
         relayADataListener.setHandle(relayAHandle);
@@ -70,11 +70,11 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
         }
     }
 
-    static class ModeRelayHostListener implements ProtocolHostListener<Vector2D> {
+    static class ModeRelayHandleListener implements ProtocolHandleListener<Vector2D> {
         private final MODE updateMode;
         private SynchronizationHandle handle;
 
-        public ModeRelayHostListener(MODE updateMode) {
+        public ModeRelayHandleListener(MODE updateMode) {
             this.updateMode = updateMode;
         }
 

@@ -7,7 +7,7 @@ package com.github.mucaho.jnetrobust.example.simple;
 
 import com.github.mucaho.jnetemu.DatagramWanEmulator;
 import com.github.mucaho.jnetrobust.example.ProtocolHost;
-import com.github.mucaho.jnetrobust.example.ProtocolHostHandle;
+import com.github.mucaho.jnetrobust.example.ProtocolHandle;
 
 import java.io.IOException;
 import java.net.InetAddress;
@@ -40,7 +40,7 @@ public class UnidirectionalMain {
 
     private static class Sender implements Runnable {
         private long counter = 0L;
-        private ProtocolHostHandle<Long> senderHandle;
+        private ProtocolHandle<Long> senderHandle;
 
         private Sender() throws IOException {
             ProtocolHost senderHost = new ProtocolHost(null, senderAddress, Long.class);
@@ -61,7 +61,7 @@ public class UnidirectionalMain {
     }
 
     private static class Receiver implements Runnable {
-        private ProtocolHostHandle<Long> receiverHandle;
+        private ProtocolHandle<Long> receiverHandle;
 
         private Receiver() throws IOException {
             ProtocolHost receiverHost = new ProtocolHost(null, receiverAddress, Long.class);

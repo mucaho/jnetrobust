@@ -12,11 +12,11 @@ import java.io.Serializable;
 import java.net.SocketAddress;
 import java.util.List;
 
-public class ProtocolHostHandle<T extends Serializable> {
+public class ProtocolHandle<T extends Serializable> {
     private final ProtocolId protocolId;
     private final ProtocolHost host;
 
-    ProtocolHostHandle(ProtocolId protocolId, ProtocolHost host) {
+    ProtocolHandle(ProtocolId protocolId, ProtocolHost host) {
         this.host = host;
         this.protocolId = protocolId;
     }

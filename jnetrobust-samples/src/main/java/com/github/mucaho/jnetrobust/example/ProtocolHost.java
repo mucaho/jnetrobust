@@ -18,7 +18,7 @@ import com.github.mucaho.jnetrobust.Protocol;
 import com.github.mucaho.jnetrobust.ProtocolListener;
 import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.controller.Packet;
-import com.github.mucaho.jnetrobust.example.ProtocolHostHandle.ProtocolId;
+import com.github.mucaho.jnetrobust.example.ProtocolHandle.ProtocolId;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -48,7 +48,7 @@ public class ProtocolHost {
 
     // protocol fields
     private final Map<ProtocolId, Protocol<?>> protocols = new ConcurrentHashMap<ProtocolId, Protocol<?>>();
-    private final Map<ProtocolId, ProtocolHostListener<?>> listeners = new ConcurrentHashMap<ProtocolId, ProtocolHostListener<?>>();
+    private final Map<ProtocolId, ProtocolHandleListener<?>> listeners = new ConcurrentHashMap<ProtocolId, ProtocolHandleListener<?>>();
 
     // serialization fields
     private final Kryo kryo;
@@ -91,12 +91,12 @@ public class ProtocolHost {
         this.hostName = hostName;
     }
 
-    public <T extends Serializable> ProtocolHostHandle<T> register(byte topic, SocketAddress remoteAddress) {
+    public <T extends Serializable> ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress) {
         return register(topic, remoteAddress, null);
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Serializable> ProtocolHostHandle<T> register(byte topic, SocketAddress remoteAddress, final ProtocolHostListener<T> listener) {
+    public <T extends Serializable> ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress, final ProtocolHandleListener<T> listener) {
         final ProtocolId protocolId = new ProtocolId(topic, remoteAddress);
 
         if (listener != null)
@@ -129,7 +129,7 @@ public class ProtocolHost {
             protocol = new Protocol<T>(protocolListener);
         protocols.put(protocolId, protocol);
 
-        return new ProtocolHostHandle<T>(protocolId, this);
+        return new ProtocolHandle<T>(protocolId, this);
     }
 
     @SuppressWarnings("all")
@@ -202,7 +202,7 @@ public class ProtocolHost {
 
     @SuppressWarnings("unchecked")
     <T extends Serializable> T receive(ProtocolId protocolId) {
-        ProtocolHostListener<T> listener = (ProtocolHostListener<T>) listeners.get(protocolId);
+        ProtocolHandleListener<T> listener = (ProtocolHandleListener<T>) listeners.get(protocolId);
 
         Queue<T> orderedQueue = (Queue<T>) orderedQueues.get(protocolId);
         T orderedData = orderedQueue != null ? orderedQueue.poll() : null;

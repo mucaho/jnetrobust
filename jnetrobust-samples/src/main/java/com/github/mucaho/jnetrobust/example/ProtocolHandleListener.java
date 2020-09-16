@@ -9,7 +9,7 @@ package com.github.mucaho.jnetrobust.example;
 
 import java.io.Serializable;
 
-public interface ProtocolHostListener<T extends Serializable> {
+public interface ProtocolHandleListener<T extends Serializable> {
     void handleOrderedData(T orderedData);
 
     void handleNewestData(T newestData);

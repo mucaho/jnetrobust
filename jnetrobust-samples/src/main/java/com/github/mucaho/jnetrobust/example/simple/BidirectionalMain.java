@@ -7,7 +7,7 @@ package com.github.mucaho.jnetrobust.example.simple;
 
 
 import com.github.mucaho.jnetrobust.example.ProtocolHost;
-import com.github.mucaho.jnetrobust.example.ProtocolHostHandle;
+import com.github.mucaho.jnetrobust.example.ProtocolHandle;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -30,10 +30,10 @@ public class BidirectionalMain {
         // ProtocolHost supports multiplexing between different peers using respective topicId, remote address and dataType
 
         ProtocolHost protocolHostA = new ProtocolHost("A", ADDRESS_A, String.class);
-        ProtocolHostHandle<String> hostHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
+        ProtocolHandle<String> hostHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
 
         ProtocolHost protocolHostB = new ProtocolHost("B", ADDRESS_B, String.class);
-        ProtocolHostHandle<String> hostHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
+        ProtocolHandle<String> hostHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
 
 
         // send from A
