@@ -103,9 +103,9 @@ public class DatagramWanEmulator {
 
     /**
      * The maximum size of incoming / outcoming datagram packets (in bytes).
-     * Defaults to 1024.
+     * Defaults to 4096.
      */
-    private int maxPacketLength = 1024;
+    private int maxPacketLength = 4096;
     /**
      * The amount of package loss. A value of 0.0f means no package loss,
      * a value of 1.0f means every packet will be lost.
@@ -136,7 +136,7 @@ public class DatagramWanEmulator {
 
     /**
      * Gets the maximum size of incoming / outcoming datagram packets (in bytes).
-     * Defaults to 1024.
+     * Defaults to 4096.
      *
      * @return the max packet length
      */
@@ -146,7 +146,7 @@ public class DatagramWanEmulator {
 
     /**
      * Sets the maximum size of incoming / outcoming datagram packets (in bytes).
-     * Defaults to 1024.
+     * Defaults to 4096.
      *
      * @param maxPacketLength the new max packet length
      */
