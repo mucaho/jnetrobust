@@ -6,7 +6,7 @@
 package com.github.mucaho.jnetrobust.example.advanced;
 
 
-import com.github.mucaho.jnetrobust.example.ProtocolHost;
+import com.github.mucaho.jnetrobust.example.ProtocolHostListener;
 import com.github.mucaho.jnetrobust.example.advanced.SynchronizationMain.*;
 
 import java.io.IOException;
@@ -24,12 +24,12 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
                                            HandleInformation handleRelayAInfo) throws IOException {
         super(hostInfo);
 
-        ModeRelayDataListener relayBDataListener = new ModeRelayDataListener(handleRelayBInfo.updateMode);
+        ModeRelayHostListener relayBDataListener = new ModeRelayHostListener(handleRelayBInfo.updateMode);
         clientAHandle = register(handleDirectAInfo, relayBDataListener);
         relayBHandle = register(handleRelayBInfo);
         relayBDataListener.setHandle(relayBHandle);
 
-        ModeRelayDataListener relayADataListener = new ModeRelayDataListener(handleRelayAInfo.updateMode);
+        ModeRelayHostListener relayADataListener = new ModeRelayHostListener(handleRelayAInfo.updateMode);
         clientBHandle = register(handleDirectBInfo, relayADataListener);
         relayAHandle = register(handleRelayAInfo);
         relayADataListener.setHandle(relayAHandle);
@@ -70,11 +70,11 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
         }
     }
 
-    static class ModeRelayDataListener implements ProtocolHost.DataListener<Vector2D> {
+    static class ModeRelayHostListener implements ProtocolHostListener<Vector2D> {
         private final MODE updateMode;
         private SynchronizationHandle handle;
 
-        public ModeRelayDataListener(MODE updateMode) {
+        public ModeRelayHostListener(MODE updateMode) {
             this.updateMode = updateMode;
         }
 
@@ -102,6 +102,10 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
                     e.printStackTrace();
                 }
             }
+        }
+
+        @Override
+        public void handleExceptionalData(Vector2D exceptionalData) {
         }
     }
 }

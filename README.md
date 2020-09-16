@@ -73,31 +73,31 @@ public class BidirectionalMain {
         // ProtocolHost supports multiplexing between different peers using respective topicId, remote address and dataType
 
         ProtocolHost protocolHostA = new ProtocolHost("A", ADDRESS_A, String.class);
-        ProtocolHandle<String> protocolHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
+        ProtocolHandle<String> protocolHostHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
 
         ProtocolHost protocolHostB = new ProtocolHost("B", ADDRESS_B, String.class);
-        ProtocolHandle<String> protocolHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
+        ProtocolHandle<String> protocolHostHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
 
 
         // send from A
-        protocolHandleA.send(Arrays.asList("Hi!", "How you doing?"));
+        protocolHostHandleA.send(Arrays.asList("Hi!", "How you doing?"));
 
         System.out.println();
         Thread.sleep(100);
 
         // receive at B
-        while ((receivedMessage = protocolHandleB.receive()) != null) {
+        while ((receivedMessage = protocolHostHandleB.receive()) != null) {
             System.out.println("<B>\t"+receivedMessage);
         }
 
         // send from B
-        protocolHandleB.send("Howdy! Fine, thanks.");
+        protocolHostHandleB.send("Howdy! Fine, thanks.");
 
         System.out.println();
         Thread.sleep(100);
 
         // receive at A
-        while ((receivedMessage = protocolHandleA.receive()) != null) {
+        while ((receivedMessage = protocolHostHandleA.receive()) != null) {
             System.out.println("<A>\t"+receivedMessage);
         }
     }

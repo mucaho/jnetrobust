@@ -18,6 +18,7 @@ import com.github.mucaho.jnetrobust.Protocol;
 import com.github.mucaho.jnetrobust.ProtocolListener;
 import com.github.mucaho.jnetrobust.control.Metadata;
 import com.github.mucaho.jnetrobust.controller.Packet;
+import com.github.mucaho.jnetrobust.example.ProtocolHostHandle.ProtocolId;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -43,43 +44,11 @@ public class ProtocolHost {
     private static final int IPTOS_THROUGHPUT = 0x08;
     private static final int IPTOS_LOWDELAY = 0x10;
 
-    public interface DataListener<T extends Serializable> {
-        void handleOrderedData(T orderedData);
-        void handleNewestData(T newestData);
-        //TODO add exceptional callback
-    }
-
-    public static class ProtocolHandle<T extends Serializable> {
-        private final ProtocolId protocolId;
-        private final ProtocolHost host;
-        private ProtocolHandle(ProtocolId protocolId, ProtocolHost host) {
-            this.host = host;
-            this.protocolId = protocolId;
-        }
-
-        public void send() throws IOException {
-            host.send(protocolId);
-        }
-
-        public void send(T data) throws IOException {
-            host.send(protocolId, data);
-        }
-
-        public void send(List<T> datas) throws IOException {
-            host.send(protocolId, datas);
-        }
-
-        public T receive() throws IOException, ClassNotFoundException {
-            host.receive();
-            return host.<T>receive(protocolId);
-        }
-    }
-
     private final String hostName;
 
     // protocol fields
-    private final Map<ProtocolId, Protocol<?>> protocols = new ConcurrentHashMap<ProtocolId, Protocol<?>>();
-    private final Map<ProtocolId, DataListener<?>> listeners = new ConcurrentHashMap<ProtocolId, DataListener<?>>();
+    private final Map<ProtocolHostHandle.ProtocolId, Protocol<?>> protocols = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, Protocol<?>>();
+    private final Map<ProtocolHostHandle.ProtocolId, ProtocolHostListener<?>> listeners = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, ProtocolHostListener<?>>();
 
     // serialization fields
     private final Kryo kryo;
@@ -122,12 +91,12 @@ public class ProtocolHost {
         this.hostName = hostName;
     }
 
-    public <T extends Serializable> ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress) {
+    public <T extends Serializable> ProtocolHostHandle<T> register(byte topic, SocketAddress remoteAddress) {
         return register(topic, remoteAddress, null);
     }
 
     @SuppressWarnings("unchecked")
-    public <T extends Serializable> ProtocolHandle<T> register(byte topic, SocketAddress remoteAddress, final DataListener<T> listener) {
+    public <T extends Serializable> ProtocolHostHandle<T> register(byte topic, SocketAddress remoteAddress, final ProtocolHostListener<T> listener) {
         final ProtocolId protocolId = new ProtocolId(topic, remoteAddress);
 
         if (listener != null)
@@ -160,27 +129,27 @@ public class ProtocolHost {
             protocol = new Protocol<T>(protocolListener);
         protocols.put(protocolId, protocol);
 
-        return new ProtocolHandle<T>(protocolId, this);
+        return new ProtocolHostHandle<T>(protocolId, this);
     }
 
     @SuppressWarnings("all")
     private final List sendDatas = new ArrayList<Object>();
 
     @SuppressWarnings("unchecked")
-    private synchronized <T extends Serializable> void send(ProtocolId protocolId) throws IOException {
+    synchronized <T extends Serializable> void send(ProtocolHostHandle.ProtocolId protocolId) throws IOException {
         sendDatas.clear();
         send(protocolId, (List<T>) sendDatas);
     }
 
     @SuppressWarnings("unchecked")
-    private synchronized <T extends Serializable> void send(ProtocolId protocolId, T data) throws IOException {
+    synchronized <T extends Serializable> void send(ProtocolHostHandle.ProtocolId protocolId, T data) throws IOException {
         sendDatas.clear();
         sendDatas.add(serializationClone(data));
         send(protocolId, (List<T>) sendDatas);
     }
 
     @SuppressWarnings("unchecked")
-    private synchronized <T extends Serializable> void send(ProtocolId protocolId, List<T> datas) throws IOException {
+    synchronized <T extends Serializable> void send(ProtocolHostHandle.ProtocolId protocolId, List<T> datas) throws IOException {
         if (datas != sendDatas) {
             sendDatas.clear();
             for (T data : datas) {
@@ -189,22 +158,22 @@ public class ProtocolHost {
         }
 
         buffer.clear();
-        buffer.put(protocolId.topic);
+        buffer.put(protocolId.getTopic());
         bufferOutput.setBuffer(buffer);
         Protocol<T> protocol = (Protocol<T>) protocols.get(protocolId);
         protocol.send(sendDatas, objectOutput);
         bufferOutput.flush();
 
         buffer.flip();
-        channel.send(buffer, protocolId.remoteAddress);
+        channel.send(buffer, protocolId.getRemoteAddress());
     }
 
-    private final Map<ProtocolId, Object> newestDatas = new ConcurrentHashMap<ProtocolId, Object>();
-    private final Map<ProtocolId, Queue<?>> receivedQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
-    private final Map<ProtocolId, Queue<?>> orderedQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
+    private final Map<ProtocolHostHandle.ProtocolId, Object> newestDatas = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, Object>();
+    private final Map<ProtocolHostHandle.ProtocolId, Queue<?>> receivedQueues = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, Queue<?>>();
+    private final Map<ProtocolHostHandle.ProtocolId, Queue<?>> orderedQueues = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, Queue<?>>();
 
     @SuppressWarnings("unchecked")
-    private synchronized void receive() throws IOException, ClassNotFoundException {
+    synchronized void receive() throws IOException, ClassNotFoundException {
         buffer.clear();
         SocketAddress remoteAddress = channel.receive(buffer);
         while (remoteAddress != null) {
@@ -232,8 +201,8 @@ public class ProtocolHost {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Serializable> T receive(ProtocolId protocolId) {
-        DataListener<T> listener = (DataListener<T>) listeners.get(protocolId);
+    <T extends Serializable> T receive(ProtocolHostHandle.ProtocolId protocolId) {
+        ProtocolHostListener<T> listener = (ProtocolHostListener<T>) listeners.get(protocolId);
 
         Queue<T> orderedQueue = (Queue<T>) orderedQueues.get(protocolId);
         T orderedData = orderedQueue != null ? orderedQueue.poll() : null;
@@ -253,36 +222,6 @@ public class ProtocolHost {
         }
 
         return receivedData;
-    }
-
-    private static class ProtocolId {
-        private final byte topic;
-        private final SocketAddress remoteAddress;
-
-        private ProtocolId(byte topic, SocketAddress remoteAddress) {
-            this.topic = topic;
-            this.remoteAddress = remoteAddress;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            ProtocolId that = (ProtocolId) o;
-
-            if (topic != that.topic) return false;
-            if (!remoteAddress.equals(that.remoteAddress)) return false;
-
-            return true;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = (int) topic;
-            result = 31 * result + remoteAddress.hashCode();
-            return result;
-        }
     }
 
     @SuppressWarnings("unchecked")

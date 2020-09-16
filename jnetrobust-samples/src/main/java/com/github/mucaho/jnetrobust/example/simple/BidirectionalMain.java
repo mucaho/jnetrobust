@@ -7,7 +7,7 @@ package com.github.mucaho.jnetrobust.example.simple;
 
 
 import com.github.mucaho.jnetrobust.example.ProtocolHost;
-import com.github.mucaho.jnetrobust.example.ProtocolHost.ProtocolHandle;
+import com.github.mucaho.jnetrobust.example.ProtocolHostHandle;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -30,31 +30,31 @@ public class BidirectionalMain {
         // ProtocolHost supports multiplexing between different peers using respective topicId, remote address and dataType
 
         ProtocolHost protocolHostA = new ProtocolHost("A", ADDRESS_A, String.class);
-        ProtocolHandle<String> protocolHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
+        ProtocolHostHandle<String> hostHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
 
         ProtocolHost protocolHostB = new ProtocolHost("B", ADDRESS_B, String.class);
-        ProtocolHandle<String> protocolHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
+        ProtocolHostHandle<String> hostHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
 
 
         // send from A
-        protocolHandleA.send(Arrays.asList("Hi!", "How you doing?"));
+        hostHandleA.send(Arrays.asList("Hi!", "How you doing?"));
 
         System.out.println();
         Thread.sleep(100);
 
         // receive at B
-        while ((receivedMessage = protocolHandleB.receive()) != null) {
+        while ((receivedMessage = hostHandleB.receive()) != null) {
             System.out.println("<B>\t"+receivedMessage);
         }
 
         // send from B
-        protocolHandleB.send("Howdy! Fine, thanks.");
+        hostHandleB.send("Howdy! Fine, thanks.");
 
         System.out.println();
         Thread.sleep(100);
 
         // receive at A
-        while ((receivedMessage = protocolHandleA.receive()) != null) {
+        while ((receivedMessage = hostHandleA.receive()) != null) {
             System.out.println("<A>\t"+receivedMessage);
         }
     }
