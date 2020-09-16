@@ -121,6 +121,30 @@ public class ProtocolHost {
 
                 super.handleNewestData(dataId, newestData);
             }
+
+            @Override
+            public void handleUnorderedData(short dataId, T unorderedData) {
+                Queue<T> exceptionalQueue = (Queue<T>) exceptionalQueues.get(protocolId);
+                if (exceptionalQueue == null) {
+                    exceptionalQueue = new LinkedList<T>();
+                    exceptionalQueues.put(protocolId, exceptionalQueue);
+                }
+                exceptionalQueue.offer(serializationClone(unorderedData));
+
+                super.handleUnorderedData(dataId, unorderedData);
+            }
+
+            @Override
+            public void handleUnackedData(short dataId, T unackedData) {
+                Queue<T> exceptionalQueue = (Queue<T>) exceptionalQueues.get(protocolId);
+                if (exceptionalQueue == null) {
+                    exceptionalQueue = new LinkedList<T>();
+                    exceptionalQueues.put(protocolId, exceptionalQueue);
+                }
+                exceptionalQueue.offer(serializationClone(unackedData));
+
+                super.handleUnackedData(dataId, unackedData);
+            }
         };
         Protocol<T> protocol;
         if (hostName != null)
@@ -136,15 +160,10 @@ public class ProtocolHost {
     private final List sendDatas = new ArrayList<Object>();
 
     @SuppressWarnings("unchecked")
-    synchronized <T extends Serializable> void send(ProtocolId protocolId) throws IOException {
-        sendDatas.clear();
-        send(protocolId, (List<T>) sendDatas);
-    }
-
-    @SuppressWarnings("unchecked")
     synchronized <T extends Serializable> void send(ProtocolId protocolId, T data) throws IOException {
         sendDatas.clear();
-        sendDatas.add(serializationClone(data));
+        if (data != null)
+            sendDatas.add(serializationClone(data));
         send(protocolId, (List<T>) sendDatas);
     }
 
@@ -168,9 +187,24 @@ public class ProtocolHost {
         channel.send(buffer, protocolId.getRemoteAddress());
     }
 
+    @SuppressWarnings("unchecked")
+    <T extends Serializable> void send(ProtocolId protocolId) {
+        ProtocolHandleListener<T> listener = (ProtocolHandleListener<T>) listeners.get(protocolId);
+
+        Queue<T> exceptionalQueue = (Queue<T>) exceptionalQueues.get(protocolId);
+        T unackedData = exceptionalQueue != null ? exceptionalQueue.poll() : null;
+        while (unackedData != null) {
+            if (listener != null)
+                listener.handleExceptionalData(unackedData);
+
+            unackedData = exceptionalQueue.poll();
+        }
+    }
+
     private final Map<ProtocolId, Object> newestDatas = new ConcurrentHashMap<ProtocolId, Object>();
     private final Map<ProtocolId, Queue<?>> receivedQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
     private final Map<ProtocolId, Queue<?>> orderedQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
+    private final Map<ProtocolId, Queue<?>> exceptionalQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
 
     @SuppressWarnings("unchecked")
     synchronized void receive() throws IOException, ClassNotFoundException {
@@ -203,6 +237,15 @@ public class ProtocolHost {
     @SuppressWarnings("unchecked")
     <T extends Serializable> T receive(ProtocolId protocolId) {
         ProtocolHandleListener<T> listener = (ProtocolHandleListener<T>) listeners.get(protocolId);
+
+        Queue<T> exceptionalQueue = (Queue<T>) exceptionalQueues.get(protocolId);
+        T unorderedData = exceptionalQueue != null ? exceptionalQueue.poll() : null;
+        while (unorderedData != null) {
+            if (listener != null)
+                listener.handleExceptionalData(unorderedData);
+
+            unorderedData = exceptionalQueue.poll();
+        }
 
         Queue<T> orderedQueue = (Queue<T>) orderedQueues.get(protocolId);
         T orderedData = orderedQueue != null ? orderedQueue.poll() : null;

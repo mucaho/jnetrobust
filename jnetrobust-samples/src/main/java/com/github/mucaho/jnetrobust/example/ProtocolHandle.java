@@ -22,15 +22,17 @@ public class ProtocolHandle<T extends Serializable> {
     }
 
     public void send() throws IOException {
-        host.send(protocolId);
+        send((T) null);
     }
 
     public void send(T data) throws IOException {
         host.send(protocolId, data);
+        host.send(protocolId);
     }
 
     public void send(List<T> datas) throws IOException {
         host.send(protocolId, datas);
+        host.send(protocolId);
     }
 
     public T receive() throws IOException, ClassNotFoundException {
