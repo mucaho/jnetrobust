@@ -47,8 +47,8 @@ public class ProtocolHost {
     private final String hostName;
 
     // protocol fields
-    private final Map<ProtocolHostHandle.ProtocolId, Protocol<?>> protocols = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, Protocol<?>>();
-    private final Map<ProtocolHostHandle.ProtocolId, ProtocolHostListener<?>> listeners = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, ProtocolHostListener<?>>();
+    private final Map<ProtocolId, Protocol<?>> protocols = new ConcurrentHashMap<ProtocolId, Protocol<?>>();
+    private final Map<ProtocolId, ProtocolHostListener<?>> listeners = new ConcurrentHashMap<ProtocolId, ProtocolHostListener<?>>();
 
     // serialization fields
     private final Kryo kryo;
@@ -136,20 +136,20 @@ public class ProtocolHost {
     private final List sendDatas = new ArrayList<Object>();
 
     @SuppressWarnings("unchecked")
-    synchronized <T extends Serializable> void send(ProtocolHostHandle.ProtocolId protocolId) throws IOException {
+    synchronized <T extends Serializable> void send(ProtocolId protocolId) throws IOException {
         sendDatas.clear();
         send(protocolId, (List<T>) sendDatas);
     }
 
     @SuppressWarnings("unchecked")
-    synchronized <T extends Serializable> void send(ProtocolHostHandle.ProtocolId protocolId, T data) throws IOException {
+    synchronized <T extends Serializable> void send(ProtocolId protocolId, T data) throws IOException {
         sendDatas.clear();
         sendDatas.add(serializationClone(data));
         send(protocolId, (List<T>) sendDatas);
     }
 
     @SuppressWarnings("unchecked")
-    synchronized <T extends Serializable> void send(ProtocolHostHandle.ProtocolId protocolId, List<T> datas) throws IOException {
+    synchronized <T extends Serializable> void send(ProtocolId protocolId, List<T> datas) throws IOException {
         if (datas != sendDatas) {
             sendDatas.clear();
             for (T data : datas) {
@@ -168,9 +168,9 @@ public class ProtocolHost {
         channel.send(buffer, protocolId.getRemoteAddress());
     }
 
-    private final Map<ProtocolHostHandle.ProtocolId, Object> newestDatas = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, Object>();
-    private final Map<ProtocolHostHandle.ProtocolId, Queue<?>> receivedQueues = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, Queue<?>>();
-    private final Map<ProtocolHostHandle.ProtocolId, Queue<?>> orderedQueues = new ConcurrentHashMap<ProtocolHostHandle.ProtocolId, Queue<?>>();
+    private final Map<ProtocolId, Object> newestDatas = new ConcurrentHashMap<ProtocolId, Object>();
+    private final Map<ProtocolId, Queue<?>> receivedQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
+    private final Map<ProtocolId, Queue<?>> orderedQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
 
     @SuppressWarnings("unchecked")
     synchronized void receive() throws IOException, ClassNotFoundException {
@@ -201,7 +201,7 @@ public class ProtocolHost {
     }
 
     @SuppressWarnings("unchecked")
-    <T extends Serializable> T receive(ProtocolHostHandle.ProtocolId protocolId) {
+    <T extends Serializable> T receive(ProtocolId protocolId) {
         ProtocolHostListener<T> listener = (ProtocolHostListener<T>) listeners.get(protocolId);
 
         Queue<T> orderedQueue = (Queue<T>) orderedQueues.get(protocolId);
