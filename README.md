@@ -64,14 +64,17 @@ public class BidirectionalMain {
         InetSocketAddress ADDRESS_A = new InetSocketAddress(InetAddress.getLocalHost(), 12345);
         InetSocketAddress ADDRESS_B = new InetSocketAddress(InetAddress.getLocalHost(), 12346);
 
-        // setup ProtocolHost A using the host's local address and registering all serialization dataTypes
-        ProtocolHost protocolHostA = new ProtocolHost("A", ADDRESS_A, String.class);
+        // host addresses
+        InetSocketAddress ADDRESS_A = new InetSocketAddress(InetAddress.getLocalHost(), 12345);
+        InetSocketAddress ADDRESS_B = new InetSocketAddress(InetAddress.getLocalHost(), 12346);
+
+        // setup ProtocolHosts using the host's local address and registering all serialization dataTypes
         // ProtocolHost supports multiplexing between different peers using respective topicId, remote address and dataType
+
+        ProtocolHost protocolHostA = new ProtocolHost("A", ADDRESS_A, String.class);
         ProtocolHost.ProtocolHandle<String> protocolHandleA = protocolHostA.register(Byte.MIN_VALUE, ADDRESS_B);
 
-        // setup ProtocolHost B using the host's local address and registering all serialization dataTypes
         ProtocolHost protocolHostB = new ProtocolHost("B", ADDRESS_B, String.class);
-        // ProtocolHost supports multiplexing between different peers using respective topicId, remote address and dataType
         ProtocolHost.ProtocolHandle<String> protocolHandleB = protocolHostB.register(Byte.MIN_VALUE, ADDRESS_A);
 
 
