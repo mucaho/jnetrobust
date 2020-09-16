@@ -45,14 +45,13 @@ It is a library and imposes no restrictions on how you use it:
 * you decide how you want to serialize the metadata-packaged data (e.g. with [default serialization](http://docs.oracle.com/javase/7/docs/api/java/io/Externalizable.html), [Kryo](https://github.com/EsotericSoftware/kryo), etc... )
 * you decide how you want to send the metadata-packaged data (e.g. plain [DatagramSocket](http://docs.oracle.com/javase/7/docs/api/java/net/DatagramSocket.html), newer NIO [DatagramChannel](http://docs.oracle.com/javase/7/docs/api/java/nio/channels/DatagramChannel.html) or even network frameworks like [Apache MINA](https://mina.apache.org/))
 
-A reference implementation which glues all those pieces together is also provided for convenience,
-with an example listed below.
+You can use the reference implementation which glues all those pieces together to get started; an example is listed below.
 
 **Refer to the [Wiki pages](https://github.com/mucaho/jnetrobust/wiki) for additional information!**
 
 Talk is cheap. Show me the code. [[1]](http://lkml.org/lkml/2000/8/25/132)
 --------------------------------
-Here is a minimal, complete example of using the provided reference implementation:
+Here is a minimal, complete example of using the provided reference implementation:  
 **Code**
 ```java
 public class BidirectionalMain {
