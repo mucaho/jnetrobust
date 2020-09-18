@@ -27,7 +27,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(JUnitParamsRunner.class)
 public class SentMapControlTest extends AbstractMapControlTest {
 
-    protected SentMapControl<Object> handler = new SentMapControl<Object>(null, config.getPacketQueueLimit(),
+    protected SentMapControl handler = new SentMapControl(null, config.getPacketQueueLimit(),
             config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
 
     public SentMapControlTest() {
@@ -80,13 +80,13 @@ public class SentMapControlTest extends AbstractMapControlTest {
             public int invocations = 0;
         }
         final Wrapper wrapper = new Wrapper();
-        new MockUp<SentMapControl<Object>>() {
+        new MockUp<SentMapControl>() {
             @Mock
             @SuppressWarnings("unused")
-            protected void notifyAcked(Invocation invocation, Segment<Object> ackedSegment, boolean directlyAcked) {
+            protected void notifyAcked(Invocation invocation, Segment ackedSegment, boolean directlyAcked) {
                 if (ackedSegment != null) {
                     assertEquals("Expected other value (insertion order must be remove order)",
-                            wrapper.invocations, ackedSegment.getData());
+                            wrapper.invocations, deserializeShort(ackedSegment.getData()));
                     wrapper.invocations++;
                 }
             }
@@ -118,7 +118,7 @@ public class SentMapControlTest extends AbstractMapControlTest {
     @Parameters
     public final void testAddToPending(final Short[][] referenceGroups) {
         for (Short[] referenceGroup : referenceGroups) {
-            Segment<Object> segment = new Segment<Object>(++dataId, referenceGroup);
+            Segment segment = new Segment(++dataId, serializeShorts(referenceGroup));
             for (Short reference : referenceGroup) {
                 handler.addToSent(reference, segment);
             }
@@ -131,12 +131,12 @@ public class SentMapControlTest extends AbstractMapControlTest {
             referenceCount += referenceGroup.length;
         }
         assertEquals("Total data count match", dataCount,
-                new HashSet<Segment<Object>>(handler.dataMap.getKeyMap().values()).size());
+                new HashSet<Segment>(handler.dataMap.getKeyMap().values()).size());
         assertEquals("Total reference count match", referenceCount, handler.dataMap.getKeyMap().keySet().size());
 
 
-        for (Segment<Object> segment : handler.dataMap.getKeyMap().values()) {
-            Short[] dataValues = (Short[]) segment.getData();
+        for (Segment segment : handler.dataMap.getKeyMap().values()) {
+            Short[] dataValues = deserializeShorts(segment.getData());
             assertEquals("Reference count match", dataValues.length, segment.getTransmissionIds().size());
             for (Short dataValue : dataValues) {
                 assertTrue("Reference match", segment.getTransmissionIds().contains(dataValue));

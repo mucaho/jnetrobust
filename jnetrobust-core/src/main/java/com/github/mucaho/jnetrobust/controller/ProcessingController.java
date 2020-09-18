@@ -13,30 +13,31 @@ import com.github.mucaho.jnetrobust.control.*;
 import com.github.mucaho.jnetrobust.util.IdComparator;
 import com.github.mucaho.jnetrobust.util.RTTHandler;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
-public class Controller<T> {
+public class ProcessingController {
     private short dataId = Short.MIN_VALUE;
     private short localTransmissionId = Short.MIN_VALUE;
-    private final SentMapControl<T> sentMapControl;
+    private final SentMapControl sentMapControl;
 
     private short remoteTransmissionId = Short.MIN_VALUE;
-    private final ReceivedMapControl<T> receivedMapControl;
+    private final ReceivedMapControl receivedMapControl;
     private final ReceivedBitsControl receivedBitsControl;
 
     private final RTTHandler rttHandler;
-    private final RetransmissionControl<T> retransmissionControl;
+    private final RetransmissionControl retransmissionControl;
 
-    private final NewestDataControl<T> newestDataControl;
+    private final NewestDataControl newestDataControl;
 
-    public Controller(ProtocolListener<T> listener, ProtocolConfig config) {
+    public ProcessingController(ProtocolListener listener, ProtocolConfig config) {
 
         // sending side
 
-        sentMapControl = new SentMapControl<T>(listener, config.getPacketQueueLimit(),
+        sentMapControl = new SentMapControl(listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit(), config.getPacketQueueTimeout()) {
             @Override
-            protected void notifyAcked(Segment<T> ackedSegment, boolean directlyAcked) {
+            protected void notifyAcked(Segment ackedSegment, boolean directlyAcked) {
                 if (ackedSegment != null && directlyAcked)
                     rttHandler.updateRTT(ackedSegment.getTime()); // update RTT
 
@@ -45,19 +46,19 @@ public class Controller<T> {
         };
 
         rttHandler = new RTTHandler(config.getK(), config.getG());
-        retransmissionControl = new RetransmissionControl<T>(sentMapControl.getValues(), listener, config.getAutoRetransmitMode());
+        retransmissionControl = new RetransmissionControl(sentMapControl.getValues(), listener, config.getAutoRetransmitMode());
 
         // receiving side
 
         receivedBitsControl = new ReceivedBitsControl();
-        receivedMapControl = new ReceivedMapControl<T>(Short.MIN_VALUE, listener, config.getPacketQueueLimit(),
+        receivedMapControl = new ReceivedMapControl(Short.MIN_VALUE, listener, config.getPacketQueueLimit(),
                 config.getPacketOffsetLimit(), config.getPacketRetransmitLimit(), config.getPacketQueueTimeout());
 
-        newestDataControl = new NewestDataControl<T>(listener);
+        newestDataControl = new NewestDataControl(listener);
     }
 
-    public Packet<T> produce() {
-        Packet<T> packet = new Packet<T>();
+    public Packet produce() {
+        Packet packet = new Packet();
 
         // apply remote transmissionId
         packet.setTransmissionAck(remoteTransmissionId);
@@ -68,43 +69,48 @@ public class Controller<T> {
         return packet;
     }
 
-    public Segment<T> produce(T data) {
+    public Segment produce(ByteBuffer data) {
         // increment unique data id; apply unique data id
-        return new Segment<T>(++dataId, data);
+        return new Segment(++dataId, data);
     }
 
-    public List<Segment<T>> retransmit() {
+    public List<Segment> retransmit() {
         // update outdated not acked packets
-        List<Segment<T>> retransmits = retransmissionControl.updatePendingTime(rttHandler.getRTO(), dataId);
+        List<Segment> retransmits = retransmissionControl.updatePendingTime(rttHandler.getRTO(), dataId);
         if (!retransmits.isEmpty()) {
             rttHandler.backoff();
         }
         return retransmits;
     }
 
-    public void send(Packet<T> packet, Segment<T> segment) {
+    public void send(Packet packet, List<Segment> segments) {
+        // save segments to send into internal data structures
+        for (int i = 0, l = segments.size(); i < l; ++i)
+            send(segments.get(i));
+
+        // some segments may have been discarded retroactively due to internal queue limits, only add those that were not
+        for (int i = 0, l = segments.size(); i < l; ++i) {
+            Segment segment = segments.get(i);
+            if (!segment.getTransmissionIds().isEmpty())
+                packet.addLastSegment(segment);
+        }
+    }
+
+    private void send(Segment segment) {
         // update last modified time
         retransmissionControl.resetPendingTime(segment);
 
         // increment local transmissionId; add pending, local transmissionId
         sentMapControl.addToSent(++localTransmissionId, segment);
-
-        packet.addLastSegment(segment);
-
-        // remove segments that were discarded retroactively by pending map
-        for (int i = packet.getSegments().size() - 1; i >= 0; --i) {
-            if (packet.getSegments().get(i).getTransmissionIds().isEmpty())
-                packet.remove(i);
-        }
     }
 
-    public void consume(Packet<T> packet) {
+    public void consume(Packet packet) {
         // remove pending, local transmissionIds
         sentMapControl.removeFromSent(packet.getTransmissionAck(), packet.getPrecedingTransmissionAcks());
     }
 
-    public Segment<T> receive(Packet<T> packet) {
-        Segment<T> segment = packet.removeFirstSegment();
+    public Segment receive(Packet packet) {
+        Segment segment = packet.removeFirstSegment();
         if (segment != null)
             receive(segment);
         else
@@ -114,7 +120,7 @@ public class Controller<T> {
         return segment;
     }
 
-    private void receive(Segment<T> segment) {
+    private void receive(Segment segment) {
         short newRemoteTransmissionId = segment.getLastTransmissionId();
 
         // update newest, remote data
@@ -131,7 +137,8 @@ public class Controller<T> {
             remoteTransmissionId = newRemoteTransmissionId;
     }
 
-    public T consume(Segment<T> segment) {
+    public ByteBuffer consume(Segment segment) {
+        if (segment.getData() != null) segment.getData().rewind();
         return segment.getData();
     }
 

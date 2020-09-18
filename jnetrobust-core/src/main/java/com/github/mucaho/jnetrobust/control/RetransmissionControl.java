@@ -11,44 +11,45 @@ import com.github.mucaho.jnetrobust.ProtocolConfig;
 import com.github.mucaho.jnetrobust.util.IdComparator;
 import com.github.mucaho.jnetrobust.util.TimeoutHandler;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.NavigableSet;
 
-public class RetransmissionControl<T> {
-    public interface RetransmissionListener<T> {
-        Boolean shouldRetransmit(short dataId, T data);
+public class RetransmissionControl {
+    public interface RetransmissionListener {
+        Boolean shouldRetransmit(short dataId, ByteBuffer retransmitData);
     }
-    private final RetransmissionListener<T> listener;
+    private final RetransmissionListener listener;
 
-    private final TimeoutHandler<Segment<T>> sentDataTimeoutHandler = new TimeoutHandler<Segment<T>>();
+    private final TimeoutHandler<Segment> sentDataTimeoutHandler = new TimeoutHandler<Segment>();
 
-    private final NavigableSet<Segment<T>> sentSegments;
+    private final NavigableSet<Segment> sentSegments;
 
     private final ProtocolConfig.AutoRetransmitMode autoRetransmitMode;
 
-    private final List<Segment<T>> retransmissions = new ArrayList<Segment<T>>();
-    private final List<Segment<T>> retransmissionsOut = Collections.unmodifiableList(retransmissions);
+    private final List<Segment> retransmissions = new ArrayList<Segment>();
+    private final List<Segment> retransmissionsOut = Collections.unmodifiableList(retransmissions);
 
-    public RetransmissionControl(NavigableSet<Segment<T>> sentSegments,
-                                 RetransmissionListener<T> listener,
+    public RetransmissionControl(NavigableSet<Segment> sentSegments,
+                                 RetransmissionListener listener,
                                  ProtocolConfig.AutoRetransmitMode autoRetransmitMode) {
         this.sentSegments = sentSegments;
         this.listener = listener;
         this.autoRetransmitMode = autoRetransmitMode;
     }
 
-    public void resetPendingTime(Segment<T> sentSegments) {
+    public void resetPendingTime(Segment sentSegments) {
         sentSegments.updateTime();
     }
 
-    public List<Segment<T>> updatePendingTime(long maxWaitTime, short newestDataId) {
+    public List<Segment> updatePendingTime(long maxWaitTime, short newestDataId) {
         retransmissions.clear();
 
-        List<Segment<T>> potentialRetransmits = sentDataTimeoutHandler.filterTimedOut(sentSegments, maxWaitTime);
+        List<Segment> potentialRetransmits = sentDataTimeoutHandler.filterTimedOut(sentSegments, maxWaitTime);
         for (int i = 0, l = potentialRetransmits.size(); i < l; ++i) {
-            Segment<T> potentialRetransmit = potentialRetransmits.get(i);
+            Segment potentialRetransmit = potentialRetransmits.get(i);
 
             Boolean userOk = determineRetransmit(potentialRetransmit);
             boolean doIt = Boolean.TRUE.equals(userOk);
@@ -64,7 +65,9 @@ public class RetransmissionControl<T> {
         return retransmissionsOut;
     }
 
-    protected Boolean determineRetransmit(Segment<T> retransmit) {
-        return listener.shouldRetransmit(retransmit.getDataId(), retransmit.getData());
+    protected Boolean determineRetransmit(Segment retransmit) {
+        Boolean shouldRetransmit = listener.shouldRetransmit(retransmit.getDataId(), retransmit.getData());
+        if (retransmit.getData() != null) retransmit.getData().rewind();
+        return shouldRetransmit;
     }
 }

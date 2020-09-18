@@ -19,6 +19,7 @@ import com.github.mucaho.jnetrobust.ProtocolListener;
 import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.controller.Packet;
 import com.github.mucaho.jnetrobust.example.ProtocolHandle.ProtocolId;
+import com.github.mucaho.jnetrobust.example.ProtocolHandleListener.ProtocolException;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -47,7 +48,7 @@ public class ProtocolHost {
     private final String hostName;
 
     // protocol fields
-    private final Map<ProtocolId, Protocol<?>> protocols = new ConcurrentHashMap<ProtocolId, Protocol<?>>();
+    private final Map<ProtocolId, Protocol> protocols = new ConcurrentHashMap<ProtocolId, Protocol>();
     private final Map<ProtocolId, ProtocolHandleListener<?>> listeners = new ConcurrentHashMap<ProtocolId, ProtocolHandleListener<?>>();
 
     // serialization fields
@@ -59,11 +60,11 @@ public class ProtocolHost {
     private final KryoObjectInput objectInput;
     private final KryoObjectOutput objectOutput;
 
-    private final ByteBuffer bufferForCloning = ByteBuffer.allocate(4096);
-    private final ByteBufferInput bufferInputForCloning = new ByteBufferInput();
-    private final ByteBufferOutput bufferOutputForCloning = new ByteBufferOutput();
-    private final KryoObjectInput objectInputForCloning;
-    private final KryoObjectOutput objectOutputForCloning;
+    private final ByteBuffer bufferForSerialization = ByteBuffer.allocate(4096);
+    private final ByteBufferInput bufferInputForSerialization = new ByteBufferInput();
+    private final ByteBufferOutput bufferOutputForSerialization = new ByteBufferOutput();
+    private final KryoObjectInput objectInputForSerialization;
+    private final KryoObjectOutput objectOutputForSerialization;
 
     // network communication fields
     private final DatagramChannel channel;
@@ -85,8 +86,8 @@ public class ProtocolHost {
         objectInput = new KryoObjectInput(kryo, bufferInput);
         objectOutput = new KryoObjectOutput(kryo, bufferOutput);
 
-        objectInputForCloning = new KryoObjectInput(kryo, bufferInputForCloning);
-        objectOutputForCloning = new KryoObjectOutput(kryo, bufferOutputForCloning);
+        objectInputForSerialization = new KryoObjectInput(kryo, bufferInputForSerialization);
+        objectOutputForSerialization = new KryoObjectOutput(kryo, bufferOutputForSerialization);
 
         this.hostName = hostName;
     }
@@ -102,109 +103,212 @@ public class ProtocolHost {
         if (listener != null)
             listeners.put(protocolId, listener);
 
-        ProtocolListener<T> protocolListener = new ProtocolListener<T>() {
+        ProtocolListener protocolListener = new ProtocolListener() {
             @Override
-            public void handleOrderedData(short dataId, T orderedData) {
-                Queue<T> orderedQueue = (Queue<T>) orderedQueues.get(protocolId);
+            public void handleOrderedData(short dataId, ByteBuffer orderedData) {
+                Queue<Serializable> orderedQueue = (Queue<Serializable>) orderedQueues.get(protocolId);
                 if (orderedQueue == null) {
-                    orderedQueue = new LinkedList<T>();
+                    orderedQueue = new LinkedList<Serializable>();
                     orderedQueues.put(protocolId, orderedQueue);
                 }
-                orderedQueue.offer(serializationClone(orderedData));
+
+                int dataCount = orderedData.getInt();
+                for (int i = 0; i < dataCount; ++i) {
+                    T value = null;
+                    try {
+                        value = deserialize(orderedData);
+                    } catch (IOException e) {
+                        handleExceptionalData(protocolId, e);
+                    } catch (ClassNotFoundException e) {
+                        handleExceptionalData(protocolId, e);
+                    }
+                    orderedQueue.offer(value);
+                }
 
                 super.handleOrderedData(dataId, orderedData);
             }
 
             @Override
-            public void handleNewestData(short dataId, T newestData) {
-                newestDatas.put(protocolId, serializationClone(newestData));
+            public void handleNewestData(short dataId, ByteBuffer newestData) {
+                int dataCount = newestData.getInt();
+                for (int i = 0; i < dataCount; ++i) {
+                    T value = null;
+                    try {
+                        value = deserialize(newestData);
+                    } catch (IOException e) {
+                        handleExceptionalData(protocolId, e);
+                    } catch (ClassNotFoundException e) {
+                        handleExceptionalData(protocolId, e);
+                    }
+                    newestDatas.put(protocolId, value);
+                }
 
                 super.handleNewestData(dataId, newestData);
             }
 
             @Override
-            public void handleUnorderedData(short dataId, T unorderedData) {
-                Queue<T> exceptionalQueue = (Queue<T>) exceptionalQueues.get(protocolId);
-                if (exceptionalQueue == null) {
-                    exceptionalQueue = new LinkedList<T>();
-                    exceptionalQueues.put(protocolId, exceptionalQueue);
+            public void handleUnorderedData(short dataId, ByteBuffer unorderedData) {
+                int dataCount = unorderedData.getInt();
+                for (int i = 0; i < dataCount; ++i) {
+                    T value = null;
+                    try {
+                        value = deserialize(unorderedData);
+                    } catch (IOException e) {
+                        handleExceptionalData(protocolId, e);
+                    } catch (ClassNotFoundException e) {
+                        handleExceptionalData(protocolId, e);
+                    }
+                    handleExceptionalData(protocolId, new ProtocolException(Logger.LoggingEvent.UNORDERED, value));
                 }
-                exceptionalQueue.offer(serializationClone(unorderedData));
 
                 super.handleUnorderedData(dataId, unorderedData);
             }
 
             @Override
-            public void handleUnackedData(short dataId, T unackedData) {
-                Queue<T> exceptionalQueue = (Queue<T>) exceptionalQueues.get(protocolId);
-                if (exceptionalQueue == null) {
-                    exceptionalQueue = new LinkedList<T>();
-                    exceptionalQueues.put(protocolId, exceptionalQueue);
+            public void handleUnackedData(short dataId, ByteBuffer unackedData) {
+                int dataCount = unackedData.getInt();
+                for (int i = 0; i < dataCount; ++i) {
+                    T value = null;
+                    try {
+                        value = deserialize(unackedData);
+                    } catch (IOException e) {
+                        handleExceptionalData(protocolId, e);
+                    } catch (ClassNotFoundException e) {
+                        handleExceptionalData(protocolId, e);
+                    }
+                    handleExceptionalData(protocolId, new ProtocolException(Logger.LoggingEvent.NOTACKED, value));
                 }
-                exceptionalQueue.offer(serializationClone(unackedData));
 
                 super.handleUnackedData(dataId, unackedData);
             }
         };
-        Protocol<T> protocol;
+
+        Protocol protocol;
         if (hostName != null)
-            protocol = new Protocol<T>(protocolListener, Logger.getConsoleLogger(hostName));
+            protocol = new Protocol(protocolListener, new Logger.AbstractConsoleLogger(hostName) {
+                @Override
+                protected String deserialize(ByteBuffer dataBuffer) {
+                    StringBuilder sb = new StringBuilder();
+
+                    int dataCount = dataBuffer.getInt();
+                    for (int i = 0; i < dataCount; ++i) {
+                        T value = null;
+                        try {
+                            value = ProtocolHost.this.deserialize(dataBuffer);
+                        } catch (IOException e) {
+                            handleExceptionalData(protocolId, e);
+                        } catch (ClassNotFoundException e) {
+                            handleExceptionalData(protocolId, e);
+                        }
+                        sb.append(value).append("\t");
+                    }
+
+                    return sb.toString();
+                }
+            });
         else
-            protocol = new Protocol<T>(protocolListener);
+            protocol = new Protocol(protocolListener);
         protocols.put(protocolId, protocol);
 
         return new ProtocolHandle<T>(protocolId, this);
     }
 
+    private void handleExceptionalData(ProtocolId protocolId, Exception exception) {
+        Queue<Exception> exceptionalQueue = exceptionalQueues.get(protocolId);
+        if (exceptionalQueue == null) {
+            exceptionalQueue = new LinkedList<Exception>();
+            exceptionalQueues.put(protocolId, exceptionalQueue);
+        }
+        exceptionalQueue.offer(exception);
+    }
+
     @SuppressWarnings("all")
     private final List sendDatas = new ArrayList<Object>();
+    private final ByteBuffer sendBuffer = ByteBuffer.allocateDirect(4096);
 
     @SuppressWarnings("unchecked")
     synchronized <T extends Serializable> void send(ProtocolId protocolId, T data) throws IOException {
         sendDatas.clear();
-        if (data != null)
-            sendDatas.add(serializationClone(data));
+        sendDatas.add(data);
         send(protocolId, (List<T>) sendDatas);
     }
 
-    @SuppressWarnings("unchecked")
     synchronized <T extends Serializable> void send(ProtocolId protocolId, List<T> datas) throws IOException {
-        if (datas != sendDatas) {
+        // make sure to at least send empty packet in unidirectional communication
+        if (datas == null) {
             sendDatas.clear();
-            for (T data : datas) {
-                sendDatas.add(serializationClone(data));
-            }
+            sendDatas.add(null);
+            datas = sendDatas;
         }
 
-        buffer.clear();
-        buffer.put(protocolId.getTopic());
-        bufferOutput.setBuffer(buffer);
-        Protocol<T> protocol = (Protocol<T>) protocols.get(protocolId);
-        protocol.send(sendDatas, objectOutput);
-        bufferOutput.flush();
+        Protocol protocol = protocols.get(protocolId);
 
-        buffer.flip();
-        channel.send(buffer, protocolId.getRemoteAddress());
+        int dataCount = 0;
+        sendBuffer.clear();
+        sendBuffer.putInt(dataCount);
+
+        for (int i = 0, l = datas.size(); i < l; ++i) {
+            ByteBuffer dataBuffer = serialize(datas.get(i));
+
+            // if there is data to send or current sendBuffer is not full
+            if (dataBuffer != null && (sendBuffer.position() + dataBuffer.limit() <= protocol.getMaximumDataSize())) {
+                sendBuffer.put(dataBuffer);
+                sendBuffer.putInt(0, ++dataCount);
+            }
+            // else send each of the packets generated out of the sendBuffer via one UDP datagram
+            else {
+                sendBuffer.flip();
+                doSend(sendBuffer, protocolId, protocol);
+
+                sendBuffer.clear();
+                sendBuffer.putInt((dataCount = 0));
+            }
+        }
+        if (dataCount > 0) {
+            sendBuffer.flip();
+            doSend(sendBuffer, protocolId, protocol);
+        }
+
+    }
+
+    private void doSend(ByteBuffer dataBuffer, ProtocolId protocolId, Protocol protocol) throws IOException {
+        NavigableMap<Short, Packet> packetMap = protocol.send(dataBuffer);
+        Short key = packetMap.isEmpty() ? null : packetMap.firstKey();
+        boolean currentKeyIsOkToBeNull = !packetMap.isEmpty() && packetMap.firstKey() == null;
+        while (key != null || currentKeyIsOkToBeNull) {
+            buffer.clear();
+            buffer.put(protocolId.getTopic());
+            bufferOutput.setBuffer(buffer);
+            protocol.send(packetMap.get(key), objectOutput);
+            bufferOutput.flush();
+
+            buffer.flip();
+            channel.send(buffer, protocolId.getRemoteAddress());
+
+            key = packetMap.higherKey(key);
+            currentKeyIsOkToBeNull = false;
+        }
     }
 
     @SuppressWarnings("unchecked")
     <T extends Serializable> void send(ProtocolId protocolId) {
         ProtocolHandleListener<T> listener = (ProtocolHandleListener<T>) listeners.get(protocolId);
 
-        Queue<T> exceptionalQueue = (Queue<T>) exceptionalQueues.get(protocolId);
-        T unackedData = exceptionalQueue != null ? exceptionalQueue.poll() : null;
-        while (unackedData != null) {
+        Queue<? extends Exception> exceptionalQueue = exceptionalQueues.get(protocolId);
+        Exception exception = exceptionalQueue != null ? exceptionalQueue.poll() : null;
+        while (exception != null) {
             if (listener != null)
-                listener.handleExceptionalData(unackedData);
+                listener.handleExceptionalData(exception);
 
-            unackedData = exceptionalQueue.poll();
+            exception = exceptionalQueue.poll();
         }
     }
 
     private final Map<ProtocolId, Object> newestDatas = new ConcurrentHashMap<ProtocolId, Object>();
     private final Map<ProtocolId, Queue<?>> receivedQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
     private final Map<ProtocolId, Queue<?>> orderedQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
-    private final Map<ProtocolId, Queue<?>> exceptionalQueues = new ConcurrentHashMap<ProtocolId, Queue<?>>();
+    private final Map<ProtocolId, Queue<Exception>> exceptionalQueues =
+            new ConcurrentHashMap<ProtocolId, Queue<Exception>>();
 
     @SuppressWarnings("unchecked")
     synchronized void receive() throws IOException, ClassNotFoundException {
@@ -212,21 +316,25 @@ public class ProtocolHost {
         SocketAddress remoteAddress = channel.receive(buffer);
         while (remoteAddress != null) {
             buffer.flip();
-            ProtocolId protocolId = new ProtocolId(buffer.get(), remoteAddress);
-            bufferInput.setBuffer(buffer);
 
-            Protocol<?> protocol = protocols.get(protocolId);
-            NavigableMap<Short, ?> receivedEntries = protocol.receive(objectInput);
-            for (Map.Entry<Short, ?> receivedEntry : receivedEntries.entrySet()) {
-                Serializable receivedData = (Serializable) receivedEntry.getValue();
-                {
-                    Queue<Object> receivedQueue = (Queue<Object>) receivedQueues.get(protocolId);
-                    if (receivedQueue == null) {
-                        receivedQueue = new LinkedList<Object>();
-                        receivedQueues.put(protocolId, receivedQueue);
-                    }
-                    receivedQueue.offer(serializationClone(receivedData));
+            ProtocolId protocolId = new ProtocolId(buffer.get(), remoteAddress);
+            Protocol protocol = protocols.get(protocolId);
+
+            bufferInput.setBuffer(buffer);
+            NavigableMap<Short, ByteBuffer> receivedEntries = protocol.receive(objectInput);
+            Short key = receivedEntries.isEmpty() ? null : receivedEntries.firstKey();
+            while (key != null) {
+                ByteBuffer receivedData = receivedEntries.get(key);
+                Queue<Object> receivedQueue = (Queue<Object>) receivedQueues.get(protocolId);
+                if (receivedQueue == null) {
+                    receivedQueue = new LinkedList<Object>();
+                    receivedQueues.put(protocolId, receivedQueue);
                 }
+                int dataCount = receivedData.getInt();
+                for (int i = 0; i < dataCount; ++i)
+                    receivedQueue.offer(deserialize(receivedData));
+
+                key = receivedEntries.higherKey(key);
             }
 
             buffer.clear();
@@ -238,13 +346,13 @@ public class ProtocolHost {
     <T extends Serializable> T receive(ProtocolId protocolId) {
         ProtocolHandleListener<T> listener = (ProtocolHandleListener<T>) listeners.get(protocolId);
 
-        Queue<T> exceptionalQueue = (Queue<T>) exceptionalQueues.get(protocolId);
-        T unorderedData = exceptionalQueue != null ? exceptionalQueue.poll() : null;
-        while (unorderedData != null) {
+        Queue<? extends Exception> exceptionalQueue = exceptionalQueues.get(protocolId);
+        Exception exception = exceptionalQueue != null ? exceptionalQueue.poll() : null;
+        while (exception != null) {
             if (listener != null)
-                listener.handleExceptionalData(unorderedData);
+                listener.handleExceptionalData(exception);
 
-            unorderedData = exceptionalQueue.poll();
+            exception = exceptionalQueue.poll();
         }
 
         Queue<T> orderedQueue = (Queue<T>) orderedQueues.get(protocolId);
@@ -267,25 +375,30 @@ public class ProtocolHost {
         return receivedData;
     }
 
-    @SuppressWarnings("unchecked")
-    private synchronized <T extends Serializable> T serializationClone(T in) {
+    private synchronized <T extends Serializable> ByteBuffer serialize(T in) throws IOException {
         if (in == null) return null;
 
-        T out;
-        try {
-            bufferForCloning.clear();
-            bufferOutputForCloning.setBuffer(bufferForCloning);
-            objectOutputForCloning.writeObject(in);
-            bufferOutputForCloning.flush();
+        bufferForSerialization.clear();
+        bufferOutputForSerialization.setBuffer(bufferForSerialization);
+        objectOutputForSerialization.writeObject(in);
+        bufferOutputForSerialization.flush();
 
-            bufferForCloning.flip();
-            bufferInputForCloning.setBuffer(bufferForCloning);
-            out = (T) objectInputForCloning.readObject();
-        } catch (IOException e) {
-            throw new RuntimeException("Application critical fault occurred.");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Application critical fault occurred.");
-        }
+        bufferForSerialization.flip();
+        return bufferForSerialization;
+    }
+
+    @SuppressWarnings("unchecked")
+    private synchronized <T extends Serializable> T deserialize(ByteBuffer in) throws IOException, ClassNotFoundException {
+        if (in == null) return null;
+
+        bufferForSerialization.clear();
+        in.mark();
+        bufferForSerialization.put(in);
+        bufferForSerialization.flip();
+        bufferInputForSerialization.setBuffer(bufferForSerialization);
+        T out = (T) objectInputForSerialization.readObject();
+        in.reset();
+        in.position(in.position() + bufferForSerialization.position());
         return out;
     }
 }

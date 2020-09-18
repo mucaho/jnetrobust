@@ -12,18 +12,18 @@ import com.github.mucaho.jnetrobust.util.SentSegmentComparator;
 
 import java.util.NavigableSet;
 
-public class SentSegmentMap<T> extends AbstractSegmentMap<T> {
+public class SentSegmentMap extends AbstractSegmentMap {
     public SentSegmentMap() {
         super(IdComparator.instance, SentSegmentComparator.instance);
     }
 
     @Override
-    void putAll(Segment<T> segment) {
+    void putAll(Segment segment) {
         putAll(segment.getTransmissionIds(), segment);
     }
 
     @Override
-    void putAll(NavigableSet<Short> transmissionIds, Segment<T> segment) {
+    void putAll(NavigableSet<Short> transmissionIds, Segment segment) {
         Short nextKey = transmissionIds.first();
         while (nextKey != null) {
             put(nextKey, segment);
@@ -32,14 +32,14 @@ public class SentSegmentMap<T> extends AbstractSegmentMap<T> {
     }
 
     @Override
-    Segment<T> put(Short transmissionId, Segment<T> segment) {
+    Segment put(Short transmissionId, Segment segment) {
         // remove from valueMap, then possibly re-add after modifying transmissionIds
         valueMap.remove(segment);
         segment.addTransmissionId(transmissionId);
         if (!segment.getTransmissionIds().isEmpty())
             valueMap.put(segment, segment.getTransmissionIds());
 
-        Segment<T> replacedSegment = keyMap.put(transmissionId, segment);
+        Segment replacedSegment = keyMap.put(transmissionId, segment);
 
         if (replacedSegment != null && replacedSegment != segment) {
             // remove from valueMap, then possibly re-add after modifying transmissionIds
@@ -53,7 +53,7 @@ public class SentSegmentMap<T> extends AbstractSegmentMap<T> {
     }
 
     @Override
-    Segment<T> put(Segment<T> segment) {
+    Segment put(Segment segment) {
         if (!segment.getTransmissionIds().isEmpty())
             return put(segment.getLastTransmissionId(), segment);
         else
@@ -61,12 +61,12 @@ public class SentSegmentMap<T> extends AbstractSegmentMap<T> {
     }
 
     @Override
-    Segment<T> removeAll(Short transmissionId) {
+    Segment removeAll(Short transmissionId) {
         return removeAll(getValue(transmissionId));
     }
 
     @Override
-    Segment<T> removeAll(Segment<T> segment) {
+    Segment removeAll(Segment segment) {
         if (segment != null)
             removeAll(segment.getTransmissionIds());
 
@@ -83,8 +83,8 @@ public class SentSegmentMap<T> extends AbstractSegmentMap<T> {
     }
 
     @Override
-    Segment<T> remove(Short transmissionId) {
-        Segment<T> segment = keyMap.remove(transmissionId);
+    Segment remove(Short transmissionId) {
+        Segment segment = keyMap.remove(transmissionId);
         if (segment != null) {
             // remove from valueMap, then possibly re-add after modifying transmissionIds
             valueMap.remove(segment);
@@ -99,8 +99,8 @@ public class SentSegmentMap<T> extends AbstractSegmentMap<T> {
     @Override
     void clear(boolean thourough) {
         if (thourough) {
-            NavigableSet<Segment<T>> segments = valueMap.navigableKeySet();
-            Segment<T> segment = segments.isEmpty() ? null : segments.first();
+            NavigableSet<Segment> segments = valueMap.navigableKeySet();
+            Segment segment = segments.isEmpty() ? null : segments.first();
             while (segment != null) {
                 segment.clearTransmissionIds();
 

@@ -9,29 +9,31 @@ package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.util.FastLog;
 
+import java.nio.ByteBuffer;
+
 import static com.github.mucaho.jnetrobust.util.BitConstants.LSB;
 import static com.github.mucaho.jnetrobust.util.BitConstants.OFFSET;
 
-public class SentMapControl<T> extends AbstractMapControl<T> {
-    public interface TransmissionSuccessListener<T> {
-        void handleAckedData(short dataId, T ackedData);
-        void handleUnackedData(short dataId, T unackedData);
+public class SentMapControl extends AbstractMapControl {
+    public interface TransmissionSuccessListener {
+        void handleAckedData(short dataId, ByteBuffer ackedData);
+        void handleUnackedData(short dataId, ByteBuffer unackedData);
     }
 
-    private TransmissionSuccessListener<T> listener;
+    private TransmissionSuccessListener listener;
 
-    public SentMapControl(TransmissionSuccessListener<T> listener, int maxEntries, int maxEntryOffset,
+    public SentMapControl(TransmissionSuccessListener listener, int maxEntries, int maxEntryOffset,
                           int maxEntryOccurrences, long maxEntryTimeout) {
         super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
         this.listener = listener;
     }
 
     @Override
-    protected AbstractSegmentMap<T> createMap() {
-        return new SentSegmentMap<T>();
+    protected AbstractSegmentMap createMap() {
+        return new SentSegmentMap();
     }
 
-    public void addToSent(Short transmissionId, Segment<T> segment) {
+    public void addToSent(Short transmissionId, Segment segment) {
         // add to pending map
         dataMap.put(transmissionId, segment);
 
@@ -65,24 +67,28 @@ public class SentMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected void discardEntry(Segment<T> segment) {
+    protected void discardEntry(Segment segment) {
         notifyNotAcked(dataMap.removeAll(segment));
     }
 
     @Override
     protected void discardEntryKey(Short key) {
-        Segment<T> shrankSegment = dataMap.remove(key);
+        Segment shrankSegment = dataMap.remove(key);
         if (shrankSegment != null && shrankSegment.getTransmissionIds().isEmpty())
             notifyNotAcked(shrankSegment);
     }
 
-    protected void notifyNotAcked(Segment<T> unackedSegment) {
-        if (unackedSegment != null)
+    protected void notifyNotAcked(Segment unackedSegment) {
+        if (unackedSegment != null) {
             listener.handleUnackedData(unackedSegment.getDataId(), unackedSegment.getData());
+            if (unackedSegment.getData() != null) unackedSegment.getData().rewind();
+        }
     }
 
-    protected void notifyAcked(Segment<T> ackedSegment, boolean directlyAcked) {
-        if (ackedSegment != null)
+    protected void notifyAcked(Segment ackedSegment, boolean directlyAcked) {
+        if (ackedSegment != null) {
             listener.handleAckedData(ackedSegment.getDataId(), ackedSegment.getData());
+            if (ackedSegment.getData() != null) ackedSegment.getData().rewind();
+        }
     }
 }

@@ -13,6 +13,7 @@ import com.github.mucaho.jnetrobust.ProtocolListener;
 import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.controller.Packet;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.ByteArrayInputStream;
@@ -24,37 +25,39 @@ import java.util.NavigableMap;
 
 public class TestHost<T> implements Runnable {
     public interface TestHostListener<T> {
-        public void notifySent(T value);
-        public void notifyReceived(T value);
+        void notifySent(T value);
+        void notifyReceived(T value);
     }
 
     public interface TestHostDataGenerator<T> {
-        public T generateData();
+        T generateData();
+        ByteBuffer serializeData(T value);
+        T deserializeData(ByteBuffer data);
     }
 
     private final TestHostListener<T> hostListener;
     private final TestHostDataGenerator<T> dataGenerator;
-    private final UnreliableQueue<Packet<T>> inQueue;
-    private final UnreliableQueue<Packet<T>> outQueue;
-    private final Protocol<T> protocol;
+    private final UnreliableQueue<Packet> inQueue;
+    private final UnreliableQueue<Packet> outQueue;
+    private final Protocol protocol;
     private final String debugName;
 
 
     public TestHost(TestHostListener<T> hostListener, TestHostDataGenerator<T> dataGenerator,
-                    UnreliableQueue<Packet<T>> inQueue, UnreliableQueue<Packet<T>> outQueue,
-                    ProtocolListener<T> protocolListener, ProtocolConfig config, String debugName) {
+                    UnreliableQueue<Packet> inQueue, UnreliableQueue<Packet> outQueue,
+                    ProtocolListener protocolListener, ProtocolConfig config, String debugName) {
         this.debugName = debugName;
         this.hostListener = hostListener;
         this.dataGenerator = dataGenerator;
-        this.protocol = new Protocol<T>(protocolListener, config);
+        this.protocol = new Protocol(protocolListener, config);
         this.inQueue = inQueue;
         this.outQueue = outQueue;
     }
 
-    private Packet<T> networkClone(Packet<T> outPacket) {
+    private Packet networkClone(Packet outPacket) {
         if (outPacket == null) return null;
 
-        Packet<T> inPacket = null;
+        Packet inPacket = null;
 
         try {
             ByteArrayOutputStream outStream = new ByteArrayOutputStream();
@@ -67,7 +70,7 @@ public class TestHost<T> implements Runnable {
             ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
             ObjectInputStream in = new ObjectInputStream(inStream);
             {
-                inPacket = new Packet<T>();
+                inPacket = new Packet();
                 inPacket.readExternal(in);
             }
             in.close();
@@ -79,25 +82,27 @@ public class TestHost<T> implements Runnable {
     }
 
     public void receive() {
-        Packet<T> packet;
+        Packet packet;
         while ((packet = networkClone(inQueue.poll())) != null) {
-            NavigableMap<Short, T> datas = protocol.receive(networkClone(packet));
-            for (T data: datas.values()) {
-                hostListener.notifyReceived(data);
+            NavigableMap<Short, ByteBuffer> datas = protocol.receive(packet);
+            for (ByteBuffer data : datas.values()) {
+                hostListener.notifyReceived(dataGenerator.deserializeData(data));
             }
         }
     }
 
     public void send() {
-        T data = dataGenerator.generateData();
-        Packet<T> packet = networkClone(protocol.send(data).getValue());
+        ByteBuffer data = dataGenerator.serializeData(dataGenerator.generateData());
+        NavigableMap<Short, Packet> packetMap = protocol.send(data);
 
-        List<Segment<T>> segments = new ArrayList<Segment<T>>(packet.getSegments());
-        for (Segment<T> segment : segments) {
-            hostListener.notifySent(segment.getData());
+        for (Packet packet : packetMap.values()) {
+            List<Segment> segments = new ArrayList<Segment>(packet.getSegments());
+            for (Segment segment : segments) {
+                hostListener.notifySent(dataGenerator.deserializeData(segment.getData()));
+            }
+
+            outQueue.offer(networkClone(packet));
         }
-
-        outQueue.offer(networkClone(packet));
     }
 
 
@@ -111,6 +116,7 @@ public class TestHost<T> implements Runnable {
                     "\tE(X):\t" + protocol.getSmoothedRTT() +
                     "\tVar(X):\t" + protocol.getRTTVariation());
         }
+        Thread.yield();
     }
 
 }

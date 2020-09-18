@@ -13,9 +13,9 @@ import com.github.mucaho.jnetrobust.util.TimeoutHandler;
 import java.util.*;
 
 
-public abstract class AbstractMapControl<T> {
-    private final TimeoutHandler<Segment<T>> entryTimeoutHandler =
-            new TimeoutHandler<Segment<T>>();
+public abstract class AbstractMapControl {
+    private final TimeoutHandler<Segment> entryTimeoutHandler =
+            new TimeoutHandler<Segment>();
 
     protected final int maxEntries;
     protected final int maxEntryOffset;
@@ -25,7 +25,7 @@ public abstract class AbstractMapControl<T> {
     /*
      * [lastSeq]-...-[seq-32]-[seq-31]-...-[seq-1]-[seq]
      */
-    protected AbstractSegmentMap<T> dataMap;
+    protected AbstractSegmentMap dataMap;
 
     public AbstractMapControl(int maxEntries, int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
         this.maxEntries = maxEntries;
@@ -35,18 +35,18 @@ public abstract class AbstractMapControl<T> {
         this.dataMap = createMap();
     }
 
-    protected abstract AbstractSegmentMap<T> createMap();
+    protected abstract AbstractSegmentMap createMap();
 
     public NavigableSet<Short> getKeys() {
         return dataMap.getKeys();
     }
 
-    public NavigableSet<Segment<T>> getValues() {
+    public NavigableSet<Segment> getValues() {
         return dataMap.getValues();
     }
 
     protected abstract void discardEntry(Short key);
-    protected abstract void discardEntry(Segment<T> segment);
+    protected abstract void discardEntry(Segment segment);
     protected abstract void discardEntryKey(Short key);
 
     protected void discardEntries() {
@@ -70,7 +70,7 @@ public abstract class AbstractMapControl<T> {
 
     private void discardTimedoutEntries() {
         if (maxEntryTimeout > 0) {
-            List<Segment<T>> timedOuts =
+            List<Segment> timedOuts =
                     entryTimeoutHandler.filterTimedOut(dataMap.getValues(), maxEntryTimeout);
             for (int i = 0, l = timedOuts.size(); i < l; ++i)
                 discardEntry(timedOuts.get(i));
@@ -78,7 +78,7 @@ public abstract class AbstractMapControl<T> {
     }
 
     private void discardTooManyDistinctEntryValues() {
-        Segment<T> segment = dataMap.firstValue();
+        Segment segment = dataMap.firstValue();
         while (segment != null && dataMap.valueSize() > maxEntries) {
             discardEntry(segment);
             segment = dataMap.firstValue();
@@ -87,7 +87,7 @@ public abstract class AbstractMapControl<T> {
 
     private void discardEntriesWithTooManyEntryKeys() {
         if (maxEntryOccurrences > 0) {
-            Segment<T> segment = dataMap.firstValue();
+            Segment segment = dataMap.firstValue();
             while (segment != null && dataMap.getKeys(segment).size() > maxEntryOccurrences) {
                 discardEntry(segment);
                 segment = dataMap.firstValue();

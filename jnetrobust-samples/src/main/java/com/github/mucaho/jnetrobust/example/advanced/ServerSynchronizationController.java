@@ -105,7 +105,8 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
         }
 
         @Override
-        public void handleExceptionalData(Vector2D exceptionalData) {
+        public void handleExceptionalData(Exception exception) {
+            exception.printStackTrace();
         }
     }
 }

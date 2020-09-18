@@ -9,16 +9,18 @@ package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.util.IdComparator;
 
-public class ReceivedMapControl<T> extends AbstractMapControl<T> {
-    public interface TransmissionOrderListener<T> {
-        void handleOrderedData(short dataId, T orderedData);
-        void handleUnorderedData(short dataId, T unorderedData);
+import java.nio.ByteBuffer;
+
+public class ReceivedMapControl extends AbstractMapControl {
+    public interface TransmissionOrderListener {
+        void handleOrderedData(short dataId, ByteBuffer orderedData);
+        void handleUnorderedData(short dataId, ByteBuffer unorderedData);
     }
 
-    private final TransmissionOrderListener<T> listener;
+    private final TransmissionOrderListener listener;
     private short nextDataId;
 
-    public ReceivedMapControl(short initialDataId, TransmissionOrderListener<T> listener, int maxEntries, int maxEntryOffset,
+    public ReceivedMapControl(short initialDataId, TransmissionOrderListener listener, int maxEntries, int maxEntryOffset,
                               int maxEntryOccurrences, long maxEntryTimeout) {
         super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
         this.listener = listener;
@@ -26,9 +28,9 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected AbstractSegmentMap<T> createMap() {
-        return new ReceivedSegmentMap<T>() {
-            Segment<T> put(Segment<T> segment) {
+    protected AbstractSegmentMap createMap() {
+        return new ReceivedSegmentMap() {
+            Segment put(Segment segment) {
                 if (IdComparator.instance.compare(segment.getDataId(), nextDataId) >= 0) {
                     return super.put(segment);
                 }
@@ -37,7 +39,7 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
         };
     }
 
-    public void addToReceived(Segment<T> segment) {
+    public void addToReceived(Segment segment) {
         // add original to received map
         dataMap.put(segment);
 
@@ -66,7 +68,7 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
     }
 
     @Override
-    protected void discardEntry(Segment<T> segment) {
+    protected void discardEntry(Segment segment) {
         discardEntry(segment.getDataId());
     }
 
@@ -75,13 +77,17 @@ public class ReceivedMapControl<T> extends AbstractMapControl<T> {
         discardEntry(key);
     }
 
-    protected void notifyUnordered(Segment<T> unorderedSegment) {
-        if (unorderedSegment != null)
+    protected void notifyUnordered(Segment unorderedSegment) {
+        if (unorderedSegment != null) {
             listener.handleUnorderedData(unorderedSegment.getDataId(), unorderedSegment.getData());
+            if (unorderedSegment.getData() != null) unorderedSegment.getData().rewind();
+        }
     }
 
-    protected void notifyOrdered(Segment<T> orderedSegment) {
-        if (orderedSegment != null)
+    protected void notifyOrdered(Segment orderedSegment) {
+        if (orderedSegment != null) {
             listener.handleOrderedData(orderedSegment.getDataId(), orderedSegment.getData());
+            if (orderedSegment.getData() != null) orderedSegment.getData().rewind();
+        }
     }
 }

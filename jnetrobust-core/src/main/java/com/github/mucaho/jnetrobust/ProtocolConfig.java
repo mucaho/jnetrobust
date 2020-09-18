@@ -9,6 +9,7 @@ package com.github.mucaho.jnetrobust;
 
 import com.github.mucaho.jnetrobust.controller.Packet;
 import com.github.mucaho.jnetrobust.util.IdComparator;
+import java.nio.ByteBuffer;
 
 /**
  * Configuration class which will be used to configure a {@link Protocol protocol instance}. <br></br>
@@ -34,11 +35,28 @@ public final class ProtocolConfig {
      * The constant MAX_PACKET_RETRANSMIT_LIMIT.
      */
     public static final int MAX_PACKET_RETRANSMIT_LIMIT = Packet.MAX_DATAS_PER_PACKET;
+    /**
+     * The constant LOWEST_POSSIBLE_MTU.
+     */
+    public static final int LOWEST_POSSIBLE_MTU_SIZE = 576;
+    /**
+     * The constant CONSERVATIVE_MTU_SIZE.
+     */
+    public static final int CONSERVATIVE_MTU_SIZE = 1024;
+    /**
+     * The constant MOST_COMMON_MTU_SIZE.
+     */
+    public static final int MOST_COMMON_MTU_SIZE = 1500;
+    /**
+     * The constant MAXIMUM_LOWER_STACK_HEADER_SIZE.
+     * Maximum IPv4 header size (60B) + UDP header size (8B)
+     */
+    public static final int MAXIMUM_LOWER_STACK_HEADER_SIZE = 60 + 8;
 
     /**
      * Enum indicating in which case the protocol should automatically retransmit data.<br />
      * Note that no matter how this setting is configured, the user still has manual fine-grain control using the
-     * {@link ProtocolListener#shouldRetransmit(short, Object) appropriate listener method}.
+     * {@link ProtocolListener#shouldRetransmit(short, ByteBuffer) appropriate listener method}.
      * <br /><br />
      * With {@link AutoRetransmitMode#ALWAYS} the protocol will retransmit all potentially lost data automatically,
      * such that it can be reliably and orderly received at the communication partner.
@@ -49,7 +67,7 @@ public final class ProtocolConfig {
      * With {@link AutoRetransmitMode#NEVER} the protocol will not retransmit any data on its own automatically,
      * giving no guarantees to reliable or in-order delivery out-of-the-box.
      * Usually appropriate setting when the user needs complete control using the
-     * {@link ProtocolListener#shouldRetransmit(short, Object) listener method}.<br />
+     * {@link ProtocolListener#shouldRetransmit(short, ByteBuffer) listener method}.<br />
      * <br />
      * Defaults to <code>ALWAYS</code>.
      */
@@ -87,6 +105,15 @@ public final class ProtocolConfig {
      * Note that this setting can only be set statically for all protocol instances.
      */
     private static boolean useExtendedPrecedingTransmissionAcks = false;
+
+    /**
+     * The highest possible MTU (Maximum Transmission Unit) size (in bytes) that can be configured for all protocol instances.
+     * Used internally to determine maximum buffer capacities.
+     * Defaults to {@value}.
+     * <br />
+     * Note that this setting can only be set statically for all protocol instances.
+     */
+    private static int highestPossibleMTUSize = 2048;
 
     /**
      * The <code>K</code> constant used for computing the retransmission timeout.
@@ -317,5 +344,27 @@ public final class ProtocolConfig {
      */
     public static void setUseExtendedPrecedingTransmissionAcks(boolean useIt) {
         useExtendedPrecedingTransmissionAcks = useIt;
+    }
+
+    /**
+     * Gets the highest possible MTU (Maximum Transmission Unit) size (in bytes) that can be configured for all protocol instances.
+     * Used internally to determine maximum buffer capacities.
+     * Defaults to {@code 2048}.
+     * <br />
+     * Note that this setting can only be set statically for all protocol instances.
+     */
+    public static int getHighestPossibleMTUSize() {
+        return highestPossibleMTUSize;
+    }
+
+    /**
+     * Sets the highest possible MTU (Maximum Transmission Unit) size (in bytes) that can be configured for all protocol instances.
+     * Used internally to determine maximum buffer capacities.
+     * Defaults to {@code 2048}.
+     * <br />
+     * Note that this setting can only be set statically for all protocol instances.
+     */
+    public static void setHighestPossibleMTUSize(int highestPossibleMTUSize) {
+        ProtocolConfig.highestPossibleMTUSize = highestPossibleMTUSize;
     }
 }

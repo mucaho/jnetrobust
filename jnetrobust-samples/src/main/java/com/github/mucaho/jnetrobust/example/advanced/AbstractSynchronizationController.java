@@ -124,7 +124,8 @@ public class AbstractSynchronizationController {
         }
 
         @Override
-        public void handleExceptionalData(Vector2D exceptionalData) {
+        public void handleExceptionalData(Exception exception) {
+            exception.printStackTrace();
         }
     }
 
@@ -150,7 +151,8 @@ public class AbstractSynchronizationController {
         }
 
         @Override
-        public void handleExceptionalData(Vector2D exceptionalData) {
+        public void handleExceptionalData(Exception exception) {
+            exception.printStackTrace();
         }
     }
 }

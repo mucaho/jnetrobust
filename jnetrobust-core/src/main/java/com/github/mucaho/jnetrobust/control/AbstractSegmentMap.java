@@ -12,30 +12,30 @@ import com.github.mucaho.jnetrobust.util.EntryIterator;
 
 import java.util.*;
 
-public abstract class AbstractSegmentMap<T> {
-    protected final NavigableMap<Short, Segment<T>> keyMap;
-    private final NavigableMap<Short, Segment<T>> keyMapOut;
+public abstract class AbstractSegmentMap {
+    protected final NavigableMap<Short, Segment> keyMap;
+    private final NavigableMap<Short, Segment> keyMapOut;
 
-    protected final NavigableMap<Segment<T>, NavigableSet<Short>> valueMap;
-    private final NavigableMap<Segment<T>, NavigableSet<Short>> valueMapOut;
+    protected final NavigableMap<Segment, NavigableSet<Short>> valueMap;
+    private final NavigableMap<Segment, NavigableSet<Short>> valueMapOut;
 
-    private final EntryIterator<Short, Segment<T>> entryIterator;
+    private final EntryIterator<Short, Segment> entryIterator;
 
-    public AbstractSegmentMap(Comparator<Short> idComparator, Comparator<Segment<?>> segmentComparator) {
-        this.keyMap = new TreeMap<Short, Segment<T>>(idComparator);
+    public AbstractSegmentMap(Comparator<Short> idComparator, Comparator<Segment> segmentComparator) {
+        this.keyMap = new TreeMap<Short, Segment>(idComparator);
         this.keyMapOut = CollectionUtils.unmodifiableNavigableMap(keyMap);
 
-        this.valueMap = new TreeMap<Segment<T>, NavigableSet<Short>>(segmentComparator);
+        this.valueMap = new TreeMap<Segment, NavigableSet<Short>>(segmentComparator);
         this.valueMapOut = CollectionUtils.unmodifiableNavigableMap(valueMap);
 
-        this.entryIterator = new SegmentMapIterator<T>(this);
+        this.entryIterator = new SegmentMapIterator(this);
     }
 
-    public NavigableMap<Short, Segment<T>> getKeyMap() {
+    public NavigableMap<Short, Segment> getKeyMap() {
         return keyMapOut;
     }
 
-    public NavigableMap<Segment<T>, NavigableSet<Short>> getValueMap() {
+    public NavigableMap<Segment, NavigableSet<Short>> getValueMap() {
         return valueMapOut;
     }
 
@@ -43,33 +43,33 @@ public abstract class AbstractSegmentMap<T> {
         return keyMapOut.navigableKeySet();
     }
 
-    public NavigableSet<Segment<T>> getValues() {
+    public NavigableSet<Segment> getValues() {
         return valueMapOut.navigableKeySet();
     }
 
-    public Segment<T> getValue(Short key) {
+    public Segment getValue(Short key) {
         return keyMapOut.get(key);
     }
 
-    public NavigableSet<Short> getKeys(Segment<T> segment) {
+    public NavigableSet<Short> getKeys(Segment segment) {
         return valueMapOut.get(segment);
     }
 
-    abstract void putAll(Segment<T> segment);
+    abstract void putAll(Segment segment);
 
-    abstract void putAll(NavigableSet<Short> keys, Segment<T> segment);
+    abstract void putAll(NavigableSet<Short> keys, Segment segment);
 
-    abstract Segment<T> put(Short key, Segment<T> segment);
+    abstract Segment put(Short key, Segment segment);
 
-    abstract Segment<T> put(Segment<T> segment);
+    abstract Segment put(Segment segment);
 
-    abstract Segment<T> removeAll(Short key);
+    abstract Segment removeAll(Short key);
 
-    abstract Segment<T> removeAll(Segment<T> segment);
+    abstract Segment removeAll(Segment segment);
 
     abstract void removeAll(NavigableSet<Short> keys);
 
-    abstract Segment<T> remove(Short key);
+    abstract Segment remove(Short key);
 
     public int keySize() {
         return keyMap.size();
@@ -95,19 +95,19 @@ public abstract class AbstractSegmentMap<T> {
         return valueMap.size();
     }
 
-    public Segment<T> firstValue() {
+    public Segment firstValue() {
         return valueMap.isEmpty() ? null : valueMap.firstKey();
     }
 
-    public Segment<T> higherValue(Segment<T> segment) {
+    public Segment higherValue(Segment segment) {
         return valueMap.higherKey(segment);
     }
 
-    public Segment<T> lastValue() {
+    public Segment lastValue() {
         return valueMap.isEmpty() ? null : valueMap.lastKey();
     }
 
-    public Segment<T> lowerValue(Segment<T> segment) {
+    public Segment lowerValue(Segment segment) {
         return valueMap.lowerKey(segment);
     }
 
@@ -125,14 +125,14 @@ public abstract class AbstractSegmentMap<T> {
     }
 
 
-    public EntryIterator<Short, Segment<T>> getIterator() {
+    public EntryIterator<Short, Segment> getIterator() {
         return entryIterator;
     }
 
-    private static class SegmentMapIterator<T> implements EntryIterator<Short, Segment<T>> {
-        private final AbstractSegmentMap<T> segmentMap;
+    private static class SegmentMapIterator implements EntryIterator<Short, Segment> {
+        private final AbstractSegmentMap segmentMap;
 
-        public SegmentMapIterator(AbstractSegmentMap<T> segmentMap) {
+        public SegmentMapIterator(AbstractSegmentMap segmentMap) {
             this.segmentMap = segmentMap;
         }
 
@@ -155,12 +155,12 @@ public abstract class AbstractSegmentMap<T> {
         }
 
         @Override
-        public Segment<T> getValue(Short currentKey) {
+        public Segment getValue(Short currentKey) {
             return segmentMap.getValue(currentKey);
         }
 
         @Override
-        public Segment<T> removeValue(Short currentKey) {
+        public Segment removeValue(Short currentKey) {
             return segmentMap.removeAll(currentKey);
         }
     }

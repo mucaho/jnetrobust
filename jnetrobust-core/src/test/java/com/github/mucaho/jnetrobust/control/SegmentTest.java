@@ -17,6 +17,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.NavigableSet;
 import java.util.TreeSet;
@@ -28,29 +29,29 @@ import static org.junit.Assert.*;
 @RunWith(JUnitParamsRunner.class)
 public class SegmentTest {
     public Object[][] parametersForTestReferences() {
-        Segment<Object> segment2 = new Segment<Object>();
+        Segment segment2 = new Segment();
         segment2.addTransmissionId((short)2);
 
-        Segment<Object> segment22 = new Segment<Object>();
+        Segment segment22 = new Segment();
         segment22.addTransmissionId((short)2);
         segment22.addTransmissionId((short)2);
 
-        Segment<Object> segment345 = new Segment<Object>();
+        Segment segment345 = new Segment();
         segment345.addTransmissionId((short)3);
         segment345.addTransmissionId((short)4);
         segment345.addTransmissionId((short)5);
 
         Object[][] out = (Object[][])
                 $($(
-                        new Segment<Object>(), true, $S(2), $S(2)
+                        new Segment(), true, $S(2), $S(2)
                 ), $(
                         segment2, false, $S(2), $S
                 ), $(
-                        new Segment<Object>(), true, $S(2, 2), $S(2)
+                        new Segment(), true, $S(2, 2), $S(2)
                 ), $(
                         segment22, false, $S(2, 2), $S
                 ), $(
-                        new Segment<Object>(), true, $S(5, 3, 4), $S(3, 4, 5)
+                        new Segment(), true, $S(5, 3, 4), $S(3, 4, 5)
                 ), $(
                         segment345, false, $S(4), $S(3, 5)
                 ));
@@ -61,7 +62,7 @@ public class SegmentTest {
 
     @Test
     @Parameters
-    public final void testReferences(Segment<Object> segment, boolean shouldAdd,
+    public final void testReferences(Segment segment, boolean shouldAdd,
                                      Short[] inRefs, Short[] expectedRefs) {
         if (shouldAdd) {
             for (short ref : inRefs)
@@ -99,12 +100,12 @@ public class SegmentTest {
     @Test
     @Parameters
     public final void testSerialization(Short[] refs, String value) throws Exception {
-        Segment<Object> inSegment, outSegment;
+        Segment inSegment, outSegment;
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(outStream);
         {
-            outSegment = new Segment<Object>(refs[0], value);
+            outSegment = new Segment(refs[0], serialize(value));
             for (Short ref : refs)
                 outSegment.addTransmissionId(ref);
             outSegment.writeExternal(out);
@@ -114,12 +115,12 @@ public class SegmentTest {
         ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
         ObjectInputStream in = new ObjectInputStream(inStream);
         {
-            inSegment = new Segment<Object>();
+            inSegment = new Segment();
             inSegment.readExternal(in);
         }
         in.close();
 
-        assertEquals("Value mismatch.", outSegment.getData(), inSegment.getData());
+        assertEquals("Value mismatch.", deserialize(outSegment.getData()), deserialize(inSegment.getData()));
         assertEquals("Static reference mismatch", outSegment.getDataId(), inSegment.getDataId());
         assertEquals("Reference count mismatch.", 1, inSegment.getTransmissionIds().size());
         assertEquals("TransmissionId mismatch", outSegment.getLastTransmissionId(), inSegment.getLastTransmissionId());
@@ -140,20 +141,20 @@ public class SegmentTest {
     @Test
     @Parameters
     public final void testClone(Short[] refs, String value) throws Exception {
-        Segment<Object> original = new Segment<Object>(refs[0], value);
+        Segment original = new Segment(refs[0], serialize(value));
         for (Short ref : refs)
             original.addTransmissionId(ref);
-        Segment<Object> clone = original.clone();
+        Segment clone = original.clone();
 
-        assertEquals("Value mismatch.", original.getData(), clone.getData());
+        assertEquals("Value mismatch.", deserialize(original.getData()), deserialize(clone.getData()));
         assertEquals("Value mismatch", original.getDataId(), clone.getDataId());
         assertArrayEquals("References mismatch",
                 original.getTransmissionIds().toArray(), clone.getTransmissionIds().toArray());
 
-        assertSame("Value has to be same.",
-                Deencapsulation.getField(original, "value"),
-                Deencapsulation.getField(clone, "value"));
-        assertNotSame("Reference has to differ",
+        assertNotSame("References have to differ.",
+                Deencapsulation.getField(original, "data"),
+                Deencapsulation.getField(clone, "data"));
+        assertSame("Objects have to be same",
                 Deencapsulation.getField(original, "dataId"),
                 Deencapsulation.getField(clone, "dataId"));
         assertNotSame("References have to differ.",
@@ -166,13 +167,14 @@ public class SegmentTest {
             assertNotSame("Reference has to differ", originalRefArray[i], clonedRefArray[i]);
         */
 
-        Deencapsulation.setField(original, "value", "__NEW_DATA__");
-        assertEquals("Original value did change", "__NEW_DATA__", original.getData());
-        assertNotEquals("Cloned value did not change", original.getData().equals(clone.getData()));
+        Deencapsulation.setField(original, "data", serialize("__NEW_DATA__"));
+        Deencapsulation.setField(original, "dataOut", serialize("__NEW_DATA__"));
+        assertEquals("Original value did change", "__NEW_DATA__", deserialize(original.getData()));
+        assertNotEquals("Cloned value did not change", deserialize(original.getData()), deserialize(clone.getData()));
 
         Deencapsulation.setField(original, "dataId", Short.MIN_VALUE);
         assertEquals("Original dataId did change", new Short(Short.MIN_VALUE), original.getDataId());
-        assertNotEquals("Cloned reference did not change", original.getDataId().equals(clone.getDataId()));
+        assertNotEquals("Cloned reference did not change", original.getDataId(), clone.getDataId());
 
         original.addTransmissionId((short) -1);
         assertEquals("Original reference count did change", refs.length + 1, original.getTransmissionIds().size());
@@ -184,7 +186,7 @@ public class SegmentTest {
 
     @Test
     public void testImmutableCollectionsReturned() {
-        Segment<Object> segment2 = new Segment<Object>();
+        Segment segment2 = new Segment();
         segment2.addTransmissionId((short)2);
 
         try {
@@ -198,5 +200,24 @@ public class SegmentTest {
             fail("Returned collection should be immutable");
         } catch (UnsupportedOperationException e) {
         }
+    }
+
+    protected static ByteBuffer serialize(String value) {
+        char[] chars = value.toCharArray();
+
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE + chars.length * Character.SIZE / Byte.SIZE);
+        buffer.putInt(chars.length);
+        for (char chr : chars) buffer.putChar(chr);
+        buffer.flip();
+        return buffer;
+    }
+
+    protected static String deserialize(ByteBuffer data) {
+        int size = data.getInt();
+        char[] chars = new char[size];
+        for (int i = 0; i < size; ++i) {
+            chars[i] = data.getChar();
+        }
+        return String.valueOf(chars);
     }
 }

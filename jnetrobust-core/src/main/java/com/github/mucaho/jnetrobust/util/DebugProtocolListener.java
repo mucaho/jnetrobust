@@ -10,55 +10,51 @@ package com.github.mucaho.jnetrobust.util;
 import com.github.mucaho.jnetrobust.Logger;
 import com.github.mucaho.jnetrobust.ProtocolListener;
 
-public class DebugProtocolListener<T> extends ProtocolListener<T> {
+import java.nio.ByteBuffer;
+
+public class DebugProtocolListener extends ProtocolListener {
 
     private final Logger logger;
-    private final ProtocolListener<T> delegate;
+    private final ProtocolListener delegate;
 
-    public DebugProtocolListener(ProtocolListener<T> delegate, Logger logger) {
+    public DebugProtocolListener(ProtocolListener delegate, Logger logger) {
         this.logger = logger;
         this.delegate = delegate;
     }
 
     @Override
-    public void handleOrderedData(short dataId, T orderedData) {
-        logger.log(Logger.LoggingEvent.ORDERED.toString(), String.valueOf(dataId),
-                orderedData != null ? orderedData.toString() : "null");
+    public void handleOrderedData(short dataId, ByteBuffer orderedData) {
+        logger.log(Logger.LoggingEvent.ORDERED.toString(), dataId, orderedData);
         delegate.handleOrderedData(dataId, orderedData);
     }
 
     @Override
-    public void handleUnorderedData(short dataId, T unorderedData) {
-        logger.log(Logger.LoggingEvent.UNORDERED.toString(), String.valueOf(dataId),
-                unorderedData != null ? unorderedData.toString() : "null");
+    public void handleUnorderedData(short dataId, ByteBuffer unorderedData) {
+        logger.log(Logger.LoggingEvent.UNORDERED.toString(), dataId, unorderedData);
         delegate.handleUnorderedData(dataId, unorderedData);
     }
 
     @Override
-    public void handleAckedData(short dataId, T ackedData) {
-        logger.log(Logger.LoggingEvent.ACKED.toString(), String.valueOf(dataId),
-                ackedData != null ? ackedData.toString() : "null");
+    public void handleAckedData(short dataId, ByteBuffer ackedData) {
+        logger.log(Logger.LoggingEvent.ACKED.toString(), dataId, ackedData);
         delegate.handleAckedData(dataId, ackedData);
     }
 
     @Override
-    public void handleUnackedData(short dataId, T unackedData) {
-        logger.log(Logger.LoggingEvent.NOTACKED.toString(), String.valueOf(dataId),
-                unackedData != null ? unackedData.toString() : "null");
+    public void handleUnackedData(short dataId, ByteBuffer unackedData) {
+        logger.log(Logger.LoggingEvent.NOTACKED.toString(), dataId, unackedData);
         delegate.handleUnackedData(dataId, unackedData);
     }
 
     @Override
-    public void handleNewestData(short dataId, T newestData) {
-        logger.log(Logger.LoggingEvent.NEWEST.toString(), String.valueOf(dataId),
-                newestData != null ? newestData.toString() : "null");
+    public void handleNewestData(short dataId, ByteBuffer newestData) {
+        logger.log(Logger.LoggingEvent.NEWEST.toString(), dataId, newestData);
         delegate.handleNewestData(dataId, newestData);
     }
 
     @Override
-    public Boolean shouldRetransmit(short dataId, T data) {
-        logger.log(Logger.LoggingEvent.RETRANSMISSION.toString(), String.valueOf(dataId),
-                data != null ? data.toString() : "null");
-        return delegate.shouldRetransmit(dataId, data);
+    public Boolean shouldRetransmit(short dataId, ByteBuffer retransmitData) {
+        logger.log(Logger.LoggingEvent.RETRANSMISSION.toString(), dataId, retransmitData);
+        return delegate.shouldRetransmit(dataId, retransmitData);
     }
 }

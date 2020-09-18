@@ -14,6 +14,7 @@ import com.github.mucaho.jnetrobust.util.IdComparator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 
 import static com.github.mucaho.jarrayliterals.ArrayShortcuts.$;
@@ -23,6 +24,23 @@ import static org.junit.Assert.assertEquals;
 @RunWith(JUnitParamsRunner.class)
 public class SentSegmentMapIterTest {
     private static short dataId = Short.MIN_VALUE;
+
+    protected static ByteBuffer serializeShorts(Short[] numbers) {
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.SIZE / Byte.SIZE + numbers.length * Short.SIZE / Byte.SIZE);
+        buffer.putInt(numbers.length);
+        for (short number : numbers) buffer.putShort(number);
+        buffer.flip();
+        return buffer;
+    }
+
+    protected static Short[] deserializeShorts(ByteBuffer data) {
+        int size = data.getInt();
+        Short[] numbers = new Short[size];
+        for (int i = 0; i < size; ++i) {
+            numbers[i] = data.getShort();
+        }
+        return numbers;
+    }
 
     public Object[][] parametersForTestIterator() {
         Object[][] out = (Object[][])
@@ -35,11 +53,11 @@ public class SentSegmentMapIterTest {
     @Test
     @Parameters
     public final void testIterator(Short[][] refGroups) {
-        AbstractSegmentMap<Object> dataMap = new SentSegmentMap<Object>();
-        EntryIterator<Short, Segment<Object>> iter = dataMap.getIterator();
+        AbstractSegmentMap dataMap = new SentSegmentMap();
+        EntryIterator<Short, Segment> iter = dataMap.getIterator();
         List<Short> refs = new ArrayList<Short>();
-        HashSet<Segment<Object>> segments = new HashSet<Segment<Object>>();
-        Segment<Object> segment;
+        HashSet<Segment> segments = new HashSet<Segment>();
+        Segment segment;
         int expectedCount, actualCount;
         Short key;
 
@@ -47,7 +65,7 @@ public class SentSegmentMapIterTest {
         expectedCount = 0;
         for (final Short[] refGroup : refGroups) {
             expectedCount += refGroup.length;
-            segment = new Segment<Object>(++dataId, refGroup);
+            segment = new Segment(++dataId, serializeShorts(refGroup));
             dataMap.putAll(new TreeSet<Short>(Arrays.asList(refGroup)), segment);
             segments.add(segment);
             refs.addAll(Arrays.asList(refGroup));

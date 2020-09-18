@@ -9,20 +9,22 @@ package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.util.IdComparator;
 
-public class NewestDataControl<T> {
-    public interface NewestDataListener<T> {
-        void handleNewestData(short dataId, T data);
-    }
-    private final NewestDataListener<T> listener;
+import java.nio.ByteBuffer;
 
-    public NewestDataControl(NewestDataListener<T> listener) {
+public class NewestDataControl {
+    public interface NewestDataListener {
+        void handleNewestData(short dataId, ByteBuffer data);
+    }
+    private final NewestDataListener listener;
+
+    public NewestDataControl(NewestDataListener listener) {
         this.listener = listener;
     }
 
     private boolean newestDataChanged = false;
-    private Segment<T> newestSegment;
+    private Segment newestSegment;
 
-    public void refreshNewestData(Segment<T> segment) {
+    public void refreshNewestData(Segment segment) {
         if (newestSegment == null || IdComparator.instance.compare(segment.getDataId(), newestSegment.getDataId()) > 0) {
             newestSegment = segment;
             newestDataChanged = true;
@@ -30,8 +32,10 @@ public class NewestDataControl<T> {
     }
 
     public void emitNewestData() {
-        if (newestDataChanged && newestSegment != null)
+        if (newestDataChanged && newestSegment != null) {
             listener.handleNewestData(newestSegment.getDataId(), newestSegment.getData());
+            if (newestSegment.getData() != null) newestSegment.getData().rewind();
+        }
         newestDataChanged = false;
     }
 }

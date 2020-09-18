@@ -31,9 +31,9 @@ public class PacketTest {
 
     @Test(expected = IndexOutOfBoundsException.class)
     public final void testExceptions() {
-        Packet<Object> packet = new Packet<Object>();
+        Packet packet = new Packet();
         for (int i = 0; i <= Packet.MAX_DATAS_PER_PACKET; ++i) {
-            packet.addLastSegment(new Segment<Object>());
+            packet.addLastSegment(new Segment());
         }
     }
 
@@ -52,15 +52,15 @@ public class PacketTest {
     @Test
     @Parameters
     public final void testSerialization(Short ack, Integer lastAcks) throws Exception {
-        Packet<Object> inPacket, outPacket;
+        Packet inPacket, outPacket;
 
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(outStream);
         {
-            outPacket = new Packet<Object>();
+            outPacket = new Packet();
             outPacket.setTransmissionAck(ack);
             outPacket.setPrecedingTransmissionAcks(lastAcks);
-            Segment<Object> segment = new Segment<Object>();
+            Segment segment = new Segment();
             Deencapsulation.setField(segment, "dataId", Short.MIN_VALUE);
             Deencapsulation.invoke(segment, "addTransmissionId", Short.MIN_VALUE);
             outPacket.addLastSegment(segment);
@@ -71,7 +71,7 @@ public class PacketTest {
         ByteArrayInputStream inStream = new ByteArrayInputStream(outStream.toByteArray());
         ObjectInputStream in = new ObjectInputStream(inStream);
         {
-            inPacket = new Packet<Object>();
+            inPacket = new Packet();
             inPacket.readExternal(in);
         }
         in.close();
@@ -96,15 +96,15 @@ public class PacketTest {
     @Test
     @Parameters
     public final void testClone(Short ack, Integer lastAcks) throws Exception {
-        Packet<Object> original = new Packet<Object>();
+        Packet original = new Packet();
         original.setTransmissionAck(ack);
         original.setPrecedingTransmissionAcks(lastAcks);
 
-        Segment<Object> segment = new Segment<Object>();
+        Segment segment = new Segment();
         Deencapsulation.setField(segment, "dataId", Short.MIN_VALUE);
         Deencapsulation.invoke(segment, "addTransmissionId", Short.MIN_VALUE);
         original.addLastSegment(segment);
-        Packet<Object> clone = original.clone();
+        Packet clone = original.clone();
 
         assertEquals("ack mismatch", original.getTransmissionAck(), clone.getTransmissionAck());
         assertEquals("lastAck mismatch", original.getPrecedingTransmissionAcks(), clone.getPrecedingTransmissionAcks());
@@ -112,7 +112,7 @@ public class PacketTest {
 
         original.setTransmissionAck((short) -1);
         original.setPrecedingTransmissionAcks(-1);
-        original.addLastSegment(new Segment<Object>());
+        original.addLastSegment(new Segment());
         assertEquals("Original ack did change", (short) -1, original.getTransmissionAck().shortValue());
         assertEquals("Original lastAck did change", -1, original.getPrecedingTransmissionAcks());
         assertEquals("Original segments size did change", 2, original.getSegments().size());

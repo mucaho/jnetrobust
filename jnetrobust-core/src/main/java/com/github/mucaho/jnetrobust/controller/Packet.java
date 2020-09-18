@@ -11,6 +11,7 @@ import com.github.mucaho.jnetrobust.ProtocolConfig;
 import com.github.mucaho.jnetrobust.control.Segment;
 import com.github.mucaho.jnetrobust.util.BitConstants;
 import com.github.mucaho.jnetrobust.util.Freezable;
+import com.github.mucaho.jnetrobust.util.Sizeable;
 
 import java.io.IOException;
 import java.io.ObjectInput;
@@ -18,47 +19,39 @@ import java.io.ObjectOutput;
 import java.util.*;
 
 
-public final class Packet<T> implements Freezable<Packet<T>> {
+public final class Packet implements Freezable<Packet>, Sizeable {
     public static final transient int MAX_DATAS_PER_PACKET = (Byte.MAX_VALUE - Byte.MIN_VALUE + 1) - 1;
 
     public Packet() {
         super();
     }
 
-    private LinkedList<Segment<T>> segments = new LinkedList<Segment<T>>();
-    private transient List<Segment<T>> segmentsOut = Collections.unmodifiableList(segments);
+    private LinkedList<Segment> segments = new LinkedList<Segment>();
+    private transient List<Segment> segmentsOut = Collections.unmodifiableList(segments);
     private Short transmissionAck;
     private long precedingTransmissionAcks;
 
-    public List<Segment<T>> getSegments() {
+    public List<Segment> getSegments() {
         return segmentsOut;
     }
 
-    public Segment<T> getFirstSegment() {
+    public Segment getFirstSegment() {
         return segments.peekFirst();
     }
 
-    public Segment<T> getLastSegment() {
+    public Segment getLastSegment() {
         return segments.peekLast();
     }
 
-    void addLastSegment(Segment<T> segment) {
+    void addLastSegment(Segment segment) {
         if (segments.size() >= MAX_DATAS_PER_PACKET)
             throw new IndexOutOfBoundsException("Cannot add more than " + MAX_DATAS_PER_PACKET + " segments to packet!");
 
         segments.addLast(segment);
     }
 
-    Segment<T> removeFirstSegment() {
+    Segment removeFirstSegment() {
         return segments.pollFirst();
-    }
-
-    Segment<T> removeLastSegment() {
-        return segments.pollLast();
-    }
-
-    Segment<T> remove(int i) {
-        return segments.remove(i);
     }
 
     public Short getTransmissionAck() {
@@ -97,7 +90,7 @@ public final class Packet<T> implements Freezable<Packet<T>> {
      * @param out    the {@link java.io.ObjectOutput} to write to
      * @throws IOException if an error occurs
      */
-    public static <T> void writeExternalStatic(Packet<T> packet, ObjectOutput out) throws IOException {
+    public static void writeExternalStatic(Packet packet, ObjectOutput out) throws IOException {
         packet.writeExternal(out);
     }
 
@@ -110,8 +103,8 @@ public final class Packet<T> implements Freezable<Packet<T>> {
      * @throws IOException            if an error occurs
      * @throws ClassNotFoundException if an error occurs.
      */
-    public static <T> Packet<T> readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
-        Packet<T> packet = new Packet<T>();
+    public static Packet readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
+        Packet packet = new Packet();
         packet.readExternal(in);
         return packet;
     }
@@ -135,7 +128,7 @@ public final class Packet<T> implements Freezable<Packet<T>> {
 
         out.writeByte(segments.size());
         for (int i = 0, l = segments.size(); i < l; ++i)
-            Segment.<T>writeExternalStatic(segments.get(i), out);
+            Segment.writeExternalStatic(segments.get(i), out);
     }
 
     @Override
@@ -149,16 +142,28 @@ public final class Packet<T> implements Freezable<Packet<T>> {
 
         int size = in.readUnsignedByte();
         for (int i = 0; i < size; ++i)
-            segments.addLast(Segment.<T>readExternalStatic(in));
+            segments.addLast(Segment.readExternalStatic(in));
     }
 
     @Override
-    public Packet<T> clone() {
-        Packet<T> clone = new Packet<T>();
+    public Packet clone() {
+        Packet clone = new Packet();
         clone.transmissionAck = transmissionAck;
         clone.precedingTransmissionAcks = precedingTransmissionAcks;
         for (int i = 0, l = segments.size(); i < l; ++i)
             clone.addLastSegment(segments.get(i).clone());
         return clone;
+    }
+
+    // TODO: test getSize() == serializationSize
+    @Override
+    public int getSize() {
+        int size = Short.SIZE / Byte.SIZE // transmissionAck
+                // precedingTransmissionAcks
+                + (ProtocolConfig.useExtendedPrecedingTransmissionAcks() ? Long.SIZE / Byte.SIZE : Integer.SIZE / Byte.SIZE)
+                + Byte.SIZE / Byte.SIZE; // segmentsSize
+        for (int i = 0, l = segments.size(); i < l; ++i)
+            size += segments.get(i).getSize(); // segments
+        return size;
     }
 }

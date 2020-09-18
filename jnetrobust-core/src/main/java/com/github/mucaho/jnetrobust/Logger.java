@@ -7,6 +7,8 @@
 
 package com.github.mucaho.jnetrobust;
 
+import java.nio.ByteBuffer;
+
 /**
  * Abstract class which is able to handle protocol specific logging.
  * Implementations of this class have to implement the {@link Logger#log(String, Object...) log} method.
@@ -45,19 +47,33 @@ public abstract class Logger {
     public abstract void log(String description, Object... params);
 
     /**
-     * Retrieve a simple logger which logs events to the {@link java.lang.System#out System.out} stream.
-     * @param name  the name of the protocol instance
-     * @return  a new console <code>Logger</code>
+     * Abstract simple logger which logs events to the {@link java.lang.System#out System.out} stream.<br />
+     * Implementors should extend this class providing a suitable implementation for {@link #deserialize(ByteBuffer)}.
      */
-    public static Logger getConsoleLogger(final String name) {
-        return new Logger() {
-            @Override
-            public void log(String description, Object... params) {
-                System.out.print("[" + name + "]: " + description + "\t");
-                for (int i = 0, l = params.length; i < l; ++i)
+    public abstract static class AbstractConsoleLogger extends Logger {
+
+        private final String name;
+
+        public AbstractConsoleLogger(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public void log(String description, Object... params) {
+            System.out.print("[" + name + "]: " + description + "\t");
+            for (int i = 0, l = params.length; i < l; ++i) {
+                if (params[i] instanceof ByteBuffer) {
+                    ByteBuffer dataBuffer = (ByteBuffer) params[i];
+                    dataBuffer.rewind();
+                    System.out.print(deserialize(dataBuffer) + "\t");
+                    dataBuffer.rewind();
+                } else {
                     System.out.print(params[i] + "\t");
-                System.out.println();
+                }
             }
-        };
+            System.out.println();
+        }
+
+        protected abstract String deserialize(ByteBuffer dataBuffer);
     }
 }

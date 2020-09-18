@@ -7,17 +7,16 @@
 
 package com.github.mucaho.jnetrobust.control;
 
-import com.github.mucaho.jnetrobust.util.CollectionUtils;
-import com.github.mucaho.jnetrobust.util.Freezable;
-import com.github.mucaho.jnetrobust.util.IdComparator;
-import com.github.mucaho.jnetrobust.util.Timestamp;
+import com.github.mucaho.jnetrobust.ProtocolConfig;
+import com.github.mucaho.jnetrobust.util.*;
 
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.nio.ByteBuffer;
 import java.util.*;
 
-public final class Segment<T> implements Timestamp, Freezable<Segment<T>> {
+public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
     private transient long newestTransmissionTime = System.currentTimeMillis();
 
     private Short dataId;
@@ -27,18 +26,23 @@ public final class Segment<T> implements Timestamp, Freezable<Segment<T>> {
     private final NavigableSet<Short> transmissionIds = new TreeSet<Short>(IdComparator.instance);
     private final transient NavigableSet<Short> transmissionIdsOut = CollectionUtils.unmodifiableNavigableSet(transmissionIds);
 
-    private T value;
+    private final ByteBuffer data = ByteBuffer.allocate(ProtocolConfig.getHighestPossibleMTUSize());
+    private final transient ByteBuffer dataOut = data.asReadOnlyBuffer();
 
-    public Segment(Short dataId, T value) {
+    public Segment(Short dataId, ByteBuffer data) {
         this.dataId = dataId;
         this.dataIds.add(dataId);
-        this.value = value;
+        if (data != null) {
+            this.data.put(data);
+            this.dataOut.position(this.data.position());
+            this.data.flip();
+            this.dataOut.flip();
+        }
     }
 
     public Segment() {
         super();
     }
-
 
     public Short getDataId() {
         return dataId;
@@ -72,11 +76,15 @@ public final class Segment<T> implements Timestamp, Freezable<Segment<T>> {
         return transmissionIds.isEmpty() ? null : transmissionIds.last();
     }
 
-
-    public T getData() {
-        return value;
+    public ByteBuffer getData() {
+        if (ByteBufferUtils.getDataSize(data) > 0) {
+            if (!dataOut.hasRemaining())
+                dataOut.rewind();
+            return dataOut;
+        } else {
+            return null;
+        }
     }
-
 
     void updateTime() {
         newestTransmissionTime = System.currentTimeMillis();
@@ -98,7 +106,7 @@ public final class Segment<T> implements Timestamp, Freezable<Segment<T>> {
             transmissionId = transmissionIds.higher(transmissionId);
         }
         out.append("]");
-        out.append(": ").append(value != null ? value.toString() : "null");
+        out.append(": ").append(ByteBufferUtils.getDataSize(data)).append("B");
 
         return out.toString();
     }
@@ -111,7 +119,7 @@ public final class Segment<T> implements Timestamp, Freezable<Segment<T>> {
      * @param out           the {@link java.io.ObjectOutput} to write to
      * @throws IOException if an error occurs
      */
-    public static <T> void writeExternalStatic(Segment<T> segment, ObjectOutput out) throws IOException {
+    public static void writeExternalStatic(Segment segment, ObjectOutput out) throws IOException {
         segment.writeExternal(out);
     }
 
@@ -124,8 +132,8 @@ public final class Segment<T> implements Timestamp, Freezable<Segment<T>> {
      * @throws IOException            if an error occurs
      * @throws ClassNotFoundException if an error occurs.
      */
-    public static <T> Segment<T> readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
-        Segment<T> segment = new Segment<T>();
+    public static Segment readExternalStatic(ObjectInput in) throws IOException, ClassNotFoundException {
+        Segment segment = new Segment();
         segment.readExternal(in);
         return segment;
     }
@@ -142,26 +150,45 @@ public final class Segment<T> implements Timestamp, Freezable<Segment<T>> {
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeShort(dataId);
         out.writeShort(transmissionIds.last());
-        out.writeObject(value);
+        int dataSize = ByteBufferUtils.getDataSize(data);
+        out.writeInt(dataSize);
+        if (dataSize > 0)
+            out.write(data.array(), data.arrayOffset(), data.limit());
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
         dataId = in.readShort();
         dataIds.add(dataId);
         transmissionIds.add(in.readShort());
-        value = (T) in.readObject();
+        int dataSize = in.readInt();
+        if (dataSize > 0) {
+            in.read(data.array(), 0, dataSize);
+            data.limit(dataSize);
+            dataOut.limit(dataSize);
+        }
     }
 
     @Override
-    public Segment<T> clone() {
-        Segment<T> clone = new Segment<T>();
-        clone.value = value;
-        clone.dataId = new Short(dataId);
+    public Segment clone() {
+        Segment clone = new Segment();
+        if (getData() != null) getData().rewind();
+        clone.data.put(getData());
+        clone.dataOut.position(clone.data.position());
+        clone.data.flip();
+        clone.dataOut.flip();
+        clone.dataId = dataId;
         clone.dataIds.add(dataId);
         clone.transmissionIds.addAll(transmissionIds);
         return clone;
+    }
+
+    @Override
+    public int getSize() {
+        return Short.SIZE / Byte.SIZE // dataId
+                + Short.SIZE / Byte.SIZE // lastTransmissionId
+                + Integer.SIZE / Byte.SIZE // dataLimit
+                + ByteBufferUtils.getDataSize(data); // data
     }
 
     @Override
@@ -169,7 +196,7 @@ public final class Segment<T> implements Timestamp, Freezable<Segment<T>> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Segment<?> segment = (Segment<?>) o;
+        Segment segment = (Segment) o;
 
         return dataId != null ? dataId.equals(segment.dataId) : segment.dataId == null;
     }

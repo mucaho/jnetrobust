@@ -9,7 +9,9 @@ package com.github.mucaho.jnetrobust;
 
 import com.github.mucaho.jnetrobust.control.AbstractMapControl;
 import com.github.mucaho.jnetrobust.control.AbstractSegmentMap;
-import com.github.mucaho.jnetrobust.controller.Controller;
+import com.github.mucaho.jnetrobust.controller.PackagingController;
+import com.github.mucaho.jnetrobust.controller.ProcessingController;
+import com.github.mucaho.jnetrobust.util.ByteBufferUtils;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.*;
@@ -23,6 +25,7 @@ import com.github.mucaho.jnetrobust.util.UnreliableQueue.QueueListener;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -38,13 +41,13 @@ public class DelayedTest {
     private static final ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(2);
 
     @Injectable
-    private QueueListener<Packet<Long>> queueListenerAtoB;
+    private QueueListener<Packet> queueListenerAtoB;
     @Injectable
-    private QueueListener<Packet<Long>> queueListenerBtoA;
+    private QueueListener<Packet> queueListenerBtoA;
     @Injectable
-    private ProtocolListener<Long> protocolListenerA;
+    private ProtocolListener protocolListenerA;
     @Injectable
-    private ProtocolListener<Long> protocolListenerB;
+    private ProtocolListener protocolListenerB;
     @Injectable
     private TestHostListener<Long> hostListenerA;
     @Injectable
@@ -69,14 +72,21 @@ public class DelayedTest {
 		/*
 		 * Record phase
 		 */
-        final UnreliableQueue<Packet<Long>> aToB = new UnreliableQueue<Packet<Long>>(queueListenerAtoB,
+        final UnreliableQueue<Packet> aToB = new UnreliableQueue<Packet>(queueListenerAtoB,
                 minDelay, maxDelay, lossChance, dupChance);
-        final UnreliableQueue<Packet<Long>> bToA = new UnreliableQueue<Packet<Long>>(queueListenerBtoA,
+        final UnreliableQueue<Packet> bToA = new UnreliableQueue<Packet>(queueListenerBtoA,
                 minDelay, maxDelay, lossChance, dupChance);
 
 
-        ProtocolListener<Long> listenerA = DEBUG ?
-                new DebugProtocolListener<Long>(protocolListenerA, Logger.getConsoleLogger("A")) :
+        final LongDataGenerator dataGenerator = new LongDataGenerator();
+
+        ProtocolListener listenerA = DEBUG ?
+                new DebugProtocolListener(protocolListenerA, new Logger.AbstractConsoleLogger("A") {
+                    @Override
+                    protected String deserialize(ByteBuffer dataBuffer) {
+                        return dataGenerator.deserializeData(dataBuffer).toString();
+                    }
+                }) :
                 protocolListenerA;
         final TestHost<Long> hostA = new TestHost<Long>(hostListenerA, new LongDataGenerator(),
                 bToA, aToB, listenerA, new ProtocolConfig(), DEBUG ? "A" : null);
@@ -91,8 +101,13 @@ public class DelayedTest {
         final List<Long> retransmitsA = new ArrayList<Long>();
 
 
-        ProtocolListener<Long> listenerB = DEBUG ?
-                new DebugProtocolListener<Long>(protocolListenerB, Logger.getConsoleLogger("B")) :
+        ProtocolListener listenerB = DEBUG ?
+                new DebugProtocolListener(protocolListenerB, new Logger.AbstractConsoleLogger("B") {
+                    @Override
+                    protected String deserialize(ByteBuffer dataBuffer) {
+                        return dataGenerator.deserializeData(dataBuffer).toString();
+                    }
+                }) :
                 protocolListenerB;
         final TestHost<Long> hostB = new TestHost<Long>(hostListenerB, new LongDataGenerator(),
                 aToB, bToA, listenerB, new ProtocolConfig(), DEBUG ? "B" : null);
@@ -125,11 +140,36 @@ public class DelayedTest {
                 }
             }));
 
-            protocolListenerA.handleAckedData(anyShort, withCapture(ackedA));
-            protocolListenerA.handleUnackedData(anyShort, withCapture(notAckedA));
-            protocolListenerA.handleOrderedData(anyShort, withCapture(orderedA));
-            protocolListenerA.handleUnorderedData(anyShort, withCapture(unorderedA));
-            protocolListenerA.shouldRetransmit(anyShort, withCapture(retransmitsA)); result = null;
+            protocolListenerA.handleAckedData(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    ackedA.add(dataGenerator.deserializeData(data));
+                }
+            }));
+            protocolListenerA.handleUnackedData(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    notAckedA.add(dataGenerator.deserializeData(data));
+                }
+            }));
+            protocolListenerA.handleOrderedData(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    orderedA.add(dataGenerator.deserializeData(data));
+                }
+            }));
+            protocolListenerA.handleUnorderedData(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    unorderedA.add(dataGenerator.deserializeData(data));
+                }
+            }));
+            protocolListenerA.shouldRetransmit(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    retransmitsA.add(dataGenerator.deserializeData(data));
+                }
+            })); result = null;
         }};
 
         new NonStrictExpectations() {{
@@ -150,52 +190,77 @@ public class DelayedTest {
                 }
             }));
 
-            protocolListenerB.handleAckedData(anyShort, withCapture(ackedB));
-            protocolListenerB.handleUnackedData(anyShort, withCapture(notAckedB));
-            protocolListenerB.handleOrderedData(anyShort, withCapture(orderedB));
-            protocolListenerB.handleUnorderedData(anyShort, withCapture(unorderedB));
-            protocolListenerB.shouldRetransmit(anyShort, withCapture(retransmitsB)); result = null;
+            protocolListenerB.handleAckedData(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    ackedB.add(dataGenerator.deserializeData(data));
+                }
+            }));
+            protocolListenerB.handleUnackedData(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    notAckedB.add(dataGenerator.deserializeData(data));
+                }
+            }));
+            protocolListenerB.handleOrderedData(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    orderedB.add(dataGenerator.deserializeData(data));
+                }
+            }));
+            protocolListenerB.handleUnorderedData(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    unorderedB.add(dataGenerator.deserializeData(data));
+                }
+            }));
+            protocolListenerB.shouldRetransmit(anyShort, with(new Delegate<ByteBuffer>() {
+                @SuppressWarnings("unused")
+                void delegate(ByteBuffer data) {
+                    retransmitsB.add(dataGenerator.deserializeData(data));
+                }
+            })); result = null;
         }};
 
         new NonStrictExpectations() {{
-            queueListenerAtoB.notifyDuplicate((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
+            queueListenerAtoB.notifyDuplicate((Packet) any); result = new Delegate<Packet>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet<Long> dup) {
-                    for (Segment<Long> segment: dup.getSegments()) {
-                        dupedSentA.add(segment.getData());
+                void delegate(Packet dup) {
+                    for (Segment segment: dup.getSegments()) {
+                        dupedSentA.add(dataGenerator.deserializeData(segment.getData()));
                         if (DEBUG)
-                            System.out.println("[A-dupedSent]: " + segment.getData());
+                            System.out.println("[A-dupedSent]: " + dataGenerator.deserializeData(segment.getData()));
                     }
                 }
             };
-            queueListenerAtoB.notifyLoss((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
+            queueListenerAtoB.notifyLoss((Packet) any); result = new Delegate<Packet>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet<Long> loss) {
-                    for (Segment<Long> segment: loss.getSegments()) {
-                        lostSentA.add(segment.getData());
+                void delegate(Packet loss) {
+                    for (Segment segment: loss.getSegments()) {
+                        lostSentA.add(dataGenerator.deserializeData(segment.getData()));
                         if (DEBUG)
-                            System.out.println("[A-lostSent]: " + segment.getData());
+                            System.out.println("[A-lostSent]: " + dataGenerator.deserializeData(segment.getData()));
                     }
                 }
             };
 
-            queueListenerBtoA.notifyDuplicate((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
+            queueListenerBtoA.notifyDuplicate((Packet) any); result = new Delegate<Packet>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet<Long> dup) {
-                    for (Segment<Long> segment: dup.getSegments()) {
-                        dupedSentB.add(segment.getData());
+                void delegate(Packet dup) {
+                    for (Segment segment: dup.getSegments()) {
+                        dupedSentB.add(dataGenerator.deserializeData(segment.getData()));
                         if (DEBUG)
-                            System.out.println("[B-dupedSent]: " + segment.getData());
+                            System.out.println("[B-dupedSent]: " + dataGenerator.deserializeData(segment.getData()));
                     }
                 }
             };
-            queueListenerBtoA.notifyLoss((Packet<Long>) any); result = new Delegate<Packet<Long>>() {
+            queueListenerBtoA.notifyLoss((Packet) any); result = new Delegate<Packet>() {
                 @SuppressWarnings("unused")
-                void delegate(Packet<Long> loss) {
-                    for (Segment<Long> segment: loss.getSegments()) {
-                        lostSentB.add(segment.getData());
+                void delegate(Packet loss) {
+                    for (Segment segment: loss.getSegments()) {
+                        lostSentB.add(dataGenerator.deserializeData(segment.getData()));
                         if (DEBUG)
-                            System.out.println("[B-lostSent]: " + segment.getData());
+                            System.out.println("[B-lostSent]: " + dataGenerator.deserializeData(segment.getData()));
                     }
                 }
             };
@@ -446,12 +511,12 @@ public class DelayedTest {
         // given a "reasonable" package loss chance
         if (lossChance == 0f || (retransmit && lossChance <= 0.15f)) {
             new Verifications() {{
-                protocolListenerA.handleUnackedData(anyShort, anyLong); times = 0;
-                protocolListenerA.handleUnorderedData(anyShort, anyLong); times = 0;
+                protocolListenerA.handleUnackedData(anyShort, (ByteBuffer) any); times = 0;
+                protocolListenerA.handleUnorderedData(anyShort, (ByteBuffer) any); times = 0;
             }};
             new Verifications() {{
-                protocolListenerB.handleUnackedData(anyShort, anyLong); times = 0;
-                protocolListenerB.handleUnorderedData(anyShort, anyLong); times = 0;
+                protocolListenerB.handleUnackedData(anyShort, (ByteBuffer) any); times = 0;
+                protocolListenerB.handleUnorderedData(anyShort, (ByteBuffer) any); times = 0;
             }};
 
             assertEquals("all packets acked", 0, notAckedA.size());
@@ -469,9 +534,10 @@ public class DelayedTest {
             assertEquals(0, bToAQueue.size());
 
             Protocol protocolA = Deencapsulation.getField(hostA, "protocol");
-            Controller controllerA = Deencapsulation.getField(protocolA, "controller");
+            PackagingController controllerA = Deencapsulation.getField(protocolA, "controller");
+            ProcessingController subControllerA = Deencapsulation.getField(controllerA, "controller");
             {
-                AbstractMapControl sentMapControl = Deencapsulation.getField(controllerA, "sentMapControl");
+                AbstractMapControl sentMapControl = Deencapsulation.getField(subControllerA, "sentMapControl");
                 AbstractSegmentMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
                 Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
                 assertEquals(1, keyMap.size());
@@ -479,7 +545,7 @@ public class DelayedTest {
                 assertEquals(1, valueMap.size());
             }
             {
-                AbstractMapControl receivedMapControl = Deencapsulation.getField(controllerA, "receivedMapControl");
+                AbstractMapControl receivedMapControl = Deencapsulation.getField(subControllerA, "receivedMapControl");
                 AbstractSegmentMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
                 Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
                 assertEquals(0, keyMap.size());
@@ -488,9 +554,10 @@ public class DelayedTest {
             }
 
             Protocol protocolB = Deencapsulation.getField(hostB, "protocol");
-            Controller controllerB = Deencapsulation.getField(protocolB, "controller");
+            PackagingController controllerB = Deencapsulation.getField(protocolB, "controller");
+            ProcessingController subControllerB = Deencapsulation.getField(controllerB, "controller");
             {
-                AbstractMapControl sentMapControl = Deencapsulation.getField(controllerB, "sentMapControl");
+                AbstractMapControl sentMapControl = Deencapsulation.getField(subControllerB, "sentMapControl");
                 AbstractSegmentMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
                 Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
                 assertEquals(1, keyMap.size());
@@ -498,7 +565,7 @@ public class DelayedTest {
                 assertEquals(1, valueMap.size());
             }
             {
-                AbstractMapControl receivedMapControl = Deencapsulation.getField(controllerB, "receivedMapControl");
+                AbstractMapControl receivedMapControl = Deencapsulation.getField(subControllerB, "receivedMapControl");
                 AbstractSegmentMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
                 Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
                 assertEquals(0, keyMap.size());
@@ -516,6 +583,19 @@ public class DelayedTest {
         @Override
         public Long generateData() {
             return ++counter;
+        }
+
+        @Override
+        public ByteBuffer serializeData(Long value) {
+            ByteBuffer buffer = ByteBuffer.allocate(Long.SIZE / Byte.SIZE);
+            buffer.putLong(value);
+            buffer.flip();
+            return buffer;
+        }
+
+        @Override
+        public Long deserializeData(ByteBuffer data) {
+            return data.getLong();
         }
     }
 }

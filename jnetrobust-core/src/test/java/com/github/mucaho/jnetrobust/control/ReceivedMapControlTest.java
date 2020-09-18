@@ -24,7 +24,7 @@ import static org.junit.Assert.*;
 
 @RunWith(JUnitParamsRunner.class)
 public class ReceivedMapControlTest extends AbstractMapControlTest {
-    protected static ReceivedMapControl<Object> handler = new ReceivedMapControl<Object>((short) 0, null,
+    protected static ReceivedMapControl handler = new ReceivedMapControl((short) 0, null,
             config.getPacketQueueLimit(), config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1,
             config.getPacketQueueTimeout());
 
@@ -68,17 +68,17 @@ public class ReceivedMapControlTest extends AbstractMapControlTest {
     @Parameters
     public final void testRemoveTail(final Short input, final Short[] outputs, final Short nextRemoteSeq) {
 
-        final LinkedHashSet<Segment<Object>> orderedSegments = new LinkedHashSet<Segment<Object>>();
-        new MockUp<ReceivedMapControl<Object>>() {
+        final LinkedHashSet<Segment> orderedSegments = new LinkedHashSet<Segment>();
+        new MockUp<ReceivedMapControl>() {
             @SuppressWarnings("unused")
             @Mock
-            private void notifyOrdered(Segment<Object> orderedPackage) {
+            private void notifyOrdered(Segment orderedPackage) {
                 if (orderedPackage != null)
                     orderedSegments.add(orderedPackage);
             }
         };
 
-        Segment<Object> segment = new Segment<Object>(input, input);
+        Segment segment = new Segment(input, serializeShort(input));
         dataMap.put(segment);
         Deencapsulation.invoke(handler, "removeTail");
 
@@ -92,8 +92,8 @@ public class ReceivedMapControlTest extends AbstractMapControlTest {
             assertEquals("No ordered segment must have occured", 0, orderedSegments.size());
 
         int i = 0;
-        for (Segment<Object> orderedSegment : orderedSegments) {
-            assertEquals("Order and contents of datas must match", outputs[i], orderedSegment.getData());
+        for (Segment orderedSegment : orderedSegments) {
+            assertEquals("Order and contents of datas must match", (short) outputs[i], deserializeShort(orderedSegment.getData()));
             i++;
         }
     }
@@ -116,7 +116,7 @@ public class ReceivedMapControlTest extends AbstractMapControlTest {
         Deencapsulation.setField(handler, "nextDataId", (short) 1);
         dataMap.clear();
 
-        Segment<Object> segment = new Segment<Object>(ref, ref);
+        Segment segment = new Segment(ref, serializeShort(ref));
         dataMap.put(segment);
         if (addedRef)
             assertEquals("Ref was added as expected", segment, dataMap.getValue(ref));

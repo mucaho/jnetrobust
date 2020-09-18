@@ -12,12 +12,13 @@ import com.github.mucaho.jnetrobust.control.SentMapControl.TransmissionSuccessLi
 import com.github.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderListener;
 import com.github.mucaho.jnetrobust.control.RetransmissionControl.RetransmissionListener;
 
+import java.nio.ByteBuffer;
+
 /**
  * The listener which will be notified about specific {@link Protocol protocol} events.
- * @param <T> the user data type
  */
-public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
-        TransmissionOrderListener<T>, RetransmissionListener<T>, NewestDataListener<T> {
+public class ProtocolListener implements TransmissionSuccessListener,
+        TransmissionOrderListener, RetransmissionListener, NewestDataListener {
 
     /**
      * This protocol instance received data in the same order it was sent from another protocol instance.
@@ -25,7 +26,7 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
      * @param orderedData   the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      */
     @Override
-    public void handleOrderedData(short dataId, T orderedData) {
+    public void handleOrderedData(short dataId, ByteBuffer orderedData) {
     }
 
     /**
@@ -35,7 +36,7 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
      * @param unorderedData the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      */
     @Override
-    public void handleUnorderedData(short dataId, T unorderedData) {
+    public void handleUnorderedData(short dataId, ByteBuffer unorderedData) {
     }
 
     /**
@@ -44,7 +45,7 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
      * @param ackedData the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      */
     @Override
-    public void handleAckedData(short dataId, T ackedData) {
+    public void handleAckedData(short dataId, ByteBuffer ackedData) {
     }
 
     /**
@@ -54,7 +55,7 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
      * @param unackedData   the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      */
     @Override
-    public void handleUnackedData(short dataId, T unackedData) {
+    public void handleUnackedData(short dataId, ByteBuffer unackedData) {
     }
 
     /**
@@ -63,7 +64,7 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
      * @param newestData    the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      */
     @Override
-    public void handleNewestData(short dataId, T newestData) {
+    public void handleNewestData(short dataId, ByteBuffer newestData) {
     }
 
     /**
@@ -75,7 +76,7 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
      * ordering of data on the receiver end can no longer be guaranteed.
      * <br />
      * The user is still free to to retransmit the data, or some cloned and updated version of the data, later on using
-     * the {@link Protocol#send(Object) protocol's send} method.
+     * the {@link Protocol#send(ByteBuffer) protocol's send} method.
      * <br /><br />
      * The following table summarizes whether the retransmission will occur based on the
      * {@link ProtocolConfig#getAutoRetransmitMode() AutoRetransmitMode setting} and
@@ -96,12 +97,12 @@ public class ProtocolListener<T> implements TransmissionSuccessListener<T>,
      * * In case of <code>NEWEST</code> the data is only automatically retransmitted if it was the most recent user-data
      * encountered so far.
      *
-     * @param dataId    the <code>id</code> of the data
-     * @param data      the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
+     * @param dataId            the <code>id</code> of the data
+     * @param retransmitData    the actual user-data; the supplied user-data should not be modified by the user / application as it's used internally later on
      * @return          a <code>null, false or true Boolean</code>, indicating the whether the data should be retransmitted
      */
     @Override
-    public Boolean shouldRetransmit(short dataId, T data) {
+    public Boolean shouldRetransmit(short dataId, ByteBuffer retransmitData) {
         return null;
     }
 }

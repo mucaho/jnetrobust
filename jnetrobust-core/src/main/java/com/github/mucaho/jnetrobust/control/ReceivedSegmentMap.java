@@ -12,19 +12,19 @@ import com.github.mucaho.jnetrobust.util.ReceivedSegmentComparator;
 
 import java.util.NavigableSet;
 
-public class ReceivedSegmentMap<T> extends AbstractSegmentMap<T> {
+public class ReceivedSegmentMap extends AbstractSegmentMap {
 
     public ReceivedSegmentMap() {
         super(IdComparator.instance, ReceivedSegmentComparator.instance);
     }
 
     @Override
-    void putAll(Segment<T> segment) {
+    void putAll(Segment segment) {
         putAll(segment.getDataIds(), segment);
     }
 
     @Override
-    void putAll(NavigableSet<Short> dataIds, Segment<T> segment) {
+    void putAll(NavigableSet<Short> dataIds, Segment segment) {
         Short nextKey = dataIds.first();
         while (nextKey != null) {
             put(nextKey, segment);
@@ -33,23 +33,23 @@ public class ReceivedSegmentMap<T> extends AbstractSegmentMap<T> {
     }
 
     @Override
-    Segment<T> put(Short dataId, Segment<T> segment) {
+    Segment put(Short dataId, Segment segment) {
         valueMap.put(segment, segment.getDataIds());
         return keyMap.put(dataId, segment);
     }
 
     @Override
-    Segment<T> put(Segment<T> segment) {
+    Segment put(Segment segment) {
         return put(segment.getDataId(), segment);
     }
 
     @Override
-    Segment<T> removeAll(Short dataId) {
+    Segment removeAll(Short dataId) {
         return removeAll(getValue(dataId));
     }
 
     @Override
-    Segment<T> removeAll(Segment<T> segment) {
+    Segment removeAll(Segment segment) {
         if (segment != null)
             removeAll(segment.getDataIds());
 
@@ -66,8 +66,8 @@ public class ReceivedSegmentMap<T> extends AbstractSegmentMap<T> {
     }
 
     @Override
-    Segment<T> remove(Short dataId) {
-        Segment<T> removedSegment = keyMap.remove(dataId);
+    Segment remove(Short dataId) {
+        Segment removedSegment = keyMap.remove(dataId);
         if (removedSegment != null)
             valueMap.remove(removedSegment);
         return removedSegment;

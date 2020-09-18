@@ -20,15 +20,15 @@ import static org.junit.Assert.*;
 
 public class SimpleMapControlTest extends AbstractMapControlTest {
     private final HashSet<Short> discardedKeys = new HashSet<Short>();
-    private final HashSet<Segment<Object>> discardedSegments = new HashSet<Segment<Object>>();
+    private final HashSet<Segment> discardedSegments = new HashSet<Segment>();
 
     private final ProtocolConfig config = new ProtocolConfig();
 
-    private AbstractMapControl<Object> control = new AbstractMapControl<Object>(config.getPacketQueueLimit(), config.getPacketOffsetLimit(),
+    private AbstractMapControl control = new AbstractMapControl(config.getPacketQueueLimit(), config.getPacketOffsetLimit(),
             config.getPacketRetransmitLimit(), config.getPacketQueueTimeout()) {
         @Override
-        protected AbstractSegmentMap<Object> createMap() {
-            return new SentSegmentMap<Object>();
+        protected AbstractSegmentMap createMap() {
+            return new SentSegmentMap();
         }
 
         @Override
@@ -38,7 +38,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
         }
 
         @Override
-        protected void discardEntry(Segment<Object> segment) {
+        protected void discardEntry(Segment segment) {
             discardedKeys.addAll(segment.getTransmissionIds());
             discardedSegments.add(dataMap.removeAll(segment));
         }
@@ -46,7 +46,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
         @Override
         protected void discardEntryKey(Short key) {
             discardedKeys.add(key);
-            Segment<Object> segment = dataMap.remove(key);
+            Segment segment = dataMap.remove(key);
             if (segment != null && segment.getTransmissionIds().isEmpty()) {
                 discardedSegments.add(segment);
             }
@@ -85,7 +85,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
         Random rand = new Random();
 
         Short key;
-        Segment<Object> segment = null;
+        Segment segment = null;
         int dataCount = 0, max = -IdComparator.MAX_SEQUENCE / 2;
         for (int i = 0; i < loopCount; i++) {
             do {
@@ -94,7 +94,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
             max = Math.max(key, max);
 
             if (segment == null || decision.ok()) {
-                segment = new Segment<Object>(++dataId, i);
+                segment = new Segment(++dataId, serializeInt(i));
                 dataCount++;
             }
             dataMap.put(key, segment);
@@ -104,7 +104,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
     }
 
     private final void assertCommon(int dataCount, int loopCount) {
-        for (Segment<Object> discardedSegment : discardedSegments) {
+        for (Segment discardedSegment : discardedSegments) {
             assertNull("discarded segment is no longer in dataMap", dataMap.getKeys(discardedSegment));
         }
         for (Short discardedKey : discardedKeys) {
@@ -115,7 +115,7 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
             assertNull("discarded key is no longer in dataMap", dataMap.getValue(discardedKey));
         }
 
-        HashSet<Segment<Object>> allSegments = new HashSet<Segment<Object>>(discardedSegments);
+        HashSet<Segment> allSegments = new HashSet<Segment>(discardedSegments);
         allSegments.addAll(dataMap.getValues());
         assertEquals("total dataCount matches", dataCount, allSegments.size());
     }
@@ -182,12 +182,12 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
     @Test
     public final void testDiscardTooOldEntryKeys() {
         Random rand = new Random();
-        Segment<Object> segment = null;
+        Segment segment = null;
         int dataCount = 0;
         int loopCount;
         for (loopCount = 0; loopCount < IdComparator.MAX_SEQUENCE; loopCount++) {
             if (segment == null || rand.nextBoolean()) {
-                segment = new Segment<Object>(++dataId, loopCount);
+                segment = new Segment(++dataId, serializeInt(loopCount));
                 dataCount++;
             }
 
@@ -274,12 +274,12 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
     public final void testDiscardTimedoutEntries() throws InterruptedException {
         Deencapsulation.setField(control, "maxEntryTimeout", 1000L);
 
-        Segment<Object> segment1 = new Segment<Object>(++dataId, 1);
+        Segment segment1 = new Segment(++dataId, serializeInt(1));
         dataMap.put((short) 1, segment1);
 
         Thread.sleep(2000L);
 
-        Segment<Object> segment2 = new Segment<Object>(++dataId, 2);
+        Segment segment2 = new Segment(++dataId, serializeInt(2));
         dataMap.put((short) 2, segment2);
 
         Deencapsulation.invoke(control, "discardTimedoutEntries");

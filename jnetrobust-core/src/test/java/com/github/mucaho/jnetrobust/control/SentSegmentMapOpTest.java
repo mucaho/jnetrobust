@@ -25,7 +25,7 @@ public class SentSegmentMapOpTest {
         System.setProperty("jmockit-mockParameters", "annotated");
     }
 
-    private final static AbstractSegmentMap<Object> dataMap = new SentSegmentMap<Object>();
+    private final static AbstractSegmentMap dataMap = new SentSegmentMap();
 
     public enum Op {
         PUT_DATA, PUT_REF,
@@ -80,9 +80,9 @@ public class SentSegmentMapOpTest {
     private void testDataOperations(Short dataId, final Short[] initialRefs,
                                     final Op op, final Short[] opRefs) {
 
-        final Segment<Object> segment;
+        final Segment segment;
         if (dataId != null) {
-            segment = new Segment<Object>(dataId, null);
+            segment = new Segment(dataId, null);
         } else {
             segment = dataMap.getValue(initialRefs[0]);
             assertNotNull("There should be a valid segment.", segment);
@@ -196,7 +196,7 @@ public class SentSegmentMapOpTest {
         } else {
             int elementCount = 0;
 
-            Segment<Object> segment;
+            Segment segment;
             for (Short[] dataRefs : expectedDataMap) {
                 elementCount += dataRefs.length;
 
@@ -213,7 +213,7 @@ public class SentSegmentMapOpTest {
         }
     }
 
-    private void properlyMockOldSegmentTransmissionIds(final Segment<Object> segment,
+    private void properlyMockOldSegmentTransmissionIds(final Segment segment,
                                                         final List<Short> removeRefs,
                                                         final List<Short> replaceRefs) {
         // due to mocking transmissionIds, old already added instances have no transmissionIds
@@ -221,7 +221,7 @@ public class SentSegmentMapOpTest {
 
         final NavigableSet<Short> toBeRemovedSegmentTransmissionIds = new TreeSet<Short>();
 
-        EntryIterator<Short, Segment<Object>> iter = dataMap.getIterator();
+        EntryIterator<Short, Segment> iter = dataMap.getIterator();
         Short key = iter.getHigherKey(null);
         while (key != null) {
             if (iter.getValue(key) == segment && !replaceRefs.contains(key)) {

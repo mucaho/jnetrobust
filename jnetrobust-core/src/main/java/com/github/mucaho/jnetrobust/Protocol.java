@@ -8,8 +8,9 @@
 package com.github.mucaho.jnetrobust;
 
 import com.github.mucaho.jnetrobust.control.Segment;
-import com.github.mucaho.jnetrobust.controller.Controller;
-import com.github.mucaho.jnetrobust.controller.DebugController;
+import com.github.mucaho.jnetrobust.controller.PackagingController;
+import com.github.mucaho.jnetrobust.controller.ProcessingController;
+import com.github.mucaho.jnetrobust.controller.DebugProcessingController;
 import com.github.mucaho.jnetrobust.controller.Packet;
 import com.github.mucaho.jnetrobust.util.CollectionUtils;
 import com.github.mucaho.jnetrobust.util.DebugProtocolListener;
@@ -18,6 +19,7 @@ import com.github.mucaho.jnetrobust.util.IdComparator;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.nio.ByteBuffer;
 import java.util.*;
 
 /**
@@ -27,23 +29,16 @@ import java.util.*;
  * <p></p>
  * Various constructors are offered to instantiate a new protocol instance.
  * <p></p>
- * Typically you call the protocol's {@link Protocol#send(Object)}
+ * Typically you call the protocol's {@link Protocol#send(ByteBuffer)}
  * and {@link Protocol#receive(Packet)} methods in order to attach/detach protocol-specific information
  * to your user data. This protocol-specific information and the protocol's internal state is then used
  * to enable reliable & ordered communication even over an unreliable medium. <br></br>
- * Note that both {@link Protocol#send(Object)} and {@link Protocol#receive(Packet)} methods may trigger zero or more
+ * Note that both {@link Protocol#send(ByteBuffer)} and {@link Protocol#receive(Packet)} methods may trigger zero or more
  * {@link ProtocolListener listener} events before they return. <br></br>
- * The user data that is passed to or returned from the protocol should not be modified by the user later on,
- * as the protocol saves this data internally (for retransmits, invoking listener methods at appropriate times, etc.).
- * The most straightforward and safest solution is to <b>clone the data before sending, after receiving or
- * after being notified about it from the protocol instance</b>.
- * The protocol does not do this automatically, since the sent / received data can be more efficiently produced / consumed
- * depending on user needs without the allocation of new objects (e.g. by using a circular object pool larger than
- * <code>2 * </code>{@link ProtocolConfig#MAX_PACKET_QUEUE_LIMIT}).<br></br>
- * The {@link Protocol#send(Object, java.io.ObjectOutput)} & {@link Protocol#receive(java.io.ObjectInput)}
- * are utility methods which automatically write the packaged user-data to a {@link java.io.ObjectOutput} or
+ * The {@link Protocol#send(Packet, java.io.ObjectOutput)} & {@link Protocol#receive(java.io.ObjectInput)}
+ * are utility methods write the packaged user-data to a {@link java.io.ObjectOutput} or
  * read the packaged user-data from a {@link java.io.ObjectInput} respectively. Other than that, they behave
- * exactly like the {@link Protocol#send(Object)} and {@link Protocol#receive(Packet)} methods. <br></br>
+ * exactly like the {@link Protocol#send(ByteBuffer)} and {@link Protocol#receive(Packet)} methods. <br></br>
  * How serialization is done and over which medium the {@link Packet packaged user-data} is sent is
  * up to the user (analogue for receiving and deserialization).
  * <p></p>
@@ -59,18 +54,16 @@ import java.util.*;
  * This class also offers the ability to {@link Protocol#compare(Short, Short) compare <code>dataIds</code>} against each other. The user <b>must not compare these ids</b> with built-in comparison
  * operators. These ids wrap around to their {@link Short#MIN_VALUE min value} once they are incremented beyond
  * their {@link Short#MAX_VALUE max value}, hence this compare method must be used.
- *
- * @param <T> the user data type
  */
-public class Protocol<T> implements Comparator<Short> {
-    private final Controller<T> controller;
+public class Protocol implements Comparator<Short> {
+    private final PackagingController controller;
     // TODO: possibly add currentlyInUse boolean to prevent reentering send / receive procedure while listeners fire
 
     /**
      * Convenience constructor that wraps the {@link #Protocol(ProtocolListener, ProtocolConfig, Logger) "default" constructor}.
      * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
      */
-    public Protocol(ProtocolListener<T> listener) {
+    public Protocol(ProtocolListener listener) {
         this(listener, new ProtocolConfig(), null);
     }
 
@@ -79,7 +72,7 @@ public class Protocol<T> implements Comparator<Short> {
      * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
      */
     public Protocol(ProtocolConfig config) {
-        this(new ProtocolListener<T>(), config, null);
+        this(new ProtocolListener(), config, null);
     }
 
     /**
@@ -87,7 +80,7 @@ public class Protocol<T> implements Comparator<Short> {
      * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
      */
     public Protocol(Logger logger) {
-        this(new ProtocolListener<T>(), new ProtocolConfig(), logger);
+        this(new ProtocolListener(), new ProtocolConfig(), logger);
     }
 
     /**
@@ -95,14 +88,14 @@ public class Protocol<T> implements Comparator<Short> {
      * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
      */
     public Protocol(ProtocolConfig config, Logger logger) {
-        this(new ProtocolListener<T>(), config, logger);
+        this(new ProtocolListener(), config, logger);
     }
 
     /**
      * Convenience constructor that wraps the {@link #Protocol(ProtocolListener, ProtocolConfig, Logger) "default" constructor}.
      * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
      */
-    public Protocol(ProtocolListener<T> listener, Logger logger) {
+    public Protocol(ProtocolListener listener, Logger logger) {
         this(listener, new ProtocolConfig(), logger);
     }
 
@@ -110,7 +103,7 @@ public class Protocol<T> implements Comparator<Short> {
      * Convenience constructor that wraps the {@link #Protocol(ProtocolListener, ProtocolConfig, Logger) "default" constructor}.
      * If not provided, the default {@link ProtocolListener}, {@link ProtocolConfig} and no {@link Logger} are used.
      */
-    public Protocol(ProtocolListener<T> listener, ProtocolConfig config) {
+    public Protocol(ProtocolListener listener, ProtocolConfig config) {
         this(listener, config, null);
     }
 
@@ -122,184 +115,133 @@ public class Protocol<T> implements Comparator<Short> {
      * @param config    the <code>protocol configuration</code> which will be used to configure this protocol instance
      * @param logger    the <code>Logger</code> which will be used to log internal state changes
      */
-    public Protocol(ProtocolListener<T> listener, ProtocolConfig config, Logger logger) {
-        if (listener == null) listener = new ProtocolListener<T>();
+    public Protocol(ProtocolListener listener, ProtocolConfig config, Logger logger) {
+        if (listener == null) listener = new ProtocolListener();
         if (config == null) config = new ProtocolConfig();
 
         if (logger != null) {
-            ProtocolListener<T> debugListener = new DebugProtocolListener<T>(listener, logger);
-            this.controller = new DebugController<T>(debugListener, config, logger);
+            ProtocolListener debugListener = new DebugProtocolListener(listener, logger);
+            this.controller = new PackagingController(new DebugProcessingController(debugListener, config, logger));
         } else {
-            this.controller = new Controller<T>(listener, config);
+            this.controller = new PackagingController(new ProcessingController(listener, config));
         }
     }
 
-    private final List<T> datasIn = new ArrayList<T>();
-    private final List<Short> dataIdsOut = new ArrayList<Short>();
-    private final List<Short> dataIdsOutOut = Collections.unmodifiableList(dataIdsOut);
-    private final PacketEntry<Short, T> packetOut = new PacketEntry<Short, T>();
-    private final PacketEntry<List<Short>, T> packetsOut = new PacketEntry<List<Short>, T>();
+    private final ByteBuffer dataIn = ByteBuffer.allocate(ProtocolConfig.getHighestPossibleMTUSize());
 
     /**
-     * Convenience method does the same as {@link Protocol#send(Object) <code>send(null)</code>}.
+     * Convenience method does the same as {@link Protocol#send(ByteBuffer) <code>send(null)</code>}.
      * Typically used from a receiver in an unidirectional communication channel, where the receiver just acknowledges receipt of data.
-     * @see Protocol#send(Object) send(null)
+     * @see Protocol#send(ByteBuffer) send(null)
      */
-    public synchronized Map.Entry<Short, Packet<T>> send() {
-        return send((T) null);
+    public synchronized NavigableMap<Short, Packet> send() {
+        return send((ByteBuffer) null);
     }
 
     /**
-     * Package the user-data, in order to transmit the user-data, acknowledge
-     * received data and retransmit data (if {@link ProtocolConfig#getAutoRetransmitMode() automatic retransmission} is enabled).
-     * <br>
-     * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events
-     * and zero or more {@link ProtocolListener#shouldRetransmit(short, Object) retransmit} events
-     * may be fired before this method returns.
-     *
-     * @param data the user-data to package, if it's <code>null</code> no user-data will be contained in the package;
-     *             the supplied user-data should not be modified afterwards by the user / application, as the data
-     *             is referenced internally by protocol and used for retransmission later on;
-     *             thus it's safest to clone the data before passing to this method
-     * @return a <code>Map.Entry</code> containing the {@link Packet packaged user-data} and
-     *          the <code>dataId</code> that was assigned to the user-data;
-     *          the returned mapEntry should not be saved by the user,
-     *          as its contents are invalidated next time one of the <code>send</code> methods is called
+     * Convenience method does the same as {@link Protocol#send(ByteBuffer) <code>send(data)</code>},
+     * by wrapping the supplied {@code data} in a temporary {@code ByteBuffer}.
+     * @see Protocol#send(ByteBuffer) send(data)
      */
-    public synchronized Map.Entry<Short, Packet<T>> send(T data) {
-        Packet<T> packet = controller.produce();
-        datasIn.clear();
-        if (data != null)
-            datasIn.add(data);
-        send(packet, datasIn);
+    public synchronized NavigableMap<Short, Packet> send(byte[] data) {
+        return send(data, 0, data.length);
+    }
 
-        packetOut.packet = packet;
-        packetOut.key = data != null ? packet.getLastSegment().getDataId() : null;
-        return packetOut;
+    /**
+     * Convenience method does the same as {@link Protocol#send(ByteBuffer) <code>send(data)</code>},
+     * by wrapping the supplied {@code data} in a temporary {@code ByteBuffer} starting from the specified {@code offset}
+     * and stretching for {@code length}.
+     * @see Protocol#send(ByteBuffer) send(data)
+     */
+    public synchronized NavigableMap<Short, Packet> send(byte[] data, int offset, int length) {
+        dataIn.clear();
+        dataIn.put(data, offset, length);
+        dataIn.flip();
+
+        return send(dataIn);
     }
 
     /**
      * Package the user-datas, in order to transmit the user-datas, acknowledge
      * received data and retransmit data (if {@link ProtocolConfig#getAutoRetransmitMode() automatic retransmission} is enabled).
-     * <br>
-     * Zero or more {@link ProtocolListener#handleUnackedData(short, Object) unackedData} events
-     * and zero or more {@link ProtocolListener#shouldRetransmit(short, Object) retransmit} events
+     * <br />
+     * Zero or more {@link ProtocolListener#handleUnackedData(short, ByteBuffer) unackedData} events
+     * and zero or more {@link ProtocolListener#shouldRetransmit(short, ByteBuffer) retransmit} events
      * may be fired before this method returns.
-     * <br>
-     * Note that no more than {@link Packet#MAX_DATAS_PER_PACKET} user-datas may be sent at once using this method.
-     * Furthermore, as a rule-of-thumb, collections of data that semantically belong to the same version / time frame should
-     * be contained in the user-data itself, rather than being packaged by this method directly.
-     * Thus this method is well suited for sending a collection of user-data that has some form of version / time frame / causal
-     * ordering / natural ordering between its elements.
+     * <br /><br />
+     * The supplied data must be smaller or equal to the {@link #getMaximumDataSize() maximum data size} allowed for a
+     * single package. Otherwise a {@link IllegalArgumentException} is thrown. See that method for further information.
+     * <br />
+     * This also means that each of the returned packages <b>should be transmitted individually</b> over the underlying
+     * transport protocol (e.g. UDP).
+     * <br /><br />
+     * Note that the returned {@code NavigableMap} may have a deliberate {@code null} as its only key.
+     * This situation occurs in an unidirectional communication setup, where the receiver just returns empty packets
+     * acknowledging the receipt of data. As this empty {@code packet} contains no packaged user-data, there is no
+     * proper key to associate the packet to, hence why the {@code null} key may occur.
+     * The returned {@code NavigableMap} can thus be navigated safely and quickly in the following fashion:
+     * <pre>
+     * Short key = packetMap.isEmpty() ? null : packetMap.firstKey();
+     * boolean currentKeyIsOkToBeNull = !packetMap.isEmpty() && packetMap.firstKey() == null;
+     * while (key != null || currentKeyIsOkToBeNull) {
+     *     Packet packet = packetMap.get(key);
+     *     // send the packet
      *
-     * @param datas the user-datas to package, if it's <code>null</code> no user-data will be contained in the package;
-     *             the supplied user-data should not be modified afterwards by the user / application, as the data
-     *             is referenced internally by protocol and used for retransmission later on;
-     *             thus it's safest to clone the data before passing to this method
-     * @return a <code>Map.Entry</code> containing a single {@link Packet package of all user-datas}
-     *          and the <code>dataIds</code> (in iteration order) that were assigned to the user-datas (in iteration order);
-     *          the returned mapEntry should not be saved by the user,
+     *     key = packetMap.higherKey(key);
+     *     currentKeyIsOkToBeNull = false;
+     * }
+     * </pre>
+     *
+     * @param data the user-data to package, if it's <code>null</code> no user-data will be contained in the package;
+     * @return a <code>NavigableMap</code> mapping all {@code dataIds} to their respective {@link Packet package of user-data};
+     *          the supplied user-data is contained in the package of the highest entry in the {@code NavigableMap}, if the user-data was provided;
+     *          additionally, the map is filled with previous packages that need to be retransmitted;
+     *          note that if no user-data was provided (and no automatic / manual retransmits are triggered)
+     *          the returned map may have just one key, which is null, mapping an empty packet containing just the
+     *          to-be-sent acknowledgements, see the the above code for proper and fast iteration;
+     *          the returned map should not be saved by the user,
      *          as its contents are invalidated next time one of the <code>send</code> methods is called
-     * @throws IndexOutOfBoundsException an exception if the amount of <code>datas</code> to send
-     *                                      is larger than {@link Packet#MAX_DATAS_PER_PACKET}
+     * @throws IllegalArgumentException if the supplied {@code data} is larger than the
+     *                                  {@link #getMaximumDataSize() maximum data size} allowed
      */
-    public synchronized Map.Entry<List<Short>, Packet<T>> send(List<T> datas) {
-        Packet<T> packet = controller.produce();
-        send(packet, datas);
-
-        dataIdsOut.clear();
-        if (datas != null) {
-            for (int i = 0, l = packet.getSegments().size(); i < l; ++i) {
-                Segment<T> segment = packet.getSegments().get(i);
-                if (datas.contains(segment.getData()))
-                    dataIdsOut.add(segment.getDataId());
-            }
-        }
-
-        packetsOut.packet = packet;
-        packetsOut.key = dataIdsOutOut;
-        return packetsOut;
-    }
-
-    private void send(Packet<T> packet, List<T> datas) {
-        int dataSize = datas != null ? datas.size() : 0;
-        if (dataSize > Packet.MAX_DATAS_PER_PACKET)
-            throw new IndexOutOfBoundsException("Cannot add more than " + Packet.MAX_DATAS_PER_PACKET + " datas to packet!");
-
-        List<Segment<T>> retransmits = controller.retransmit();
-        for (int i = 0, l = retransmits.size(); i < l && i + dataSize < Packet.MAX_DATAS_PER_PACKET; ++i)
-            controller.send(packet, retransmits.get(i));
-
-        if (datas != null) {
-            for (int i = 0, l = datas.size(); i < l; ++i) {
-                T data = datas.get(i);
-                if (data != null)
-                    controller.send(packet, controller.produce(data));
-            }
-        }
+    public synchronized NavigableMap<Short, Packet> send(ByteBuffer data) {
+        return controller.send(data);
     }
 
     /**
-     * Convenience method which writes the output of internally called {@link Protocol#send(Object) <code>send(data)</code>}
-     * to a {@link java.io.ObjectOutput}.
+     * Convenience method which can be used to iteratively write the output of
+     * {@link Protocol#send(ByteBuffer) <code>send(data)</code>} to a {@link java.io.ObjectOutput}.
+     * <br />
+     * Note that each {@code packet} is meant to be sent separately over the underlying communication channel.
      *
      * @param objectOutput the object output to write the packaged user-data to
      * @throws IOException  if there was an error writing to the <code>ObjectOutput</code>
-     * @see Protocol#send(Object) <code>send(data)</code>
+     * @see Protocol#send(ByteBuffer) <code>send(data)</code>
      */
-    public synchronized Map.Entry<Short, Packet<T>> send(T data, ObjectOutput objectOutput) throws IOException {
-        Map.Entry<Short, Packet<T>> packetEntry = send(data);
-        Packet.<T>writeExternalStatic(packetEntry.getValue(), objectOutput);
-        return packetEntry;
+    public synchronized void send(Packet packet, ObjectOutput objectOutput) throws IOException {
+        controller.send(packet, objectOutput);
     }
-
-    /**
-     * Convenience method which writes the output of internally called {@link Protocol#send(List) <code>send(datas)</code>}
-     * to a {@link java.io.ObjectOutput}.
-     *
-     * @param objectOutput the object output to write the packaged user-data to
-     * @throws IOException  if there was an error writing to the <code>ObjectOutput</code>
-     * @see Protocol#send(List) <code>send(datas)
-     */
-    public synchronized Map.Entry<List<Short>, Packet<T>> send(List<T> datas, ObjectOutput objectOutput) throws IOException {
-        Map.Entry<List<Short>, Packet<T>> packetEntry = send(datas);
-        Packet.<T>writeExternalStatic(packetEntry.getValue(), objectOutput);
-        return packetEntry;
-    }
-
-    private final NavigableMap<Short, T> receivedDatas = new TreeMap<Short, T>(IdComparator.instance);
-    private final NavigableMap<Short, T> receivedDatasOut = CollectionUtils.unmodifiableNavigableMap(receivedDatas);
 
     /**
      * Unpackage the packaged user-data, in order to retrieve the user-data that was received, acknowledge sent data and
      * receive retransmitted data (if {@link ProtocolConfig#getAutoRetransmitMode() automatic retransmission} is enabled).
-     * <br>
-     * Zero or more {@link ProtocolListener#handleOrderedData(short, Object) orderedData},
-     * {@link ProtocolListener#handleUnorderedData(short, Object) unorderedData},
-     * {@link ProtocolListener#handleAckedData(short, Object) ackedData} or
-     * {@link ProtocolListener#handleNewestData(short, Object) newestData}
+     * <br />
+     * Zero or more {@link ProtocolListener#handleOrderedData(short, ByteBuffer) orderedData},
+     * {@link ProtocolListener#handleUnorderedData(short, ByteBuffer) unorderedData},
+     * {@link ProtocolListener#handleAckedData(short, ByteBuffer) ackedData} or
+     * {@link ProtocolListener#handleNewestData(short, ByteBuffer) newestData}
      * events may be fired before this method returns.
      *
      * @param packet the packaged-user data to unpackage
      * @return a <code>NavigableMap</code> containing all received (directly received or received by retransmission)
      *         user-datas and their assigned <code>dataId</code>s;
-     *         the returned object should not be saved by the user,
+     *         the returned map should not be saved by the user,
      *         as its contents are invalidated next time one of the <code>receive</code> methods is called;
-     *         the returned user-data should also not be modified afterwards by the user / application, as data is
-     *         referenced internally by the protocol and used for informing proper receipt of ordered data later on;
-     *         thus it's safest to clone the data received from this method
+     *         the returned user-data should be processed, copied or cloned by the user immediately,
+     *         as the data gets invalidated next time one of the <code>receive</code> methods is called;
      */
-    public synchronized NavigableMap<Short, T> receive(Packet<T> packet) {
-        receivedDatas.clear();
-
-        controller.consume(packet);
-        Segment<T> segment = controller.receive(packet);
-        while (segment != null) {
-            receivedDatas.put(segment.getDataId(), controller.consume(segment));
-            segment = controller.receive(packet);
-        }
-
-        return receivedDatasOut;
+    public synchronized NavigableMap<Short, ByteBuffer> receive(Packet packet) {
+        return controller.receive(packet);
     }
 
     /**
@@ -309,11 +251,10 @@ public class Protocol<T> implements Comparator<Short> {
      * @param objectInput the object input to read the packaged user-data from
      * @throws IOException if there was an error reading from the <code>ObjectInput</code>
      * @throws ClassNotFoundException if the object being read from the <code>ObjectInput</code> is not of the correct type
-     * @see Protocol#send(Object) <code>receive(package)</code>
+     * @see Protocol#send(ByteBuffer) <code>receive(package)</code>
      */
-    public synchronized NavigableMap<Short, T> receive(ObjectInput objectInput) throws IOException, ClassNotFoundException {
-        Packet<T> packet = Packet.<T>readExternalStatic(objectInput);
-        return receive(packet);
+    public synchronized NavigableMap<Short, ByteBuffer> receive(ObjectInput objectInput) throws IOException, ClassNotFoundException {
+        return controller.receive(objectInput);
     }
 
     /**
@@ -356,26 +297,75 @@ public class Protocol<T> implements Comparator<Short> {
         return controller.getRTTVariation();
     }
 
-    private static class PacketEntry<K, T> implements Map.Entry<K, Packet<T>> {
-        private K key;
-        private Packet<T> packet;
+    /**
+     * Gets the path's maximum transmission unit size in bytes. Defaults to {@link ProtocolConfig#CONSERVATIVE_MTU_SIZE}.
+     * <br />
+     * The protocol instance uses the MTU to limit the size of emitted packets from the protocol
+     * to prevent packet fragmentation on the Internet Layer.
+     * <br />
+     * The MTU size directly impacts {@link #getMaximumDataSize() the amount of data the user is allowed to send in one packet}.
+     * The user may still split the data manually into multiple chunks which result in multiple packets
+     * that can be send over the underlying transport protocol (e.g. UDP).
+     * <br /><br />
+     * It is initially set to a conservative value, however the user may set this in a majority of cases
+     * to {@link ProtocolConfig#MOST_COMMON_MTU_SIZE}.
+     * Furthermore, path MTU discovery may be done to determine the actual MTU size between sender
+     * and receiver protocol instances.
+     * <br /><br />
+     * The closer this setting is to the real path's MTU (without going over it of course),
+     * the more data can be sent with less "metadata" / header overhead.
+     * <br /><br />
+     * The provided value can not be greater than the
+     * {@link ProtocolConfig#getHighestPossibleMTUSize() highest possible MTU size} and is therefore clamped accordingly.
+     */
+    public int getMaximumTransmissionUnitSize() {
+        return controller.getMaximumTransmissionUnitSize();
+    }
 
-        private PacketEntry() {
-        }
+    /**
+     * Sets the path's maximum transmission unit size in bytes. Defaults to {@link ProtocolConfig#CONSERVATIVE_MTU_SIZE}.
+     * <br />
+     * The protocol instance uses the MTU to limit the size of emitted packets from the protocol
+     * to prevent packet fragmentation on the Internet Layer.
+     * <br />
+     * The MTU size directly impacts {@link #getMaximumDataSize() the amount of data the user is allowed to send in one packet}.
+     * The user may still split the data manually into multiple chunks which result in multiple packets
+     * that can be send over the underlying transport protocol (e.g. UDP).
+     * <br /><br />
+     * It is initially set to a conservative value, however the user may set this in a majority of cases
+     * to {@link ProtocolConfig#MOST_COMMON_MTU_SIZE}.
+     * Furthermore, path MTU discovery may be done to determine the actual MTU size between sender
+     * and receiver protocol instances.
+     * <br /><br />
+     * The closer this setting is to the real path's MTU (without going over it of course),
+     * the more data can be sent with less "metadata" / header overhead.
+     * <br /><br />
+     * The provided value can not be greater than the
+     * {@link ProtocolConfig#getHighestPossibleMTUSize() highest possible MTU size} and is therefore clamped accordingly.
+     */
+    public void setMaximumTransmissionUnitSize(int maximumTransmissionUnitSize) {
+        controller.setMaximumTransmissionUnitSize(maximumTransmissionUnitSize);
+    }
 
-        @Override
-        public K getKey() {
-            return key;
-        }
-
-        @Override
-        public Packet<T> getValue() {
-            return packet;
-        }
-
-        @Override
-        public Packet<T> setValue(Packet<T> packet) {
-            throw new UnsupportedOperationException();
-        }
+    /**
+     * Gets the maximum data size which regulates how much user-data may be packaged into a single packet
+     * that gets transmitted over the network. <br /><br />
+     * When sending new data via the protocol instance, the data <b>must not</b> exceed this limit, otherwise an
+     * exception is thrown. <br />
+     * Alternatively, the user may split the data into smaller, logical chunks < {@code maximumDataSize} and invoke the
+     * send method for each of those chunks. This constraint is typically encountered when trying to send a serialized
+     * collection of objects, which can be solved by sending only parts of such collection with each packet
+     * and optionally tagging all these objects with a collection identifier, tying them all together at the receiver side.
+     * <br />
+     * The protocol does not do this automatically, as it has no knowledge about the objects and their boundaries
+     * in this serialized format.
+     * <br /><br />
+     * This limitation is enforced in order to avoid IP fragmentation, which lowers transmission performance considerably
+     * in congested networks.
+     *
+     * @see #setMaximumTransmissionUnitSize(int)
+     */
+    public int getMaximumDataSize() {
+        return controller.getMaximumDataSize();
     }
 }
