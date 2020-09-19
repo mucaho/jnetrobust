@@ -125,6 +125,11 @@ public class AbstractSynchronizationController {
 
         @Override
         public void handleExceptionalData(Exception exception) {
+            if (exception instanceof ProtocolException) {
+                ProtocolException protocolException = (ProtocolException) exception;
+                System.err.println(protocolException.getLoggingEvent().toString() +
+                        " exception occurred for " + protocolException.getData().toString());
+            }
             exception.printStackTrace();
         }
     }
@@ -152,6 +157,11 @@ public class AbstractSynchronizationController {
 
         @Override
         public void handleExceptionalData(Exception exception) {
+            if (exception instanceof ProtocolException) {
+                ProtocolException protocolException = (ProtocolException) exception;
+                System.err.println(protocolException.getLoggingEvent().toString() +
+                        " exception occurred for " + protocolException.getData().toString());
+            }
             exception.printStackTrace();
         }
     }
