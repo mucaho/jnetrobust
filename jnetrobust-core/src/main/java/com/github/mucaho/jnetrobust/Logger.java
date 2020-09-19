@@ -60,18 +60,19 @@ public abstract class Logger {
 
         @Override
         public void log(String description, Object... params) {
-            System.out.print("[" + name + "]: " + description + "\t");
+            StringBuffer sb = new StringBuffer();
+            sb.append("[" + name + "]: " + description + "\t");
             for (int i = 0, l = params.length; i < l; ++i) {
                 if (params[i] instanceof ByteBuffer) {
                     ByteBuffer dataBuffer = (ByteBuffer) params[i];
                     dataBuffer.rewind();
-                    System.out.print(deserialize(dataBuffer) + "\t");
+                    sb.append(deserialize(dataBuffer) + "\t");
                     dataBuffer.rewind();
                 } else {
-                    System.out.print(params[i] + "\t");
+                    sb.append(params[i] + "\t");
                 }
             }
-            System.out.println();
+            System.out.println(sb.toString());
         }
 
         protected abstract String deserialize(ByteBuffer dataBuffer);
