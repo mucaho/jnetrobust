@@ -51,6 +51,11 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
                 // relay to B
                 if (relayBHandle.getUpdateMode() == MODE.UPDATE_ON_RECEIVED_DATA) {
                     relayBHandle.send(receivedData);
+                } else if (relayBHandle.getUpdateMode() == MODE.UPDATE_ON_ORDERED_DATA) {
+                    // make sure we at least send acknowledgements at a fixed interval,
+                    // as relaying on ordered data is very irregular
+                    // because of dropped packets and jitter we would be skipping 10+ intervals in practice
+                    relayBHandle.send(null);
                 }
             }
 
@@ -59,6 +64,11 @@ public class ServerSynchronizationController extends AbstractSynchronizationCont
                 // relay to A
                 if (relayAHandle.getUpdateMode() == MODE.UPDATE_ON_RECEIVED_DATA) {
                     relayAHandle.send(receivedData);
+                } else if (relayAHandle.getUpdateMode() == MODE.UPDATE_ON_ORDERED_DATA) {
+                    // make sure we at least send acknowledgements at a fixed interval,
+                    // as relaying on ordered data is very irregular
+                    // because of dropped packets and jitter we would be skipping 10+ intervals in practice
+                    relayAHandle.send(null);
                 }
             }
 

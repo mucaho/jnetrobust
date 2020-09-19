@@ -72,6 +72,7 @@ public abstract class Logger {
                     sb.append(params[i] + "\t");
                 }
             }
+            sb.append("@loggerId=").append(hashCode()).append("\t@T=").append(System.currentTimeMillis());
             System.out.println(sb.toString());
         }
 

@@ -117,6 +117,8 @@ public class PackagingController {
         controller.send(packet, segments);
         if (!packet.getSegments().isEmpty()) // check for retroactive discards
             outMap.put(packet.getLastSegment().getDataId(), packet);
+        else
+            System.err.println("EMPTY");
     }
 
     public void send(Packet packet, ObjectOutput objectOutput) throws IOException {

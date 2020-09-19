@@ -229,20 +229,20 @@ public class ProtocolHost {
     @SuppressWarnings("unchecked")
     synchronized <T extends Serializable> void send(ProtocolId protocolId, T data) throws IOException {
         sendDatas.clear();
-        sendDatas.add(data);
+        if (data != null)
+            sendDatas.add(data);
         send(protocolId, (List<T>) sendDatas);
     }
 
     @SuppressWarnings("unchecked")
     synchronized <T extends Serializable> void send(ProtocolId protocolId, List<T> datas) throws IOException {
-        // make sure to at least send empty packet in unidirectional communication
-        if (datas == null) {
-            sendDatas.clear();
-            sendDatas.add(null);
-            datas = sendDatas;
-        }
-
         Protocol protocol = protocols.get(protocolId);
+
+        // make sure to send at least an empty packet in unidirectional communication
+        if (datas == null || datas.isEmpty()) {
+            doSend(null, protocolId, protocol);
+            return;
+        }
 
         int dataCount = 0;
         sendBuffer.clear();
@@ -250,9 +250,10 @@ public class ProtocolHost {
 
         for (int i = 0, l = datas.size(); i < l; ++i) {
             ByteBuffer dataBuffer = serialize(datas.get(i));
+            if (dataBuffer == null) continue;
 
             // if there is data to send or current sendBuffer is not full
-            if (dataBuffer != null && (sendBuffer.position() + dataBuffer.limit() <= protocol.getMaximumDataSize())) {
+            if (sendBuffer.position() + dataBuffer.limit() <= protocol.getMaximumDataSize()) {
                 sendBuffer.put(dataBuffer);
                 sendBuffer.putInt(0, ++dataCount);
             }

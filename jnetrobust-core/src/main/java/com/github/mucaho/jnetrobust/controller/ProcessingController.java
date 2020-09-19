@@ -93,6 +93,8 @@ public class ProcessingController {
             Segment segment = segments.get(i);
             if (!segment.getTransmissionIds().isEmpty())
                 packet.addLastSegment(segment);
+            else
+                System.err.println("EMPTY"); // TODO: recover localTransmissionId here
         }
     }
 
