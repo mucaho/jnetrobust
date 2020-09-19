@@ -233,6 +233,7 @@ public class ProtocolHost {
         send(protocolId, (List<T>) sendDatas);
     }
 
+    @SuppressWarnings("unchecked")
     synchronized <T extends Serializable> void send(ProtocolId protocolId, List<T> datas) throws IOException {
         // make sure to at least send empty packet in unidirectional communication
         if (datas == null) {

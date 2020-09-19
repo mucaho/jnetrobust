@@ -511,70 +511,72 @@ public class DelayedTest {
         // given a "reasonable" package loss chance
         if (lossChance == 0f || (retransmit && lossChance <= 0.15f)) {
             new Verifications() {{
-                protocolListenerA.handleUnackedData(anyShort, (ByteBuffer) any); times = 0;
-                protocolListenerA.handleUnorderedData(anyShort, (ByteBuffer) any); times = 0;
+                protocolListenerA.handleUnackedData(anyShort, (ByteBuffer) any);
+                times = 0;
+                protocolListenerA.handleUnorderedData(anyShort, (ByteBuffer) any);
+                times = 0;
             }};
             new Verifications() {{
-                protocolListenerB.handleUnackedData(anyShort, (ByteBuffer) any); times = 0;
-                protocolListenerB.handleUnorderedData(anyShort, (ByteBuffer) any); times = 0;
+                protocolListenerB.handleUnackedData(anyShort, (ByteBuffer) any);
+                times = 0;
+                protocolListenerB.handleUnorderedData(anyShort, (ByteBuffer) any);
+                times = 0;
             }};
 
             assertEquals("all packets acked", 0, notAckedA.size());
             assertEquals("all packets ordered", 0, unorderedA.size());
             assertEquals("all packets acked", 0, notAckedB.size());
             assertEquals("all packets ordered", 0, unorderedB.size());
+
+            // additionally make sure internal data structures are empty and properly exhaused
+            // otherwise this is a good indicator something went wrong
+            {
+                DelayQueue aToBQueue = Deencapsulation.getField(aToB, "queue");
+                assertEquals(0, aToBQueue.size());
+                DelayQueue bToAQueue = Deencapsulation.getField(bToA, "queue");
+                assertEquals(0, bToAQueue.size());
+
+                Protocol protocolA = Deencapsulation.getField(hostA, "protocol");
+                PackagingController controllerA = Deencapsulation.getField(protocolA, "controller");
+                ProcessingController subControllerA = Deencapsulation.getField(controllerA, "controller");
+                {
+                    AbstractMapControl sentMapControl = Deencapsulation.getField(subControllerA, "sentMapControl");
+                    AbstractSegmentMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
+                    Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
+                    assertEquals(1, keyMap.size());
+                    Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
+                    assertEquals(1, valueMap.size());
+                }
+                {
+                    AbstractMapControl receivedMapControl = Deencapsulation.getField(subControllerA, "receivedMapControl");
+                    AbstractSegmentMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
+                    Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
+                    assertEquals(0, keyMap.size());
+                    Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
+                    assertEquals(0, valueMap.size());
+                }
+
+                Protocol protocolB = Deencapsulation.getField(hostB, "protocol");
+                PackagingController controllerB = Deencapsulation.getField(protocolB, "controller");
+                ProcessingController subControllerB = Deencapsulation.getField(controllerB, "controller");
+                {
+                    AbstractMapControl sentMapControl = Deencapsulation.getField(subControllerB, "sentMapControl");
+                    AbstractSegmentMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
+                    Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
+                    assertEquals(1, keyMap.size());
+                    Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
+                    assertEquals(1, valueMap.size());
+                }
+                {
+                    AbstractMapControl receivedMapControl = Deencapsulation.getField(subControllerB, "receivedMapControl");
+                    AbstractSegmentMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
+                    Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
+                    assertEquals(0, keyMap.size());
+                    Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
+                    assertEquals(0, valueMap.size());
+                }
+            }
         }
-
-        // additionally make sure internal data structures are empty and properly exhaused
-        // otherwise this is a good indicator something went wrong
-        {
-            DelayQueue aToBQueue = Deencapsulation.getField(aToB, "queue");
-            assertEquals(0, aToBQueue.size());
-            DelayQueue bToAQueue = Deencapsulation.getField(bToA, "queue");
-            assertEquals(0, bToAQueue.size());
-
-            Protocol protocolA = Deencapsulation.getField(hostA, "protocol");
-            PackagingController controllerA = Deencapsulation.getField(protocolA, "controller");
-            ProcessingController subControllerA = Deencapsulation.getField(controllerA, "controller");
-            {
-                AbstractMapControl sentMapControl = Deencapsulation.getField(subControllerA, "sentMapControl");
-                AbstractSegmentMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
-                Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
-                assertEquals(1, keyMap.size());
-                Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
-                assertEquals(1, valueMap.size());
-            }
-            {
-                AbstractMapControl receivedMapControl = Deencapsulation.getField(subControllerA, "receivedMapControl");
-                AbstractSegmentMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
-                Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
-                assertEquals(0, keyMap.size());
-                Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
-                assertEquals(0, valueMap.size());
-            }
-
-            Protocol protocolB = Deencapsulation.getField(hostB, "protocol");
-            PackagingController controllerB = Deencapsulation.getField(protocolB, "controller");
-            ProcessingController subControllerB = Deencapsulation.getField(controllerB, "controller");
-            {
-                AbstractMapControl sentMapControl = Deencapsulation.getField(subControllerB, "sentMapControl");
-                AbstractSegmentMap dataMap = Deencapsulation.getField(sentMapControl, "dataMap");
-                Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
-                assertEquals(1, keyMap.size());
-                Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
-                assertEquals(1, valueMap.size());
-            }
-            {
-                AbstractMapControl receivedMapControl = Deencapsulation.getField(subControllerB, "receivedMapControl");
-                AbstractSegmentMap dataMap = Deencapsulation.getField(receivedMapControl, "dataMap");
-                Map keyMap = Deencapsulation.getField(dataMap, "keyMap");
-                assertEquals(0, keyMap.size());
-                Map valueMap = Deencapsulation.getField(dataMap, "valueMap");
-                assertEquals(0, valueMap.size());
-            }
-        }
-
-
     }
 
     private class LongDataGenerator implements TestHost.TestHostDataGenerator<Long> {

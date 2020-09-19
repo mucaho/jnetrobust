@@ -12,6 +12,7 @@ package com.github.mucaho.jnetrobust.util;
  * SRTT += ( R' - SRTT ) * alpha;
  * <p/>
  * RTTVAR = (1 - beta) * RTTVAR + beta * |SRTT - R'|
+ * RTTVAR = RTTVAR - beta * RTTVAR + beta * |SRTT - R'|
  * RTTVAR += (| SRTT - R' | - RTTVAR) * beta
  * <p/>
  * alpha = 1/8 = 0.125

@@ -151,7 +151,7 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
         out.writeShort(dataId);
         out.writeShort(transmissionIds.last());
         int dataSize = ByteBufferUtils.getDataSize(data);
-        out.writeInt(dataSize);
+        out.writeShort(dataSize); // dataSize must be < MTU, Short.MAX is enough for this
         if (dataSize > 0)
             out.write(data.array(), data.arrayOffset(), data.limit());
     }
@@ -161,7 +161,7 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
         dataId = in.readShort();
         dataIds.add(dataId);
         transmissionIds.add(in.readShort());
-        int dataSize = in.readInt();
+        int dataSize = in.readShort(); // dataSize must be < MTU, Short.MAX is enough for this
         if (dataSize > 0) {
             in.read(data.array(), 0, dataSize);
             data.limit(dataSize);

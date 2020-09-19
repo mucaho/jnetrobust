@@ -101,16 +101,13 @@ public class PackagingController {
             currentPacketSize += segmentSize;
             packetSegments.add(segment);
         }
-        if (!packetSegments.isEmpty()) {
-            // apply remaining segments to new packet
+        // apply remaining segments to new packet
+        if (!packetSegments.isEmpty())
             doSend(packetSegments, packetMap);
-        }
 
         // if there is no packet, send at least an empty packet
-        if (packetMap.isEmpty()) {
-            System.err.println("EMPTY");
+        if (packetMap.isEmpty())
             packetMap.put(null, controller.produce());
-        }
 
         return packetMapOut;
     }
@@ -120,8 +117,6 @@ public class PackagingController {
         controller.send(packet, segments);
         if (!packet.getSegments().isEmpty()) // check for retroactive discards
             outMap.put(packet.getLastSegment().getDataId(), packet);
-        else
-            System.err.println("DISCARD");
     }
 
     public void send(Packet packet, ObjectOutput objectOutput) throws IOException {
