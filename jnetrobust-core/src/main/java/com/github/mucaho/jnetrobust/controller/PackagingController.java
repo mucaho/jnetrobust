@@ -74,6 +74,9 @@ public class PackagingController {
 
         packetMap.clear();
 
+        // update current time
+        controller.setTimeNow(System.currentTimeMillis());
+
         // produce all retransmits & user-data segments
         allSegments.clear();
         allSegments.addAll(controller.retransmit());
@@ -115,10 +118,7 @@ public class PackagingController {
     private void doSend(List<Segment> segments, NavigableMap<Short, Packet> outMap) {
         Packet packet = controller.produce();
         controller.send(packet, segments);
-        if (!packet.getSegments().isEmpty()) // check for retroactive discards
-            outMap.put(packet.getLastSegment().getDataId(), packet);
-        else
-            System.err.println("EMPTY");
+        outMap.put(packet.getLastSegment().getDataId(), packet);
     }
 
     public void send(Packet packet, ObjectOutput objectOutput) throws IOException {
@@ -130,6 +130,9 @@ public class PackagingController {
 
     public NavigableMap<Short, ByteBuffer> receive(Packet packet) {
         receivedDatas.clear();
+
+        // update current time
+        controller.setTimeNow(System.currentTimeMillis());
 
         controller.consume(packet);
         Segment segment = controller.receive(packet);

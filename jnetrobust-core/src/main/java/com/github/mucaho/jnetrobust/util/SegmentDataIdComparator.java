@@ -11,8 +11,8 @@ import com.github.mucaho.jnetrobust.control.Segment;
 
 import java.util.Comparator;
 
-public final class ReceivedSegmentComparator implements Comparator<Segment> {
-    public static final ReceivedSegmentComparator instance = new ReceivedSegmentComparator();
+public final class SegmentDataIdComparator implements Comparator<Segment> {
+    public static final SegmentDataIdComparator instance = new SegmentDataIdComparator();
 
     @Override
     public int compare(Segment o1, Segment o2) {

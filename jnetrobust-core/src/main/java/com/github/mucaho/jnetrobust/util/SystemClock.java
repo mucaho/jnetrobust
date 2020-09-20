@@ -7,10 +7,6 @@
 
 package com.github.mucaho.jnetrobust.util;
 
-import java.nio.ByteBuffer;
-
-public final class ByteBufferUtils {
-    public final static int getDataSize(ByteBuffer data) {
-        return data != null && (data.limit() < data.capacity()) ? data.limit() : 0;
-    }
+public interface SystemClock {
+    long getTimeNow();
 }

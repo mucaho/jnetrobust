@@ -7,19 +7,20 @@
 
 package com.github.mucaho.jnetrobust.util;
 
+import com.github.mucaho.jnetrobust.control.Segment;
+
 import java.util.*;
 
-public final class TimeoutHandler<T extends Timestamp> {
-    // TODO: add everywhere meaningful initial capacities, e.g. in this case MAX_PACKET_QUEUE_LIMIT
-    private final List<T> timeouts = new ArrayList<T>();
-    private final List<T> timeoutsOut = Collections.unmodifiableList(timeouts);
+public final class TimeoutHandler {
+    private final List<Segment> timeouts = new ArrayList<Segment>();
+    private final List<Segment> timeoutsOut = Collections.unmodifiableList(timeouts);
 
-    public List<T> filterTimedOut(NavigableSet<T> datas, long maxWaitTime) {
+    public List<Segment> filterTimedout(NavigableSet<Segment> datas, long timeout, long timeNow) {
         timeouts.clear();
 
-        T data = datas.isEmpty() ? null : datas.first();
+        Segment data = datas.isEmpty() ? null : datas.first();
         while (data != null) {
-            if (System.currentTimeMillis() - data.getTime() > maxWaitTime) {
+            if (timeNow - data.getTime() > timeout) {
                 timeouts.add(data);
             }
 
@@ -29,15 +30,60 @@ public final class TimeoutHandler<T extends Timestamp> {
         return timeoutsOut;
     }
 
-    private final List<T> sorted = new ArrayList<T>();
-    private final List<T> sortedOut = Collections.unmodifiableList(sorted);
+    public List<Segment> filterLostInBetween(NavigableSet<Segment> segments, long relativeTimeout, int minDistance) {
+        timeouts.clear();
+        if (segments.isEmpty()) return timeoutsOut;
 
-    public List<T> computeSortedByAge(Collection<T> datas) {
-        sorted.clear();
-        sorted.addAll(datas);
+        long newestAckedSentTime = -1L;
 
-        Collections.sort(sorted, TimeComparator.instance);
+        Integer previousPacketId = null;
+        Integer packetId = null;
+        long sentTime = -1L;
+        boolean packetAcked = false;
+        int ackedPacketDelta = 0;
 
-        return sortedOut;
+        Segment segment = segments.last();
+        while (segment != null) {
+            // iteration loop initializers
+            sentTime = segment.getNewestSentTime();
+            packetId = segment.getPacketId();
+
+            // initialize sent time to most recent acked data
+            if (newestAckedSentTime < 0 && segment.getAckedTime() >= 0)
+                newestAckedSentTime = segment.getNewestSentTime();
+
+            // do not start processing until most recent acked data encountered
+            if (newestAckedSentTime >= 0) {
+
+                // determine all segments that were sent in one packet
+                if (!packetId.equals(previousPacketId)) {
+                    // increase packet delta if the current packet is not the starting acked packet
+                    if (sentTime != newestAckedSentTime && packetAcked)
+                        ackedPacketDelta++;
+
+                    // new packet's initial acked flag depends on first segment of that packet
+                    packetAcked = segment.getAckedTime() >= 0;
+                } else {
+                    // if at least one segment is packed in packet, whole packet is marked as acked
+                    packetAcked = packetAcked || segment.getAckedTime() >= 0;
+                }
+
+                // fast-retransmit if it's too big of a delay and multiple acks for newer datas have been received already
+                if (segment.getAckedTime() < 0
+                        && newestAckedSentTime - sentTime > relativeTimeout
+                        && ackedPacketDelta >= minDistance) {
+
+                    timeouts.add(segment);
+                }
+            }
+
+           // iteration loop updates
+            previousPacketId = packetId;
+            segment = segments.lower(segment);
+        }
+
+        // reverse the list, as newer datas should be last in the list
+        Collections.reverse(timeouts);
+        return timeoutsOut;
     }
 }

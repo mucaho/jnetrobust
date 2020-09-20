@@ -15,36 +15,36 @@ import java.util.NavigableSet;
 import static com.github.mucaho.jnetrobust.util.BitConstants.OFFSET;
 import static com.github.mucaho.jnetrobust.util.BitConstants.SIZE;
 
-public class ReceivedBitsControl {
+public class AckBitsControl {
     /*
      * [remoteTransmissionId-32]-[remoteTransmissionId-31]-...-[remoteTransmissionId-1]
      */
-    private final ShiftableBitSet receivedRemoteBits = new ShiftableBitSet();
+    private final ShiftableBitSet ackRemoteBits = new ShiftableBitSet();
 
-    public long getReceivedRemoteBits() {
-        return this.receivedRemoteBits.get();
+    public long getAckRemoteBits() {
+        return this.ackRemoteBits.get();
     }
 
-    public void addToReceived(NavigableSet<Short> remoteTransmissionIds, short remoteTransmissionId) {
+    public void addToAck(NavigableSet<Short> remoteTransmissionIds, short remoteTransmissionId) {
         int diff;
 
         Short id = remoteTransmissionIds.isEmpty() ? null : remoteTransmissionIds.first();
         while (id != null) {
             diff = IdComparator.instance.compare(remoteTransmissionId, id);
-            addToReceived(diff);
+            addToAck(diff);
 
             id = remoteTransmissionIds.higher(id);
         }
     }
 
-    protected void addToReceived(int diff) {
+    protected void addToAck(int diff) {
         // add to received bitset
         if ((diff > 0) && (diff - OFFSET < SIZE)) { // save late pkg.seq into bitset
-            receivedRemoteBits.set(diff - OFFSET, true);
+            ackRemoteBits.set(diff - OFFSET, true);
         } else if (diff < 0) { // save new remoteTransmissionId: save old remoteTransmissionId into bitSet, then shift for remainder
-            receivedRemoteBits.shiftLeft(OFFSET);
-            receivedRemoteBits.setLowestBit(true);
-            receivedRemoteBits.shiftLeft(-diff - OFFSET);
+            ackRemoteBits.shiftLeft(OFFSET);
+            ackRemoteBits.setLowestBit(true);
+            ackRemoteBits.shiftLeft(-diff - OFFSET);
         }
     }
 }

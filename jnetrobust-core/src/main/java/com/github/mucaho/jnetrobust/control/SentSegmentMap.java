@@ -8,13 +8,13 @@
 package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.util.IdComparator;
-import com.github.mucaho.jnetrobust.util.SentSegmentComparator;
+import com.github.mucaho.jnetrobust.util.SegmentLastTransmissionIdComparator;
 
 import java.util.NavigableSet;
 
 public class SentSegmentMap extends AbstractSegmentMap {
     public SentSegmentMap() {
-        super(IdComparator.instance, SentSegmentComparator.instance);
+        super(IdComparator.instance, SegmentLastTransmissionIdComparator.instance);
     }
 
     @Override

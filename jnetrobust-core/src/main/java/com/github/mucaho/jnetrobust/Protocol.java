@@ -288,10 +288,10 @@ public class Protocol implements Comparator<Short> {
     }
 
     /**
-     * Get the round-trip time variance. <br></br>
+     * Get the round-trip time variation. <br></br>
      * Updated on receiving acknowledgement of data receipt, using the formula
      * <code> RTT_SMOOTHED_VAR = 3/4 * RTT_SMOOTHED_VAR + 1/4 * |RTT_SMOOTHED_AVG - RTT_NEW|</code>
-     * @return the exponentially smoothed round-trip time variance
+     * @return the exponentially smoothed round-trip time variation
      */
     public long getRTTVariation() {
         return controller.getRTTVariation();

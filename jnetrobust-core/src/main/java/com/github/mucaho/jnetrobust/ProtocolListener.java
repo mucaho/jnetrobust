@@ -7,7 +7,7 @@
 
 package com.github.mucaho.jnetrobust;
 
-import com.github.mucaho.jnetrobust.control.NewestDataControl.NewestDataListener;
+import com.github.mucaho.jnetrobust.control.NewestReceivedControl.NewestReceivedListener;
 import com.github.mucaho.jnetrobust.control.SentMapControl.TransmissionSuccessListener;
 import com.github.mucaho.jnetrobust.control.ReceivedMapControl.TransmissionOrderListener;
 import com.github.mucaho.jnetrobust.control.RetransmissionControl.RetransmissionListener;
@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
  * The listener which will be notified about specific {@link Protocol protocol} events.
  */
 public class ProtocolListener implements TransmissionSuccessListener,
-        TransmissionOrderListener, RetransmissionListener, NewestDataListener {
+        TransmissionOrderListener, RetransmissionListener, NewestReceivedListener {
 
     /**
      * This protocol instance received data in the same order it was sent from another protocol instance.

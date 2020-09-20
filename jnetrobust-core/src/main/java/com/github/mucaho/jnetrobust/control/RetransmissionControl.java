@@ -9,13 +9,11 @@ package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.ProtocolConfig;
 import com.github.mucaho.jnetrobust.util.IdComparator;
+import com.github.mucaho.jnetrobust.util.SegmentLastTransmissionIdComparator;
 import com.github.mucaho.jnetrobust.util.TimeoutHandler;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.NavigableSet;
+import java.util.*;
 
 public class RetransmissionControl {
     public interface RetransmissionListener {
@@ -23,9 +21,12 @@ public class RetransmissionControl {
     }
     private final RetransmissionListener listener;
 
-    private final TimeoutHandler<Segment> sentDataTimeoutHandler = new TimeoutHandler<Segment>();
+    private static final int FAST_RETRANSMIT_NDUPACK = 2;
+
+    private final TimeoutHandler timeoutHandler = new TimeoutHandler();
 
     private final NavigableSet<Segment> sentSegments;
+    private final NavigableSet<Segment> ackedSegments;
 
     private final ProtocolConfig.AutoRetransmitMode autoRetransmitMode;
 
@@ -33,23 +34,50 @@ public class RetransmissionControl {
     private final List<Segment> retransmissionsOut = Collections.unmodifiableList(retransmissions);
 
     public RetransmissionControl(NavigableSet<Segment> sentSegments,
+                                 NavigableSet<Segment> ackedSegments,
                                  RetransmissionListener listener,
                                  ProtocolConfig.AutoRetransmitMode autoRetransmitMode) {
         this.sentSegments = sentSegments;
+        this.ackedSegments = ackedSegments;
         this.listener = listener;
         this.autoRetransmitMode = autoRetransmitMode;
     }
 
-    public void resetPendingTime(Segment sentSegments) {
-        sentSegments.updateTime();
+    public void updateSentTime(Segment sentSegment, long timeNow) {
+        sentSegment.setNewestSentTime(timeNow);
     }
 
-    public List<Segment> updatePendingTime(long maxWaitTime, short newestDataId) {
+    public void setAcknowledgedTime(Segment ackedSegment, long timeNow) {
+        ackedSegment.setAckedTime(timeNow);
+    }
+
+    public List<Segment> getTimedoutRetransmits(long timeout, short newestDataId, long timeNow) {
         retransmissions.clear();
 
-        List<Segment> potentialRetransmits = sentDataTimeoutHandler.filterTimedOut(sentSegments, maxWaitTime);
-        for (int i = 0, l = potentialRetransmits.size(); i < l; ++i) {
-            Segment potentialRetransmit = potentialRetransmits.get(i);
+        List<Segment> potentialRetransmits = timeoutHandler.filterTimedout(sentSegments, timeout, timeNow);
+        determineRetransmits(potentialRetransmits, newestDataId, retransmissions);
+
+        return retransmissionsOut;
+    }
+
+    private final NavigableSet<Segment> allSegments = new TreeSet<Segment>(SegmentLastTransmissionIdComparator.instance);
+
+    public List<Segment> getFastRetransmits(long relativeTimeout, short newestDataId) {
+        retransmissions.clear();
+
+        allSegments.clear();
+        allSegments.addAll(sentSegments);
+        allSegments.addAll(ackedSegments);
+        List<Segment> fastRetransmits = timeoutHandler.filterLostInBetween(
+                allSegments, relativeTimeout, FAST_RETRANSMIT_NDUPACK + 1);
+        determineRetransmits(fastRetransmits, newestDataId, retransmissions);
+
+        return retransmissionsOut;
+    }
+
+    private void determineRetransmits(List<Segment> in, short newestDataId, List<Segment> out) {
+        for (int i = 0, l = in.size(); i < l; ++i) {
+            Segment potentialRetransmit = in.get(i);
 
             Boolean userOk = determineRetransmit(potentialRetransmit);
             boolean doIt = Boolean.TRUE.equals(userOk);
@@ -59,10 +87,8 @@ public class RetransmissionControl {
                     && autoRetransmitMode == ProtocolConfig.AutoRetransmitMode.NEWEST
                     && IdComparator.instance.equals(potentialRetransmit.getDataId(), newestDataId);
             if (doIt)
-                retransmissions.add(potentialRetransmit);
+                out.add(potentialRetransmit);
         }
-
-        return retransmissionsOut;
     }
 
     protected Boolean determineRetransmit(Segment retransmit) {

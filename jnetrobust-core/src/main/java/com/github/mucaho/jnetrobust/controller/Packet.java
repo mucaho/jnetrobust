@@ -26,8 +26,9 @@ public final class Packet implements Freezable<Packet>, Sizeable {
         super();
     }
 
-    private LinkedList<Segment> segments = new LinkedList<Segment>();
-    private transient List<Segment> segmentsOut = Collections.unmodifiableList(segments);
+    // possibly use ArrayDeque with iterator instead
+    private final LinkedList<Segment> segments = new LinkedList<Segment>();
+    private transient final List<Segment> segmentsOut = Collections.unmodifiableList(segments);
     private Short transmissionAck;
     private long precedingTransmissionAcks;
 

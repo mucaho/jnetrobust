@@ -10,7 +10,6 @@ package com.github.mucaho.jnetrobust.control;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import com.github.mucaho.jnetrobust.util.EntryIterator;
-import com.github.mucaho.jnetrobust.util.IdComparator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

@@ -8,30 +8,34 @@
 package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.util.IdComparator;
+import com.github.mucaho.jnetrobust.util.SystemClock;
 import com.github.mucaho.jnetrobust.util.TimeoutHandler;
 
 import java.util.*;
 
 
 public abstract class AbstractMapControl {
-    private final TimeoutHandler<Segment> entryTimeoutHandler =
-            new TimeoutHandler<Segment>();
+    private final TimeoutHandler entryTimeoutHandler =
+            new TimeoutHandler();
 
     protected final int maxEntries;
     protected final int maxEntryOffset;
     protected final int maxEntryOccurrences;
     protected final long maxEntryTimeout;
+    protected final SystemClock systemClock;
 
     /*
      * [lastSeq]-...-[seq-32]-[seq-31]-...-[seq-1]-[seq]
      */
     protected AbstractSegmentMap dataMap;
 
-    public AbstractMapControl(int maxEntries, int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout) {
+    public AbstractMapControl(int maxEntries, int maxEntryOffset, int maxEntryOccurrences, long maxEntryTimeout,
+                              SystemClock systemClock) {
         this.maxEntries = maxEntries;
         this.maxEntryOffset = maxEntryOffset;
         this.maxEntryOccurrences = maxEntryOccurrences;
         this.maxEntryTimeout = maxEntryTimeout;
+        this.systemClock = systemClock;
         this.dataMap = createMap();
     }
 
@@ -49,7 +53,7 @@ public abstract class AbstractMapControl {
     protected abstract void discardEntry(Segment segment);
     protected abstract void discardEntryKey(Short key);
 
-    protected void discardEntries() {
+    public void discardEntries() {
         discardTooOldEntryKeys();
 
         discardTimedoutEntries();
@@ -71,7 +75,7 @@ public abstract class AbstractMapControl {
     private void discardTimedoutEntries() {
         if (maxEntryTimeout > 0) {
             List<Segment> timedOuts =
-                    entryTimeoutHandler.filterTimedOut(dataMap.getValues(), maxEntryTimeout);
+                    entryTimeoutHandler.filterTimedout(dataMap.getValues(), maxEntryTimeout, systemClock.getTimeNow());
             for (int i = 0, l = timedOuts.size(); i < l; ++i)
                 discardEntry(timedOuts.get(i));
         }

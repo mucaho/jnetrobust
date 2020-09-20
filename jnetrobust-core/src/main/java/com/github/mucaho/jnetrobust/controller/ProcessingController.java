@@ -12,49 +12,65 @@ import com.github.mucaho.jnetrobust.ProtocolListener;
 import com.github.mucaho.jnetrobust.control.*;
 import com.github.mucaho.jnetrobust.util.IdComparator;
 import com.github.mucaho.jnetrobust.util.RTTHandler;
+import com.github.mucaho.jnetrobust.util.SystemClock;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
-public class ProcessingController {
-    private short dataId = Short.MIN_VALUE;
+public class ProcessingController implements SystemClock {
     private short localTransmissionId = Short.MIN_VALUE;
     private final SentMapControl sentMapControl;
-
-    private short remoteTransmissionId = Short.MIN_VALUE;
-    private final ReceivedMapControl receivedMapControl;
-    private final ReceivedBitsControl receivedBitsControl;
-
+    private final AckedMapControl ackedMapControl;
     private final RTTHandler rttHandler;
     private final RetransmissionControl retransmissionControl;
 
-    private final NewestDataControl newestDataControl;
+    private short remoteTransmissionId = Short.MIN_VALUE;
+    private final AckBitsControl ackBitsControl;
+
+    private short dataId = Short.MIN_VALUE;
+    private final ReceivedMapControl receivedMapControl;
+    private final NewestReceivedControl newestReceivedControl;
+
+    private long timeNow = -1L;
 
     public ProcessingController(ProtocolListener listener, ProtocolConfig config) {
 
         // sending side
 
         sentMapControl = new SentMapControl(listener, config.getPacketQueueLimit(),
-                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit(), config.getPacketQueueTimeout()) {
+                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit(), config.getPacketQueueTimeout(), this) {
             @Override
-            protected void notifyAcked(Segment ackedSegment, boolean directlyAcked) {
-                if (ackedSegment != null && directlyAcked)
-                    rttHandler.updateRTT(ackedSegment.getTime()); // update RTT
+            protected void notifyAcked(Short transmissionId, Segment ackedSegment, boolean directlyAcked) {
+                super.notifyAcked(transmissionId, ackedSegment, directlyAcked);
 
-                super.notifyAcked(ackedSegment, directlyAcked);
+                acknowledge(transmissionId, ackedSegment, directlyAcked);
             }
         };
+        ackedMapControl = new AckedMapControl(config.getPacketQueueLimit(), config.getPacketOffsetLimit(),
+                config.getPacketRetransmitLimit(), config.getPacketQueueTimeout(), this);
 
         rttHandler = new RTTHandler(config.getK(), config.getG());
-        retransmissionControl = new RetransmissionControl(sentMapControl.getValues(), listener, config.getAutoRetransmitMode());
+        retransmissionControl = new RetransmissionControl(sentMapControl.getValues(), ackedMapControl.getValues(),
+                listener, config.getAutoRetransmitMode());
 
         // receiving side
 
-        receivedBitsControl = new ReceivedBitsControl();
-        receivedMapControl = new ReceivedMapControl(Short.MIN_VALUE, listener, config.getPacketQueueLimit(),
-                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit(), config.getPacketQueueTimeout());
+        ackBitsControl = new AckBitsControl();
 
-        newestDataControl = new NewestDataControl(listener);
+        receivedMapControl = new ReceivedMapControl(Short.MIN_VALUE, listener, config.getPacketQueueLimit(),
+                config.getPacketOffsetLimit(), config.getPacketRetransmitLimit(), config.getPacketQueueTimeout(), this);
+        newestReceivedControl = new NewestReceivedControl(listener);
+    }
+
+    public void setTimeNow(long timeNow) {
+        // let all applied timestamps and time calculations use the exact same timeNow measurement
+        this.timeNow = timeNow;
+    }
+
+    @Override
+    public long getTimeNow() {
+        return timeNow;
     }
 
     public Packet produce() {
@@ -64,7 +80,7 @@ public class ProcessingController {
         packet.setTransmissionAck(remoteTransmissionId);
 
         // apply remote precedingTransmissionIds
-        packet.setPrecedingTransmissionAcks(receivedBitsControl.getReceivedRemoteBits());
+        packet.setPrecedingTransmissionAcks(ackBitsControl.getAckRemoteBits());
 
         return packet;
     }
@@ -76,34 +92,52 @@ public class ProcessingController {
 
     public List<Segment> retransmit() {
         // update outdated not acked packets
-        List<Segment> retransmits = retransmissionControl.updatePendingTime(rttHandler.getRTO(), dataId);
+        List<Segment> retransmits = retransmissionControl.getTimedoutRetransmits(rttHandler.getRTO(), dataId, timeNow);
         if (!retransmits.isEmpty()) {
-            rttHandler.backoff();
+            rttHandler.backoff(timeNow);
+        } else if (!rttHandler.isBackedOff()) {
+            retransmits = retransmissionControl.getFastRetransmits(rttHandler.getVTO(), dataId);
         }
         return retransmits;
     }
 
     public void send(Packet packet, List<Segment> segments) {
-        // save segments to send into internal data structures
-        for (int i = 0, l = segments.size(); i < l; ++i)
-            send(segments.get(i));
+        // discard old sent entries in internal datastructures
+        sentMapControl.discardEntries();
 
-        // some segments may have been discarded retroactively due to internal queue limits, only add those that were not
         for (int i = 0, l = segments.size(); i < l; ++i) {
             Segment segment = segments.get(i);
-            if (!segment.getTransmissionIds().isEmpty())
-                packet.addLastSegment(segment);
-            else
-                System.err.println("EMPTY"); // TODO: recover localTransmissionId here
+
+            // save segment to send into internal data structures
+            send(segment);
+
+            // assign segment to packet
+            packet.addLastSegment(segment);
+            segment.setPacketId(packet.hashCode());
         }
     }
 
     private void send(Segment segment) {
-        // update last modified time
-        retransmissionControl.resetPendingTime(segment);
+        // update newest sent time
+        retransmissionControl.updateSentTime(segment, timeNow);
 
         // increment local transmissionId; add pending, local transmissionId
         sentMapControl.addToSent(++localTransmissionId, segment);
+    }
+
+    private void acknowledge(Short transmissionId, Segment ackedSegment, boolean directlyAcked) {
+        if (ackedSegment != null && directlyAcked)
+            rttHandler.updateRTT(ackedSegment.getNewestSentTime(), timeNow); // update RTT
+
+        if (transmissionId != null && ackedSegment != null) {
+            // update acked time
+            retransmissionControl.setAcknowledgedTime(ackedSegment, timeNow);
+
+            // discard old acked entries in internal data structures
+            receivedMapControl.discardEntries();
+            // add acked, local transmissionId
+            ackedMapControl.addToAcked(transmissionId, ackedSegment);
+        }
     }
 
     public void consume(Packet packet) {
@@ -112,12 +146,15 @@ public class ProcessingController {
     }
 
     public Segment receive(Packet packet) {
+        // remove segment from packet assignment
         Segment segment = packet.removeFirstSegment();
+
         if (segment != null)
+            // save received segment into internal data structures
             receive(segment);
         else
             // emit newest, remote data after packet is empty
-            newestDataControl.emitNewestData();
+            newestReceivedControl.emitNewestReceived();
 
         return segment;
     }
@@ -125,14 +162,18 @@ public class ProcessingController {
     private void receive(Segment segment) {
         short newRemoteTransmissionId = segment.getLastTransmissionId();
 
-        // update newest, remote data
-        newestDataControl.refreshNewestData(segment);
-
         // add received, remote transmissionIds
-        receivedBitsControl.addToReceived(segment.getTransmissionIds(), remoteTransmissionId);
+        ackBitsControl.addToAck(segment.getTransmissionIds(), remoteTransmissionId);
+
+        // update newest, remote data
+        newestReceivedControl.refreshNewestReceived(segment);
 
         // add received, remote dataIds
         receivedMapControl.addToReceived(segment);
+        // discard old received entries in internal data structures
+        receivedMapControl.discardEntries();
+        // remove received, remote dataIds from tail
+        receivedMapControl.removeFromTail();
 
         // change remote transmissionId
         if (IdComparator.instance.compare(remoteTransmissionId, newRemoteTransmissionId) < 0)

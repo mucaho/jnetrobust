@@ -17,7 +17,10 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
-    private transient long newestTransmissionTime = System.currentTimeMillis();
+    private transient long newestSentTime = -1L;
+    private transient long ackedTime = -1L;
+
+    private transient Integer packetId = null;
 
     private Short dataId;
     private final transient NavigableSet<Short> dataIds = new TreeSet<Short>();
@@ -26,22 +29,36 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
     private final NavigableSet<Short> transmissionIds = new TreeSet<Short>(IdComparator.instance);
     private final transient NavigableSet<Short> transmissionIdsOut = CollectionUtils.unmodifiableNavigableSet(transmissionIds);
 
-    private final ByteBuffer data = ByteBuffer.allocate(ProtocolConfig.getHighestPossibleMTUSize());
-    private final transient ByteBuffer dataOut = data.asReadOnlyBuffer();
+    private final ByteBuffer data = ByteBuffer.allocate(ProtocolConfig.getHighestPossibleMTUSize()); {
+        data.flip();
+    }
+    private final transient ByteBuffer dataOut = data.asReadOnlyBuffer(); {
+        dataOut.flip();
+    }
 
+    // TODO: hide public constructors for segment and packet
+    //  and use static factory methods instead which will delegate to object pools in future
     public Segment(Short dataId, ByteBuffer data) {
         this.dataId = dataId;
         this.dataIds.add(dataId);
-        if (data != null) {
-            this.data.put(data);
-            this.dataOut.position(this.data.position());
-            this.data.flip();
-            this.dataOut.flip();
-        }
+        setData(data);
     }
 
     public Segment() {
         super();
+    }
+
+    private void setData(ByteBuffer data) {
+        if (data != null) {
+            this.data.limit(this.data.capacity());
+            this.dataOut.limit(this.dataOut.capacity());
+
+            this.data.put(data);
+            this.dataOut.position(this.data.position());
+
+            this.data.flip();
+            this.dataOut.flip();
+        }
     }
 
     public Short getDataId() {
@@ -77,7 +94,7 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
     }
 
     public ByteBuffer getData() {
-        if (ByteBufferUtils.getDataSize(data) > 0) {
+        if (getDataSize(data) > 0) {
             if (!dataOut.hasRemaining())
                 dataOut.rewind();
             return dataOut;
@@ -86,13 +103,33 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
         }
     }
 
-    void updateTime() {
-        newestTransmissionTime = System.currentTimeMillis();
+    public long getNewestSentTime() {
+        return newestSentTime;
+    }
+
+    public void setNewestSentTime(long timeNow) {
+        this.newestSentTime = timeNow;
+    }
+
+    public long getAckedTime() {
+        return ackedTime;
+    }
+
+    void setAckedTime(long timeNow) {
+        ackedTime = timeNow;
     }
 
     @Override
     public long getTime() {
-        return newestTransmissionTime;
+        return getAckedTime() >= 0L ? getAckedTime() : getNewestSentTime();
+    }
+
+    public Integer getPacketId() {
+        return packetId;
+    }
+
+    public void setPacketId(Integer packetId) {
+        this.packetId = packetId;
     }
 
     @Override
@@ -106,7 +143,7 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
             transmissionId = transmissionIds.higher(transmissionId);
         }
         out.append("]");
-        out.append(": ").append(ByteBufferUtils.getDataSize(data)).append("B");
+        out.append(": ").append(getDataSize(data)).append("B");
 
         return out.toString();
     }
@@ -150,7 +187,7 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
     public void writeExternal(ObjectOutput out) throws IOException {
         out.writeShort(dataId);
         out.writeShort(transmissionIds.last());
-        int dataSize = ByteBufferUtils.getDataSize(data);
+        int dataSize = getDataSize(data);
         out.writeShort(dataSize); // dataSize must be < MTU, Short.MAX is enough for this
         if (dataSize > 0)
             out.write(data.array(), data.arrayOffset(), data.limit());
@@ -172,14 +209,15 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
     @Override
     public Segment clone() {
         Segment clone = new Segment();
-        if (getData() != null) getData().rewind();
-        clone.data.put(getData());
-        clone.dataOut.position(clone.data.position());
-        clone.data.flip();
-        clone.dataOut.flip();
+        if (getData() != null) {
+            getData().rewind();
+            clone.setData(getData());
+            getData().rewind();
+        }
         clone.dataId = dataId;
         clone.dataIds.add(dataId);
         clone.transmissionIds.addAll(transmissionIds);
+        // TODO: convert all addAll method invocations into manual iterations
         return clone;
     }
 
@@ -188,7 +226,7 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
         return Short.SIZE / Byte.SIZE // dataId
                 + Short.SIZE / Byte.SIZE // lastTransmissionId
                 + Integer.SIZE / Byte.SIZE // dataLimit
-                + ByteBufferUtils.getDataSize(data); // data
+                + getDataSize(data); // data
     }
 
     @Override
@@ -204,5 +242,9 @@ public final class Segment implements Timestamp, Freezable<Segment>, Sizeable {
     @Override
     public int hashCode() {
         return dataId != null ? dataId.hashCode() : 0;
+    }
+
+    private static int getDataSize(ByteBuffer data) {
+        return data != null ? data.limit() : 0;
     }
 }

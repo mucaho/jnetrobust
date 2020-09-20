@@ -7,6 +7,7 @@
 
 package com.github.mucaho.jnetrobust.control;
 
+import com.github.mucaho.jnetrobust.util.SystemClock;
 import mockit.Deencapsulation;
 import com.github.mucaho.jnetrobust.ProtocolConfig;
 import com.github.mucaho.jnetrobust.util.IdComparator;
@@ -25,7 +26,12 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
     private final ProtocolConfig config = new ProtocolConfig();
 
     private AbstractMapControl control = new AbstractMapControl(config.getPacketQueueLimit(), config.getPacketOffsetLimit(),
-            config.getPacketRetransmitLimit(), config.getPacketQueueTimeout()) {
+            config.getPacketRetransmitLimit(), config.getPacketQueueTimeout(), new SystemClock() {
+        @Override
+        public long getTimeNow() {
+            return System.currentTimeMillis();
+        }
+    }) {
         @Override
         protected AbstractSegmentMap createMap() {
             return new SentSegmentMap();
@@ -275,22 +281,24 @@ public class SimpleMapControlTest extends AbstractMapControlTest {
         Deencapsulation.setField(control, "maxEntryTimeout", 1000L);
 
         Segment segment1 = new Segment(++dataId, serializeInt(1));
+        segment1.setNewestSentTime(System.currentTimeMillis());
         dataMap.put((short) 1, segment1);
 
         Thread.sleep(2000L);
 
         Segment segment2 = new Segment(++dataId, serializeInt(2));
+        segment2.setNewestSentTime(System.currentTimeMillis());
         dataMap.put((short) 2, segment2);
 
         Deencapsulation.invoke(control, "discardTimedoutEntries");
 
-        assertTrue("timestamp of 2nd segment is newer than 1s", System.currentTimeMillis() - segment2.getTime() < 1000L);
+        assertTrue("timestamp of 2nd segment is newer than 1s", System.currentTimeMillis() - segment2.getNewestSentTime() < 1000L);
         assertEquals("dataMap key size is 1", 1, dataMap.keySize());
         assertEquals("dataMap key is 2nd segment's key", (short) 2, (short) dataMap.firstKey());
         assertEquals("dataMap value size is 1", 1, dataMap.valueSize());
         assertEquals("dataMap value is 2nd segment", segment2, dataMap.firstValue());
 
-        assertTrue("timestamp of 1st segment is older than 1s", System.currentTimeMillis() - segment1.getTime() > 1000L);
+        assertTrue("timestamp of 1st segment is older than 1s", System.currentTimeMillis() - segment1.getNewestSentTime() > 1000L);
         assertEquals("discarded key size is 1", 1, discardedKeys.size());
         assertEquals("discarded key is 1st segment's key", (short) 1, (short) discardedKeys.iterator().next());
         assertEquals("discarded data size is 1", 1, discardedSegments.size());

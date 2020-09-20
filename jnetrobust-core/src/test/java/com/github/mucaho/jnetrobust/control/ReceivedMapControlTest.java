@@ -7,6 +7,7 @@
 
 package com.github.mucaho.jnetrobust.control;
 
+import com.github.mucaho.jnetrobust.util.SystemClock;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.Deencapsulation;
@@ -26,7 +27,12 @@ import static org.junit.Assert.*;
 public class ReceivedMapControlTest extends AbstractMapControlTest {
     protected static ReceivedMapControl handler = new ReceivedMapControl((short) 0, null,
             config.getPacketQueueLimit(), config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1,
-            config.getPacketQueueTimeout());
+            config.getPacketQueueTimeout(), new SystemClock() {
+        @Override
+        public long getTimeNow() {
+            return System.currentTimeMillis();
+        }
+    });
 
     static {
         System.setProperty("jmockit-mockParameters", "annotated");
@@ -72,7 +78,7 @@ public class ReceivedMapControlTest extends AbstractMapControlTest {
         new MockUp<ReceivedMapControl>() {
             @SuppressWarnings("unused")
             @Mock
-            private void notifyOrdered(Segment orderedPackage) {
+            private void notifyOrdered(Short dataId, Segment orderedPackage) {
                 if (orderedPackage != null)
                     orderedSegments.add(orderedPackage);
             }
@@ -80,7 +86,7 @@ public class ReceivedMapControlTest extends AbstractMapControlTest {
 
         Segment segment = new Segment(input, serializeShort(input));
         dataMap.put(segment);
-        Deencapsulation.invoke(handler, "removeTail");
+        Deencapsulation.invoke(handler, "removeFromTail");
 
 
         Short actualNextRemoteSeq = Deencapsulation.getField(handler, "nextDataId");

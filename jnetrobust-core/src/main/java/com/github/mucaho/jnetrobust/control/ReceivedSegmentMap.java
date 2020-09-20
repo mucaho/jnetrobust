@@ -8,14 +8,14 @@
 package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.util.IdComparator;
-import com.github.mucaho.jnetrobust.util.ReceivedSegmentComparator;
+import com.github.mucaho.jnetrobust.util.SegmentDataIdComparator;
 
 import java.util.NavigableSet;
 
 public class ReceivedSegmentMap extends AbstractSegmentMap {
 
     public ReceivedSegmentMap() {
-        super(IdComparator.instance, ReceivedSegmentComparator.instance);
+        super(IdComparator.instance, SegmentDataIdComparator.instance);
     }
 
     @Override

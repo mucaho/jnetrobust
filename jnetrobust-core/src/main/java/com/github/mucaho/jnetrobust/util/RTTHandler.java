@@ -21,7 +21,7 @@ package com.github.mucaho.jnetrobust.util;
  * G <= 100ms
  * <p/>
  * RTO = SRTT + max (G, K*RTTVAR)
- * RTO = min (RTO, 60s)
+ * RTO = min( max(RTO, 200ms), 60s )
  * <br/>
  * Everytime timer expires, RTO += RTO as linear backoff (or more conservatively RTO *= 2 as exponential backoff),
  * until the RTT of the newly retransmitted message arrives
@@ -41,8 +41,11 @@ public final class RTTHandler {
     }
 
     private long rto = 1000; // or more conservatively 3000
+    private long vto = rto / 10;
+
     private Long lastBackoffTime = null;
     private int backoffFactor = 1;
+
     private long srtt = 0;
     private long rttvar = 0;
 
@@ -55,17 +58,29 @@ public final class RTTHandler {
         return rttvar;
     }
 
-    public long getRTO() { // retransmissionTimeOut
+    // relative retransmission ("variance") timeout
+    public long getVTO() {
+        // for isolated packet losses we do not need to backoff,
+        // otherwise RTO will trigger for a complete stalling loss of multiple packets
+        return vto;
+    }
+
+    // absolute retransmission timeout
+    public long getRTO() {
         return rto * backoffFactor;
     }
 
-    public void backoff() {
-        lastBackoffTime = System.currentTimeMillis();
+    public void backoff(long timeNow) {
+        lastBackoffTime = timeNow;
         backoffFactor++;
     }
 
-    public void updateRTT(long packetTimestamp) {
-        long rttDelta = System.currentTimeMillis() - packetTimestamp - srtt;
+    public boolean isBackedOff() {
+        return lastBackoffTime != null;
+    }
+
+    public void updateRTT(long packetTimestamp, long timeNow) {
+        long rttDelta = timeNow - packetTimestamp - srtt;
 
         if (srtt == 0 || rttvar == 0) { // first RTT received
             srtt = rttDelta;
@@ -75,7 +90,9 @@ public final class RTTHandler {
             rttvar += (Math.abs(rttDelta) - rttvar) * BETA;
         }
 
-        rto = Math.min(srtt + Math.max(G, K * rttvar), 60L * 1000);
+        long v = Math.max(G, K * rttvar);
+        rto = Math.min(Math.max(srtt + v, 200L), 60L * 1000);
+        vto = Math.min(v, 1000L);
 
         if (lastBackoffTime != null && packetTimestamp >= lastBackoffTime) {
             lastBackoffTime = null;

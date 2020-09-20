@@ -23,27 +23,27 @@ import static com.github.mucaho.jnetrobust.util.TestUtils.binLong;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JUnitParamsRunner.class)
-public class ReceivedBitsControlTest {
+public class AckBitsControlTest {
 
     @Test
     @Parameters
-    public final void testAddToReceivedInt(long preBits, int inDiff, long postBits) {
+    public final void testAddToAckInt(long preBits, int inDiff, long postBits) {
         ShiftableBitSet actualBitSet = new ShiftableBitSet(preBits);
         ShiftableBitSet expectedBitSet = new ShiftableBitSet(postBits);
-        ReceivedBitsControl handler = new ReceivedBitsControl();
-        Deencapsulation.setField(handler, "receivedRemoteBits", actualBitSet);
+        AckBitsControl handler = new AckBitsControl();
+        Deencapsulation.setField(handler, "ackRemoteBits", actualBitSet);
 
         String debug = "";
         debug += actualBitSet;
-        handler.addToReceived(inDiff);
-        debug += ".addToReceived(" + inDiff + ")";
+        handler.addToAck(inDiff);
+        debug += ".addToAck(" + inDiff + ")";
         debug += " = " + actualBitSet;
         debug += " != " + expectedBitSet;
 
         assertEquals(debug, expectedBitSet.get(), actualBitSet.get());
     }
 
-    public Collection<Object[]> parametersForTestAddToReceivedInt() {
+    public Collection<Object[]> parametersForTestAddToAckInt() {
         ArrayList<Object[]> list = new ArrayList<Object[]>();
         Random rng = new Random();
         long preBits;

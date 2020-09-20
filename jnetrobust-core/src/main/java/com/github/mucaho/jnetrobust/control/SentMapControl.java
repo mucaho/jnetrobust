@@ -8,6 +8,7 @@
 package com.github.mucaho.jnetrobust.control;
 
 import com.github.mucaho.jnetrobust.util.FastLog;
+import com.github.mucaho.jnetrobust.util.SystemClock;
 
 import java.nio.ByteBuffer;
 
@@ -23,8 +24,8 @@ public class SentMapControl extends AbstractMapControl {
     private TransmissionSuccessListener listener;
 
     public SentMapControl(TransmissionSuccessListener listener, int maxEntries, int maxEntryOffset,
-                          int maxEntryOccurrences, long maxEntryTimeout) {
-        super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout);
+                          int maxEntryOccurrences, long maxEntryTimeout, SystemClock systemClock) {
+        super(maxEntries, maxEntryOffset, maxEntryOccurrences, maxEntryTimeout, systemClock);
         this.listener = listener;
     }
 
@@ -36,9 +37,6 @@ public class SentMapControl extends AbstractMapControl {
     public void addToSent(Short transmissionId, Segment segment) {
         // add to pending map
         dataMap.put(transmissionId, segment);
-
-        // discard old entries in pending map
-        discardEntries();
     }
 
     public void removeFromSent(Short transmissionId, long precedingTransmissionIds) {
@@ -46,16 +44,16 @@ public class SentMapControl extends AbstractMapControl {
         removeFromSentOnBits(transmissionId, precedingTransmissionIds);
 
         // remove newest from pending map
-        notifyAcked(dataMap.removeAll(transmissionId), true);
+        notifyAcked(transmissionId, dataMap.removeAll(transmissionId), true);
     }
 
-    private void removeFromSentOnBits(short transmissionId, long precedingTransmissionIds) {
-        short precedingTransmissionId;
+    private void removeFromSentOnBits(Short transmissionId, long precedingTransmissionIds) {
+        Short precedingTransmissionId;
         int msbIndex;
         while (precedingTransmissionIds != 0) {
             msbIndex = FastLog.log2(precedingTransmissionIds);
             precedingTransmissionId = (short) (transmissionId - msbIndex - OFFSET);
-            notifyAcked(dataMap.removeAll(precedingTransmissionId), false);
+            notifyAcked(precedingTransmissionId, dataMap.removeAll(precedingTransmissionId), false);
             precedingTransmissionIds &= ~(LSB << msbIndex);
         }
 
@@ -63,29 +61,29 @@ public class SentMapControl extends AbstractMapControl {
 
     @Override
     protected void discardEntry(Short key) {
-        notifyNotAcked(dataMap.removeAll(key));
+        notifyNotAcked(key, dataMap.removeAll(key));
     }
 
     @Override
     protected void discardEntry(Segment segment) {
-        notifyNotAcked(dataMap.removeAll(segment));
+        notifyNotAcked(segment.getLastTransmissionId(), dataMap.removeAll(segment));
     }
 
     @Override
     protected void discardEntryKey(Short key) {
         Segment shrankSegment = dataMap.remove(key);
         if (shrankSegment != null && shrankSegment.getTransmissionIds().isEmpty())
-            notifyNotAcked(shrankSegment);
+            notifyNotAcked(key, shrankSegment);
     }
 
-    protected void notifyNotAcked(Segment unackedSegment) {
+    protected void notifyNotAcked(Short transmissionId, Segment unackedSegment) {
         if (unackedSegment != null) {
             listener.handleUnackedData(unackedSegment.getDataId(), unackedSegment.getData());
             if (unackedSegment.getData() != null) unackedSegment.getData().rewind();
         }
     }
 
-    protected void notifyAcked(Segment ackedSegment, boolean directlyAcked) {
+    protected void notifyAcked(Short transmissionId, Segment ackedSegment, boolean directlyAcked) {
         if (ackedSegment != null) {
             listener.handleAckedData(ackedSegment.getDataId(), ackedSegment.getData());
             if (ackedSegment.getData() != null) ackedSegment.getData().rewind();

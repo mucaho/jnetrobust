@@ -11,7 +11,6 @@ import com.github.mucaho.jnetrobust.control.AbstractMapControl;
 import com.github.mucaho.jnetrobust.control.AbstractSegmentMap;
 import com.github.mucaho.jnetrobust.controller.PackagingController;
 import com.github.mucaho.jnetrobust.controller.ProcessingController;
-import com.github.mucaho.jnetrobust.util.ByteBufferUtils;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.*;

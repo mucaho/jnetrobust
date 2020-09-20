@@ -7,6 +7,7 @@
 
 package com.github.mucaho.jnetrobust.control;
 
+import com.github.mucaho.jnetrobust.util.SystemClock;
 import junitparams.JUnitParamsRunner;
 import junitparams.Parameters;
 import mockit.Invocation;
@@ -28,7 +29,13 @@ import static org.junit.Assert.assertTrue;
 public class SentMapControlTest extends AbstractMapControlTest {
 
     protected SentMapControl handler = new SentMapControl(null, config.getPacketQueueLimit(),
-            config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1, config.getPacketQueueTimeout());
+            config.getPacketOffsetLimit(), config.getPacketRetransmitLimit() + 1,
+            config.getPacketQueueTimeout(), new SystemClock() {
+        @Override
+        public long getTimeNow() {
+            return System.currentTimeMillis();
+        }
+    });
 
     public SentMapControlTest() {
         initDataMap(handler);
@@ -83,7 +90,7 @@ public class SentMapControlTest extends AbstractMapControlTest {
         new MockUp<SentMapControl>() {
             @Mock
             @SuppressWarnings("unused")
-            protected void notifyAcked(Invocation invocation, Segment ackedSegment, boolean directlyAcked) {
+            protected void notifyAcked(Invocation invocation, Short transmissionId, Segment ackedSegment, boolean directlyAcked) {
                 if (ackedSegment != null) {
                     assertEquals("Expected other value (insertion order must be remove order)",
                             wrapper.invocations, deserializeShort(ackedSegment.getData()));
