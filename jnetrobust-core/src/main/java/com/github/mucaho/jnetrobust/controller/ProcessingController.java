@@ -15,7 +15,6 @@ import com.github.mucaho.jnetrobust.util.RTTHandler;
 import com.github.mucaho.jnetrobust.util.SystemClock;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ProcessingController implements SystemClock {
