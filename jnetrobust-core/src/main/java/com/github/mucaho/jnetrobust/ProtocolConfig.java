@@ -52,6 +52,15 @@ public final class ProtocolConfig {
      * Maximum IPv4 header size (60B) + UDP header size (8B)
      */
     public static final int MAXIMUM_LOWER_STACK_HEADER_SIZE = 60 + 8;
+    /**
+     * The constant MAXIMUM_LOWER_STACK_HEADER_SIZE.
+     * Minimum IPv4 header size (40B) + UDP header size (8B)
+     */
+    public static final int MOST_COMMON_LOWER_STACK_HEADER_SIZE = 40 + 8;
+    /**
+     * The constant DEFAULT_FAST_RETRANSMIT_DUPLICATE_ACK_COUNT.
+     */
+    public static final int DEFAULT_FAST_RETRANSMIT_DUPLICATE_ACK_COUNT = 3;
 
     /**
      * Enum indicating in which case the protocol should automatically retransmit data.<br />
@@ -120,9 +129,9 @@ public final class ProtocolConfig {
      * <br />
      * <br />
      * The retransmission timeout (<code>RTO</code>) is calculated based on the average round-trip time (<code>RTT_avg</code>),
-     * the RTT "standard deviation" (<code>RTT_stddev</code>) and constants <code>K</code> &amp; <code>G</code>.
+     * the RTT variation (<code>RTT_VAR</code>) and constants <code>K</code> &amp; <code>G</code>.
      * <br />
-     * <code>RTO = RTT_avg + max(G, K * RTT_stddev)</code>
+     * <code>RTO = RTT_avg + max(G, K * RTT_VAR)</code>
      */
     private int K = 2;
     /**
@@ -130,11 +139,21 @@ public final class ProtocolConfig {
      * <br />
      * <br />
      * The retransmission timeout (<code>RTO</code>) is calculated based on the average round-trip time (<code>RTT_avg</code>),
-     * the RTT "standard deviation" (<code>RTT_stddev</code>) and constants <code>K</code> &amp; <code>G</code>.
+     * the RTT variation (<code>RTT_VAR</code>) and constants <code>K</code> &amp; <code>G</code>.
      * <br />
-     * <code>RTO = RTT_avg + max(G, K * RTT_stddev)</code>
+     * <code>RTO = RTT_avg + max(G, K * RTT_VAR)</code>
      */
     private int G = 25;
+
+    /**
+     * The <code>NDUPACK</code> constant used in determining fast retransmits.
+     * Defaults to {@link #DEFAULT_FAST_RETRANSMIT_DUPLICATE_ACK_COUNT}.
+     * <br />
+     * <br />
+     * The number of duplicate acks determines how aggressive fast retransmit mechanism will be:
+     * If it's a low number, older, unacked data will be sent sooner if already newer, acked data is available.
+     */
+    private int nDupAck = DEFAULT_FAST_RETRANSMIT_DUPLICATE_ACK_COUNT;
 
     /**
      * Instantiates a new Protocol config with default values.
@@ -263,9 +282,9 @@ public final class ProtocolConfig {
      * <br />
      * <br />
      * The retransmission timeout (<code>RTO</code>) is calculated based on the average round-trip time (<code>RTT_avg</code>),
-     * the RTT "standard deviation" (<code>RTT_stddev</code>) and constants <code>K</code> &amp; <code>G</code>.
+     * the RTT variation (<code>RTT_VAR</code>) and constants <code>K</code> &amp; <code>G</code>.
      * <br />
-     * <code>RTO = RTT_avg + max(G, K * RTT_stddev)</code>
+     * <code>RTO = RTT_avg + max(G, K * RTT_VAR)</code>
      *
      * @return the <code>K</code> constant used for computing the retransmission timeout
      */
@@ -278,9 +297,9 @@ public final class ProtocolConfig {
      * <br />
      * <br />
      * The retransmission timeout (<code>RTO</code>) is calculated based on the average round-trip time (<code>RTT_avg</code>),
-     * the RTT "standard deviation" (<code>RTT_stddev</code>) and constants <code>K</code> &amp; <code>G</code>.
+     * the RTT variation (<code>RTT_VAR</code>) and constants <code>K</code> &amp; <code>G</code>.
      * <br />
-     * <code>RTO = RTT_avg + max(G, K * RTT_stddev)</code>
+     * <code>RTO = RTT_avg + max(G, K * RTT_VAR)</code>
      *
      * @param k the <code>K</code> constant used for computing the retransmission timeout
      */
@@ -293,9 +312,9 @@ public final class ProtocolConfig {
      * <br />
      * <br />
      * The retransmission timeout (<code>RTO</code>) is calculated based on the average round-trip time (<code>RTT_avg</code>),
-     * the RTT "standard deviation" (<code>RTT_stddev</code>) and constants <code>K</code> &amp; <code>G</code>.
+     * the RTT variation (<code>RTT_VAR</code>) and constants <code>K</code> &amp; <code>G</code>.
      * <br />
-     * <code>RTO = RTT_avg + max(G, K * RTT_stddev)</code>
+     * <code>RTO = RTT_avg + max(G, K * RTT_VAR)</code>
      *
      * @return the <code>K</code> constant used for computing the retransmission timeout
      */
@@ -308,14 +327,38 @@ public final class ProtocolConfig {
      * <br />
      * <br />
      * The retransmission timeout (<code>RTO</code>) is calculated based on the average round-trip time (<code>RTT_avg</code>),
-     * the RTT "standard deviation" (<code>RTT_stddev</code>) and constants <code>K</code> &amp; <code>G</code>.
+     * the RTT variation (<code>RTT_VAR</code>) and constants <code>K</code> &amp; <code>G</code>.
      * <br />
-     * <code>RTO = RTT_avg + max(G, K * RTT_stddev)</code>
+     * <code>RTO = RTT_avg + max(G, K * RTT_VAR)</code>
      *
      * @param g the <code>G</code> constant used for computing the retransmission timeout
      */
     public void setG(int g) {
         G = g;
+    }
+
+    /**
+     * Gets the <code>NDUPACK</code> constant used in determining fast retransmits.
+     * Defaults to {@link #DEFAULT_FAST_RETRANSMIT_DUPLICATE_ACK_COUNT}.
+     * <br />
+     * <br />
+     * The number of duplicate acks determines how aggressive fast retransmit mechanism will be:
+     * If it's a low number, older, unacked data will be sent sooner if already newer, acked data is available.
+     */
+    public int getNDupAck() {
+        return nDupAck;
+    }
+
+    /**
+     * Sets the <code>NDUPACK</code> constant used in determining fast retransmits.
+     * Defaults to {@link #DEFAULT_FAST_RETRANSMIT_DUPLICATE_ACK_COUNT}.
+     * <br />
+     * <br />
+     * The number of duplicate acks determines how aggressive fast retransmit mechanism will be:
+     * If it's a low number, older, unacked data will be sent sooner if already newer, acked data is available.
+     */
+    public void setNDupAck(int nDupAck) {
+        this.nDupAck = nDupAck;
     }
 
     /**

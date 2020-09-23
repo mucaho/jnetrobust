@@ -23,6 +23,7 @@ public class ProcessingController implements SystemClock {
     private final AckedMapControl ackedMapControl;
     private final RTTHandler rttHandler;
     private final RetransmissionControl retransmissionControl;
+    private final CongestionControl congestionControl;
 
     private short remoteTransmissionId = Short.MIN_VALUE;
     private final AckBitsControl ackBitsControl;
@@ -51,7 +52,8 @@ public class ProcessingController implements SystemClock {
 
         rttHandler = new RTTHandler(config.getK(), config.getG());
         retransmissionControl = new RetransmissionControl(sentMapControl.getValues(), ackedMapControl.getValues(),
-                listener, config.getAutoRetransmitMode());
+                listener, config.getAutoRetransmitMode(), config.getNDupAck());
+        congestionControl = new CongestionControl(sentMapControl.getValues(), ackedMapControl.getValues(), rttHandler);
 
         // receiving side
 
@@ -137,6 +139,9 @@ public class ProcessingController implements SystemClock {
             // add acked, local transmissionId
             ackedMapControl.addToAcked(transmissionId, ackedSegment);
         }
+
+        // FIXME
+        System.out.println(congestionControl.nextPacketSize(timeNow));
     }
 
     public void consume(Packet packet) {

@@ -54,7 +54,7 @@ public class DelayedTest {
 
     public Object[][] parametersForTestDelayed() {
         Object[][] out = {{
-                150, 200, 0.10f, 0.05f, 16, 10, true
+                150, 200, 0.10f, 0.05f, 16, 20, true
                 // 40, 60000, 0.75f, 0.25f, 16, 1000, true
         }};
 
