@@ -21,14 +21,13 @@ public class RetransmissionControl {
     }
     private final RetransmissionListener listener;
 
-    private static final int FAST_RETRANSMIT_NDUPACK = 2;
-
     private final TimeoutHandler timeoutHandler = new TimeoutHandler();
 
     private final NavigableSet<Segment> sentSegments;
     private final NavigableSet<Segment> ackedSegments;
 
     private final ProtocolConfig.AutoRetransmitMode autoRetransmitMode;
+    private final int nDupAck;
 
     private final List<Segment> retransmissions = new ArrayList<Segment>();
     private final List<Segment> retransmissionsOut = Collections.unmodifiableList(retransmissions);
@@ -36,11 +35,13 @@ public class RetransmissionControl {
     public RetransmissionControl(NavigableSet<Segment> sentSegments,
                                  NavigableSet<Segment> ackedSegments,
                                  RetransmissionListener listener,
-                                 ProtocolConfig.AutoRetransmitMode autoRetransmitMode) {
+                                 ProtocolConfig.AutoRetransmitMode autoRetransmitMode,
+                                 int nDupAck) {
         this.sentSegments = sentSegments;
         this.ackedSegments = ackedSegments;
         this.listener = listener;
         this.autoRetransmitMode = autoRetransmitMode;
+        this.nDupAck = nDupAck;
     }
 
     public void updateSentTime(Segment sentSegment, long timeNow) {
@@ -68,8 +69,7 @@ public class RetransmissionControl {
         allSegments.clear();
         allSegments.addAll(sentSegments);
         allSegments.addAll(ackedSegments);
-        List<Segment> fastRetransmits = timeoutHandler.filterLostInBetween(
-                allSegments, relativeTimeout, FAST_RETRANSMIT_NDUPACK + 1);
+        List<Segment> fastRetransmits = timeoutHandler.filterLostInBetween(allSegments, relativeTimeout, nDupAck);
         determineRetransmits(fastRetransmits, newestDataId, retransmissions);
 
         return retransmissionsOut;
