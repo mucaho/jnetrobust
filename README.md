@@ -2,8 +2,7 @@
 =============
 [![Build Status](https://travis-ci.org/mucaho/jnetrobust.svg?branch=master)](https://travis-ci.org/mucaho/jnetrobust)
 [![Coverage Status](https://img.shields.io/coveralls/mucaho/jnetrobust.svg)](https://coveralls.io/r/mucaho/jnetrobust)
-[![Code Analysis Status](https://scan.coverity.com/projects/3328/badge.svg)](https://scan.coverity.com/projects/3328)
-[![Library Dependency Status](https://www.versioneye.com/user/projects/544c117151259293d3000002/badge.svg)](https://www.versioneye.com/user/projects/544c117151259293d3000002)   
+[![Code Analysis Status](https://scan.coverity.com/projects/3328/badge.svg)](https://scan.coverity.com/projects/3328)   
 [![Maven Central](http://img.shields.io/maven-central/v/com.github.mucaho/jnetrobust.svg)](http://search.maven.org/#search|ga|1|jnetrobust*)
 [![Supported Platform](http://img.shields.io/badge/java-1.6+-blue.svg)](http://docs.oracle.com/javase/6/docs/api/)
 [![License](http://img.shields.io/badge/license-MPL-blue.svg)](https://www.mozilla.org/MPL/2.0/)
