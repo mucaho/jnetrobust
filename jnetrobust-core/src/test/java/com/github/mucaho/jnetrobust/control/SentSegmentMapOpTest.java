@@ -90,8 +90,9 @@ public class SentSegmentMapOpTest {
 
         final List<Short> addRefs = new ArrayList<Short>();
         final List<Short> removeRefs = new ArrayList<Short>();
-        new NonStrictExpectations(segment) {{
-            onInstance(segment).getTransmissionIds();
+        new Expectations(segment) {{
+            segment.getTransmissionIds();
+            minTimes = 0;
             result = new Delegate<Object>() {
                 NavigableSet<Short> delegate() {
                     NavigableSet<Short> out = new TreeSet<Short>();
@@ -101,17 +102,19 @@ public class SentSegmentMapOpTest {
                     return out;
                 }
             };
-            onInstance(segment).addTransmissionId(withCapture(addRefs));
+            segment.addTransmissionId(withCapture(addRefs));
+            minTimes = 0;
             result = true;
-            onInstance(segment).removeTransmissionId(withCapture(removeRefs));
+            segment.removeTransmissionId(withCapture(removeRefs));
+            minTimes = 0;
             result = true;
         }};
 
         switch (op) {
             case PUT_DATA:
                 // temporarily mock getLastTransmissionId, as it needs to return non-empty transmissionIds for this test to work
-                new NonStrictExpectations() {{
-                    onInstance(segment).getLastTransmissionId();
+                new Expectations(segment) {{
+                    segment.getLastTransmissionId();
                     result = new Delegate<Object>() {
                         Short delegate() {
                             NavigableSet<Short> out = new TreeSet<Short>();
@@ -126,13 +129,14 @@ public class SentSegmentMapOpTest {
                 dataMap.put(segment);
 
                 // remove temporary mock
-                new NonStrictExpectations() {{
-                    onInstance(segment).getLastTransmissionId();
+                new Expectations(segment) {{
+                    segment.getLastTransmissionId();
                     result = new Delegate<Object>() {
                         Short delegate(Invocation invocation) {
                             return invocation.proceed();
                         }
                     };
+                    minTimes = 0;
                 }};
                 break;
             case PUT_REF:
@@ -168,22 +172,22 @@ public class SentSegmentMapOpTest {
             if (op.toString().startsWith(Op.PUT_DATA.toString())) {
                 // TODO: figure out what's wrong in the verification here
                 // onInstance(segment).addTransmissionId(withEqual(initialRefs[initialRefs.length - 1])); times = 1;
-                onInstance(segment).removeTransmissionId(anyShort); times = 0;
+                segment.removeTransmissionId(anyShort); times = 0;
             } else if (op.toString().startsWith("PUT")) {
                 for (Short addRef : addRefs) {
-                    onInstance(segment).addTransmissionId(withEqual(addRef)); times = 1;
+                    segment.addTransmissionId(withEqual(addRef)); times = 1;
                 }
-                onInstance(segment).removeTransmissionId(anyShort); times = 0;
+                segment.removeTransmissionId(anyShort); times = 0;
             } else if (op.toString().startsWith(Op.REMOVE.toString())) {
                 for (Short removeRef : removeRefs) {
-                    onInstance(segment).removeTransmissionId(withEqual(removeRef)); times = 1;
+                    segment.removeTransmissionId(withEqual(removeRef)); times = 1;
                 }
-                onInstance(segment).addTransmissionId(anyShort); times = 0;
+                segment.addTransmissionId(anyShort); times = 0;
             } else if (op == Op.REPLACE) {
                 for (Short addRef : addRefs) {
-                    onInstance(segment).addTransmissionId(withEqual(addRef)); times = 1;
+                    segment.addTransmissionId(withEqual(addRef)); times = 1;
                 }
-                onInstance(segment).removeTransmissionId(anyShort); times = 0;
+                segment.removeTransmissionId(anyShort); times = 0;
             }
         }};
     }
@@ -230,8 +234,8 @@ public class SentSegmentMapOpTest {
             key = iter.getHigherKey(key);
         }
 
-        new NonStrictExpectations() {{
-            onInstance(segment).getTransmissionIds();
+        new Expectations(segment) {{
+            segment.getTransmissionIds();
             result = new Delegate<Object>() {
                 NavigableSet<Short> delegate() {
                     toBeRemovedSegmentTransmissionIds.removeAll(removeRefs);

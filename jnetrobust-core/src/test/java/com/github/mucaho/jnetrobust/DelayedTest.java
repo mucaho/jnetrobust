@@ -121,7 +121,7 @@ public class DelayedTest {
         final List<Long> retransmitsB = new ArrayList<Long>();
 
 
-        new NonStrictExpectations() {{
+        new Expectations() {{
             hostListenerA.notifyReceived(with(new Delegate<Long>() {
                 @SuppressWarnings("unused")
                 void delegate(Long data) {
@@ -151,6 +151,7 @@ public class DelayedTest {
                     notAckedA.add(dataGenerator.deserializeData(data));
                 }
             }));
+            minTimes = 0;
             protocolListenerA.handleOrderedData(anyShort, with(new Delegate<ByteBuffer>() {
                 @SuppressWarnings("unused")
                 void delegate(ByteBuffer data) {
@@ -163,6 +164,7 @@ public class DelayedTest {
                     unorderedA.add(dataGenerator.deserializeData(data));
                 }
             }));
+            minTimes = 0;
             protocolListenerA.shouldRetransmit(anyShort, with(new Delegate<ByteBuffer>() {
                 @SuppressWarnings("unused")
                 void delegate(ByteBuffer data) {
@@ -171,7 +173,7 @@ public class DelayedTest {
             })); result = null;
         }};
 
-        new NonStrictExpectations() {{
+        new Expectations() {{
             hostListenerB.notifyReceived(with(new Delegate<Long>() {
                 @SuppressWarnings("unused")
                 void delegate(Long data) {
@@ -201,6 +203,7 @@ public class DelayedTest {
                     notAckedB.add(dataGenerator.deserializeData(data));
                 }
             }));
+            minTimes = 0;
             protocolListenerB.handleOrderedData(anyShort, with(new Delegate<ByteBuffer>() {
                 @SuppressWarnings("unused")
                 void delegate(ByteBuffer data) {
@@ -213,6 +216,7 @@ public class DelayedTest {
                     unorderedB.add(dataGenerator.deserializeData(data));
                 }
             }));
+            minTimes = 0;
             protocolListenerB.shouldRetransmit(anyShort, with(new Delegate<ByteBuffer>() {
                 @SuppressWarnings("unused")
                 void delegate(ByteBuffer data) {
@@ -221,7 +225,7 @@ public class DelayedTest {
             })); result = null;
         }};
 
-        new NonStrictExpectations() {{
+        new Expectations() {{
             queueListenerAtoB.notifyDuplicate((Packet) any); result = new Delegate<Packet>() {
                 @SuppressWarnings("unused")
                 void delegate(Packet dup) {

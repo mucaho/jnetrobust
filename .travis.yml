@@ -2,7 +2,6 @@ language: java
 virt: lxd
 jdk:
   - openjdk8
-  - oraclejdk9
 
 env:
   global:

@@ -5,7 +5,7 @@
     
     <groupId>com.github.mucaho</groupId>
     <artifactId>jnetrobust</artifactId>
-    <version>0.0.2</version>
+    <version>${revision}</version>
 
     <url>https://github.com/mucaho/jnetrobust</url>
     <name>${project.groupId}:${project.artifactId}</name>
@@ -42,8 +42,10 @@
     </modules>
 
     <properties>
+        <revision>0.1.0</revision>
         <maven.compiler.source>1.6</maven.compiler.source>
         <maven.compiler.target>1.6</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <build>
@@ -68,6 +70,8 @@
                     <maxmem>256m</maxmem>
                     <!-- aggregated reports for multi-module projects -->
                     <aggregate>true</aggregate>
+                    <check>
+                    </check>
                     <instrumentation>
                         <ignores>
                             <ignore>com.github.mucaho.jarrayliterals.*</ignore>
